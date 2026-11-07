@@ -778,6 +778,7 @@ impl Index {
     /// `ids_superseding`). Crate-private and unscoped: the caller must run
     /// every id it returns through a reader check before using it, since the
     /// answer says a successor exists.
+    #[cfg_attr(not(feature = "python"), allow(dead_code))]
     pub(crate) fn ids_superseding(&self, id: &str) -> Result<Vec<String>> {
         let mut st = self
             .conn
