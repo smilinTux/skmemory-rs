@@ -1000,10 +1000,14 @@ def main() -> None:
                     b["schema_version"],
                 ]
             conn.execute(f"INSERT INTO memories ({cols}) VALUES ({ph})", vals)
+        # BM25 statistics count dead documents until the index is rebuilt: rebuild so
+        # the scores depend only on the live corpus (the Rust test does the same).
+        conn.execute("REINDEX INDEX public.memories_bm25")
         try:
             lex = run_lexical(conn)
         finally:
             conn.execute("DELETE FROM memories WHERE id LIKE 'skrs-r05-%'")
+            conn.execute("REINDEX INDEX public.memories_bm25")
     (OUT / "r05_lex_corpus.json").write_text(
         json.dumps(bodies, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
     )
