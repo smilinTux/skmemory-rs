@@ -6,6 +6,12 @@ All notable changes to `skmem` are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Class bench (SKMEM-P1-12): `load_corpus` now sets `kind`, `outcome` from the fixture row, matching
+  the fixed Python `_to_memory`. The recorded Python golden is regenerated (only its
+  `skmemory_commit` changes: per-class numbers and all 53 ranked pages are identical).
+
 ### Added
 
 - Class bench (SKMEM-R-06B): `skmem::bench::run_bench` and `format_table` score `bm25_only`,
