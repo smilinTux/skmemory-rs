@@ -16,6 +16,19 @@ All notable changes to `skmem` are documented here. The format follows
   parser. `cargo run --example class_bench` prints the table. `tests/class_bench.rs` asserts the
   candidate meets or beats the Python numbers recorded by `tests/golden/gen_class_bench_golden.py`
   for every class, and matches Python's ranked page on all 53 queries. `reimpl_fusion` is not ported.
+- Reader ceiling and query sanitizer (SKMEM-R-06C): `skmem::audience` (`ReaderScope`,
+  `AudienceConfig`, `resolve`: `SKMEMORY_READER` is a ceiling a per-call reader can only
+  narrow, an unparseable reader is `@public`, a hidden id reads as missing) and
+  `skmem::query_sanitizer::sanitize_query`, both with golden parity against Python
+  (`tests/golden/gen_reader_golden.py`, 444 reader cases, 41 sanitizer cases). The filter is
+  now MANDATORY: every public entry point that returns memories takes a `&ReaderScope`
+  (`flat::Store::{load,list,flat_id_set}`, `index::Index::{get,all_rows,search_lexical}`,
+  `pg::VectorArm::{search_semantic,search_vector}`, `pg::lexical_arm::LexicalArm::search_lexical`,
+  every `pg::graph_arm::GraphArm` read, and `search::SearchInput::scope`). The pg arms push the
+  ceiling into the SQL `WHERE` (and re-check each hydrated row); `search::search` drops hidden
+  candidates and arm ids before fusing and sanitizes the query. **Breaking:** those signatures
+  changed, `flat::Store::{find_file,load_path}` are crate-private, and `Candidate` gained
+  `context_tag` and `tags`.
 - Retrieval fusion (SKMEM-R-06): `skmem::fusion` (`run_arm`, `route_query` identifier vs
   natural, `reciprocal_rank_fusion`, `rank_interleave`, `pinned_rrf`, `fuse`: identifier
   route pins `lexical_local` then `lexical` at depth 3, natural route pins the vector head
