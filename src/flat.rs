@@ -193,7 +193,7 @@ impl Store {
     }
 
     /// Save with a durable atomic write. Returns the id.
-    pub fn save(&self, memory: &Memory) -> Result<String, StoreError> {
+    pub fn save(&self, memory: &Memory, _owner: &OwnerScope) -> Result<String, StoreError> {
         let path = self.path_for(memory)?;
         atomic_write_bytes(&path, memory.to_json().as_bytes())?;
         Ok(memory.id.clone())
@@ -277,7 +277,7 @@ impl Store {
     /// True for a conflict copy that is not the record's only live copy:
     /// a canonical `<id>.json` exists in any layer, or a later-sorted sibling
     /// conflict copy exists.
-    pub fn is_hidden_conflict_copy(&self, path: &Path) -> bool {
+    pub(crate) fn is_hidden_conflict_copy(&self, path: &Path) -> bool {
         let name = file_name(path);
         let Some(cid) = conflict_copy_id(&name) else {
             return false;

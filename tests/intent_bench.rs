@@ -29,7 +29,8 @@ fn med(runs: usize, mut f: impl FnMut()) -> f64 {
 #[ignore = "timing run, not a gate"]
 fn prefilter_timing() {
     let base = scratch("bench").join("base");
-    let st = IntentionStore::open_with(&base, 30_000, Some(&base.join("../locks"))).unwrap();
+    let st =
+        IntentionStore::open_with(&base, 30_000, Some(&base.join("../locks")), &own()).unwrap();
     for n in 0..N {
         let mut i = Intention::new(&format!("b{n:05}"), Kind::Event, "bench");
         i.state = State::Armed;
@@ -60,7 +61,8 @@ fn prefilter_timing() {
         let cold = med(runs, || {
             let _ = prefilter_safe(&base, text, &none, None);
         });
-        let st = IntentionStore::open_with(&base, 30_000, Some(&base.join("../locks"))).unwrap();
+        let st =
+            IntentionStore::open_with(&base, 30_000, Some(&base.join("../locks")), &own()).unwrap();
         let opts = PrefilterOpts {
             deadline_s: Some(5.0),
             ..Default::default()
@@ -94,4 +96,8 @@ fn prefilter_timing() {
             println!("{}", String::from_utf8_lossy(&out.stderr));
         }
     }
+}
+
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
 }

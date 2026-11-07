@@ -190,7 +190,7 @@ fn py_loads_rust_output() {
     for n in case_names() {
         let inp = fs::read(golden().join("in").join(format!("{n}.json"))).unwrap();
         let m = Memory::from_stored_json(&inp).unwrap();
-        store.save(&m).unwrap();
+        store.save(&m, &own()).unwrap();
     }
     let status = std::process::Command::new(py)
         .arg(golden().join("verify_rust_written.py"))

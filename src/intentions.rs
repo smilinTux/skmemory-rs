@@ -18,6 +18,7 @@
 //! * the state machine, merge lattice, prefilter and supersession sweep follow
 //!   the Python line for line (see the per-item notes).
 
+use crate::audience::OwnerScope;
 use crate::flat::atomic_write_bytes;
 use crate::model::py_strip;
 use crate::pytime::{Dt, EPOCH};
@@ -999,8 +1000,8 @@ pub struct IntentionStore {
 
 impl IntentionStore {
     /// Open with the default 30 s busy timeout and the default lock root.
-    pub fn open(base: impl AsRef<Path>) -> Result<IntentionStore> {
-        Self::open_with(base, 30_000, None)
+    pub fn open(base: impl AsRef<Path>, owner: &OwnerScope) -> Result<IntentionStore> {
+        Self::open_with(base, 30_000, None, owner)
     }
 
     /// Open with an explicit SQLite busy timeout (ms) and, for tests that
@@ -1010,6 +1011,7 @@ impl IntentionStore {
         base: impl AsRef<Path>,
         busy_ms: u64,
         lock_root_dir: Option<&Path>,
+        _owner: &OwnerScope,
     ) -> Result<IntentionStore> {
         let base = base.as_ref().to_path_buf();
         let dir = base.join("intentions");
@@ -1848,7 +1850,10 @@ pub fn prefilter_safe(
     let t0 = Instant::now();
     let base = base.as_ref().to_path_buf();
     let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        let store = IntentionStore::open_with(&base, 50, None).ok()?;
+        // A declared reader (SKMEMORY_READER ceiling) gets nothing: Python refuses it
+        // every intention tool and its inject hook does nothing.
+        let owner = OwnerScope::from_process().ok()?;
+        let store = IntentionStore::open_with(&base, 50, None, &owner).ok()?;
         store
             .prefilter(
                 text,

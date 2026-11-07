@@ -283,7 +283,7 @@ fn seeded_store(tag: &str) -> (Store, PathBuf) {
     let dir = tmp(tag);
     let store = Store::open(dir.join("m")).unwrap();
     for r in ROWS {
-        store.save(&memory(r)).unwrap();
+        store.save(&memory(r), &own()).unwrap();
     }
     (store, dir)
 }
@@ -362,7 +362,8 @@ fn seeded_index(tag: &str, fts: bool) -> (Index, PathBuf) {
     let idx = Index::open(store.root(), fts).unwrap();
     for r in ROWS {
         let m = memory(r);
-        idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
+        idx.index_memory(&m, &store.path_for(&m).unwrap(), &own())
+            .unwrap();
     }
     (idx, dir)
 }

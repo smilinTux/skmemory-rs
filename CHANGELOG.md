@@ -16,9 +16,14 @@ All notable changes to `skmem` are documented here. The format follows
   parser. `cargo run --example class_bench` prints the table. `tests/class_bench.rs` asserts the
   candidate meets or beats the Python numbers recorded by `tests/golden/gen_class_bench_golden.py`
   for every class, and matches Python's ranked page on all 53 queries. `reimpl_fusion` is not ported.
-- Reader hardening (SKMEM-R-06D): `audience::OwnerScope` (only `OwnerScope::resolve` or
-  `from_process` build one, and both REFUSE with `NotOwner` when `SKMEMORY_READER` declares a
-  non-owner ceiling) now gates every raw or store-wide handle: `Index::{connection,fts_status,
+- Reader hardening (SKMEM-R-06D): `audience::OwnerScope` (only `OwnerScope::from_process` builds one
+  publicly, and it REFUSES with `NotOwner` when the real process `SKMEMORY_READER` declares a
+  non-owner ceiling; the env-injecting `OwnerScope::resolve` and `ReaderScope::resolve` exist only
+  under `cfg(test)` or the `testing` feature, enabled solely by the self dev-dependency, and the
+  public `ReaderScope::from_process{,_with_config}` always apply the process ceiling) now gates every raw or store-wide handle: `flat::Store::save`, `Index::index_memory`, `IntentionStore::{open,open_with}` and
+  `Ledger::new` also take an `&OwnerScope` (a reader process cannot write, and `prefilter_safe`
+  returns nothing under a ceiling); `Store::is_hidden_conflict_copy` is crate-private; CI now runs
+  `cargo test --doc` and a must-not-compile `tests/forge_check`. Gated: `Index::{connection,fts_status,
   reindex,fts_backfill,backfill_importance,delete}`, `flat::Store::{archive,tombstone,
   is_tombstoned,delete}`, and `client_mut` on the vector, lexical and graph arms plus
   `GraphArm::cypher`. The existence oracles are scoped: `Index::count`, `bump_access` and

@@ -31,7 +31,7 @@ fn s(v: &Value) -> &str {
 
 fn open(base: &Path) -> IntentionStore {
     // Locks under the scratch dir, never the real runtime dir.
-    IntentionStore::open_with(base, 30_000, Some(&base.join("..").join("locks"))).unwrap()
+    IntentionStore::open_with(base, 30_000, Some(&base.join("..").join("locks")), &own()).unwrap()
 }
 
 fn pristine_copy(tag: &str) -> (PathBuf, IntentionStore) {
@@ -378,7 +378,7 @@ fn ledger_copy(tag: &str) -> (PathBuf, Ledger) {
     let d = scratch(tag);
     let base = d.join("base");
     copy_dir(&parity().join("py_ledger"), &base);
-    let l = Ledger::new(&base, Some("skap01"));
+    let l = Ledger::new(&base, Some("skap01"), &own());
     (base, l)
 }
 
@@ -442,7 +442,7 @@ fn ledger_record_bytes_match_python() {
     let ex = expected();
     let d = scratch("ledger-record");
     let base = d.join("base");
-    let l = Ledger::new(&base, Some("skap01"));
+    let l = Ledger::new(&base, Some("skap01"), &own());
     for c in ex["ledger_calls"].as_array().unwrap() {
         let r = Record {
             effect: c["effect"].as_str(),
@@ -487,7 +487,7 @@ fn ledger_never_fuses_onto_a_torn_tail() {
         s(&ex["ledger_torn_before"]),
     )
     .unwrap();
-    let l = Ledger::new(&base, Some("skwk02"));
+    let l = Ledger::new(&base, Some("skwk02"), &own());
     l.record(
         "after-torn",
         "1",
@@ -529,7 +529,7 @@ fn ledger_ids_match_python() {
 fn hermes_import_matches_python() {
     let ex = expected();
     let d = scratch("hermes");
-    let l = Ledger::new(d.join("base"), Some("skap01"));
+    let l = Ledger::new(d.join("base"), Some("skap01"), &own());
     let usage = parity().join("py_ledger/usage.json");
     let first = sidecar::import_hermes_usage(&usage, &l).unwrap();
     let second = sidecar::import_hermes_usage(&usage, &l).unwrap();
@@ -597,7 +597,7 @@ fn live_python_and_rust_share_one_lock_file() {
     let (base, run) = (d.join("base"), d.join("run"));
     fs::create_dir_all(&run).unwrap();
     // Rust opens first so the base exists; both resolve the same lock dir from the same env.
-    let st = IntentionStore::open_with(&base, 30_000, Some(&run)).unwrap();
+    let st = IntentionStore::open_with(&base, 30_000, Some(&run), &own()).unwrap();
     let pyd = run_py(
         &py,
         &run,
@@ -677,7 +677,7 @@ fn live_python_loads_what_rust_wrote() {
     let d = scratch("live-files");
     let (base, run) = (d.join("base"), d.join("run"));
     fs::create_dir_all(&run).unwrap();
-    let st = IntentionStore::open_with(&base, 30_000, Some(&run)).unwrap();
+    let st = IntentionStore::open_with(&base, 30_000, Some(&run), &own()).unwrap();
     for row in jsonl(&fixtures().join("intentions-v1.jsonl")) {
         st.save(&Intention::from_value(&row).unwrap()).unwrap();
     }
@@ -723,7 +723,7 @@ fn live_python_loads_what_rust_wrote() {
     )
     .unwrap();
     drop(st);
-    let l = Ledger::new(&base, Some("skap01"));
+    let l = Ledger::new(&base, Some("skap01"), &own());
     for (n, (ev, eff)) in [
         ("served", None),
         ("followed", Some("success")),
@@ -759,4 +759,8 @@ fn live_python_loads_what_rust_wrote() {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
+}
+
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
 }

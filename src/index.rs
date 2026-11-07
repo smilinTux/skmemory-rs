@@ -662,7 +662,12 @@ impl Index {
     /// content columns only: `access_count`, `last_accessed` and `importance`
     /// are usage state and survive a re-save. Importance is set on first
     /// insert only. Commits and runs the throttled PASSIVE checkpoint.
-    pub fn index_memory(&self, memory: &Memory, file_path: &Path) -> Result<()> {
+    pub fn index_memory(
+        &self,
+        memory: &Memory,
+        file_path: &Path,
+        _owner: &OwnerScope,
+    ) -> Result<()> {
         let tx = self.conn.unchecked_transaction()?;
         self.upsert_in(&tx, memory, file_path)?;
         tx.commit()?;

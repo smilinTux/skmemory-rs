@@ -46,8 +46,9 @@ fn index_all(tag: &str, mems: &[Memory], fts: bool) -> (Store, Index, PathBuf) {
     let store = Store::open(dir.join("m")).unwrap();
     let idx = Index::open(store.root(), fts).unwrap();
     for m in mems {
-        store.save(m).unwrap();
-        idx.index_memory(m, &store.path_for(m).unwrap()).unwrap();
+        store.save(m, &own()).unwrap();
+        idx.index_memory(m, &store.path_for(m).unwrap(), &own())
+            .unwrap();
     }
     (store, idx, dir)
 }

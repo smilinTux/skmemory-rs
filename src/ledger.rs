@@ -23,6 +23,7 @@
 //! success after at least 3 follows, and is flagged `served-never-followed`
 //! when served >= 3 and followed == 0.
 
+use crate::audience::OwnerScope;
 use crate::pyjson::{float_repr, write_string};
 use crate::pytime::Dt;
 use crate::util::uuid4;
@@ -281,7 +282,7 @@ pub struct Ledger {
 
 impl Ledger {
     /// `Ledger(base_path, host)`: the host defaults to the short hostname.
-    pub fn new(base: impl AsRef<Path>, host: Option<&str>) -> Ledger {
+    pub fn new(base: impl AsRef<Path>, host: Option<&str>, _owner: &OwnerScope) -> Ledger {
         let base = expanduser(base.as_ref());
         let raw = match host.filter(|h| !h.is_empty()) {
             Some(h) => h.to_string(),

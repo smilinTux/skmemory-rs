@@ -54,6 +54,17 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       - name: cargo test (default features, pure Rust)
         run: cargo test --locked --all-targets
+      # --all-targets skips doctests, and the compile_fail doctests in
+      # skmem::audience pin the owner-only gates: run them explicitly.
+      - name: cargo test --doc (compile_fail doctests)
+        run: cargo test --locked --doc
+      - name: the process reader ceiling cannot be bypassed (must NOT compile)
+        if: matrix.rust == 'stable'
+        run: |
+          cp Cargo.lock tests/forge_check/Cargo.lock
+          if cargo check --locked --manifest-path tests/forge_check/Cargo.toml; then
+            echo "forge_check compiled: an env-injecting scope constructor is public"; exit 1
+          fi
 
   pg:
     name: pg arms (skmem-pg container, rust ${{ matrix.rust }})
@@ -93,6 +104,8 @@ jobs:
         run: cargo clippy --locked --all-targets --features pg -- -D warnings
       - name: cargo test, pg feature (database tests are required, not skipped)
         run: cargo test --locked --features pg --all-targets
+      - name: cargo test --doc, pg feature
+        run: cargo test --locked --features pg --doc
 
   python-wheel:
     name: python feature (maturin)

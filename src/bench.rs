@@ -1042,10 +1042,12 @@ pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
     let docs = load_corpus(fixture_dir)?;
     let queries = load_queries(fixture_dir)?;
     let tmp = TempDir::new()?;
+    // The bench is an owner run over synthetic fixtures; it refuses under a reader ceiling.
+    let owner = OwnerScope::from_process().map_err(|e| e.to_string())?;
     let index = Index::open(&tmp.0, true).map_err(|e| e.to_string())?;
     for d in &docs {
         index
-            .index_memory(&d.memory, Path::new(""))
+            .index_memory(&d.memory, Path::new(""), &owner)
             .map_err(|e| e.to_string())?;
     }
     let now = Dt::parse(FIXTURE_NOW).ok_or("fixture clock")?;
@@ -1059,7 +1061,7 @@ pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
             .collect(),
         docs: &docs,
         index,
-        owner: OwnerScope::resolve(&Env::empty()).map_err(|e| e.to_string())?,
+        owner,
         now_secs,
     };
     let all: Vec<&Doc> = docs.iter().collect();

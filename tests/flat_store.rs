@@ -34,8 +34,8 @@ fn save_load_list_roundtrip_and_layout() {
     }
     let a = mem("a", Layer::Short, "2026-01-01T00:00:00+00:00");
     let b = mem("b", Layer::Long, "2026-02-01T00:00:00+00:00");
-    s.save(&a).unwrap();
-    s.save(&b).unwrap();
+    s.save(&a, &own()).unwrap();
+    s.save(&b, &own()).unwrap();
     assert!(d.join("short-term/a.json").is_file());
     assert_eq!(s.load("a", &owner()).unwrap().unwrap(), a);
     assert_eq!(s.load("b", &owner()).unwrap().unwrap(), b);
@@ -68,7 +68,7 @@ fn unsafe_ids_are_refused() {
     for bad in ["", "  ", "../x", "a/b", ".."] {
         let mut m = mem("x", Layer::Short, "2026-01-01T00:00:00+00:00");
         m.id = bad.into();
-        assert!(s.save(&m).is_err(), "{bad:?}");
+        assert!(s.save(&m, &own()).is_err(), "{bad:?}");
     }
     let _ = fs::remove_dir_all(&d);
 }
@@ -79,8 +79,11 @@ fn invalid_files_are_skipped_by_list_and_reported_by_load() {
     let s = Store::open(&d).unwrap();
     fs::write(d.join("short-term/bad.json"), b"{not json").unwrap();
     fs::write(d.join("short-term/.hidden.json"), b"{}").unwrap();
-    s.save(&mem("ok", Layer::Short, "2026-01-01T00:00:00+00:00"))
-        .unwrap();
+    s.save(
+        &mem("ok", Layer::Short, "2026-01-01T00:00:00+00:00"),
+        &own(),
+    )
+    .unwrap();
     let l = s.list(None, &owner());
     assert_eq!(l.memories.len(), 1);
     assert_eq!(l.unloadable.len(), 1, "a bad file is reported, not dropped");
@@ -100,7 +103,7 @@ fn sync_conflict_copies_are_skipped_unless_only_copy() {
     let d = scratch("conflict");
     let s = Store::open(&d).unwrap();
     let canon = mem("c1", Layer::Mid, "2026-01-01T00:00:00+00:00");
-    s.save(&canon).unwrap();
+    s.save(&canon, &own()).unwrap();
     // A divergent conflict copy of c1 sits next to the canonical file.
     let mut div = canon.clone();
     div.title = "divergent".into();
@@ -143,7 +146,7 @@ fn tombstone_and_archive() {
     let d = scratch("arch");
     let s = Store::open(&d).unwrap();
     let m = mem("gone", Layer::Short, "2026-01-01T00:00:00+00:00");
-    s.save(&m).unwrap();
+    s.save(&m, &own()).unwrap();
     let before = fs::read(d.join("short-term/gone.json")).unwrap();
     let dest = s.archive("gone", Some("deduped"), &own()).unwrap().unwrap();
     assert_eq!(dest, d.join("archive/deduped/gone.json"));
@@ -158,7 +161,7 @@ fn tombstone_and_archive() {
         .unwrap();
     assert!(s.is_tombstoned("gone", &own()));
     let m2 = mem("plain", Layer::Mid, "2026-01-01T00:00:00+00:00");
-    s.save(&m2).unwrap();
+    s.save(&m2, &own()).unwrap();
     let p = s.archive("plain", None, &own()).unwrap().unwrap();
     assert_eq!(p, d.join("archive/plain.json"));
     assert!(!s.delete("plain", &own()).unwrap());
@@ -171,9 +174,9 @@ fn overwrite_replaces_whole_file() {
     let s = Store::open(&d).unwrap();
     let mut m = mem("o", Layer::Short, "2026-01-01T00:00:00+00:00");
     m.content = "x".repeat(5000);
-    s.save(&m).unwrap();
+    s.save(&m, &own()).unwrap();
     m.content = "short".into();
-    s.save(&m).unwrap();
+    s.save(&m, &own()).unwrap();
     assert_eq!(s.load("o", &owner()).unwrap().unwrap().content, "short");
     let _ = fs::remove_dir_all(&d);
 }
@@ -186,7 +189,7 @@ fn crash_before_rename_leaves_prior_file_intact_and_temp_invisible() {
         let d = scratch("crash");
         let s = Store::open(&d).unwrap();
         let mut m = mem("k", Layer::Short, "2026-01-01T00:00:00+00:00");
-        s.save(&m).unwrap();
+        s.save(&m, &own()).unwrap();
         let before = fs::read(d.join("short-term/k.json")).unwrap();
 
         m.content = "NEW CONTENT".repeat(1000);
@@ -258,7 +261,7 @@ fn kill_child_writer() {
     loop {
         let mut m = mem("victim", Layer::Short, "2026-01-01T00:00:00+00:00");
         m.content = if i % 2 == 0 { "A" } else { "B" }.repeat(400_000);
-        s.save(&m).unwrap();
+        s.save(&m, &own()).unwrap();
         i += 1;
     }
 }
@@ -351,9 +354,12 @@ fn nan_and_lone_surrogates_are_reported_not_dropped() {
 fn archive_and_delete_remove_the_source_entry() {
     let d = scratch("fsyncdirs");
     let s = Store::open(&d).unwrap();
-    s.save(&mem("a1", Layer::Short, "2026-01-01T00:00:00+00:00"))
-        .unwrap();
-    s.save(&mem("d1", Layer::Mid, "2026-01-01T00:00:00+00:00"))
+    s.save(
+        &mem("a1", Layer::Short, "2026-01-01T00:00:00+00:00"),
+        &own(),
+    )
+    .unwrap();
+    s.save(&mem("d1", Layer::Mid, "2026-01-01T00:00:00+00:00"), &own())
         .unwrap();
     assert!(s.archive("a1", None, &own()).unwrap().is_some());
     assert!(s.delete("d1", &own()).unwrap());

@@ -65,7 +65,7 @@ fn index_sorted(idx: &Index, store: &Store) {
         fs_.sort();
         for p in fs_ {
             let m = skmem::model::Memory::from_stored_json(&fs::read(&p).unwrap()).unwrap();
-            idx.index_memory(&m, &p).unwrap();
+            idx.index_memory(&m, &p, &own()).unwrap();
         }
     }
 }
@@ -297,9 +297,9 @@ fn upsert_preserves_usage_and_reinforcement_step() {
     let idx = Index::open(store.root(), true).unwrap();
     let mut m = Memory::new("alpha", "first body");
     m.emotional.intensity = 5.0;
-    store.save(&m).unwrap();
+    store.save(&m, &own()).unwrap();
     let p = store.path_for(&m).unwrap();
-    idx.index_memory(&m, &p).unwrap();
+    idx.index_memory(&m, &p, &own()).unwrap();
     let start = idx.get(&m.id, &owner()).unwrap().unwrap();
     assert_eq!(start.importance, initial_importance("short-term", 5.0));
     assert_eq!(start.access_count, 0);
@@ -316,7 +316,7 @@ fn upsert_preserves_usage_and_reinforcement_step() {
     // Re-save with new content: content columns change, usage state does not.
     m.content = "second body".into();
     m.title = "beta".into();
-    idx.index_memory(&m, &p).unwrap();
+    idx.index_memory(&m, &p, &own()).unwrap();
     let after = idx.get(&m.id, &owner()).unwrap().unwrap();
     assert_eq!(after.title, "beta");
     assert_eq!(after.access_count, 1);
@@ -387,7 +387,8 @@ fn vaulted_store_indexes_no_plaintext_and_refuses_fts() {
     {
         let idx = Index::open(store.root(), true).unwrap();
         let m = Memory::new("t", &format!("{} SECRETSENTINELXYZ body", "p".repeat(300)));
-        idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
+        idx.index_memory(&m, &store.path_for(&m).unwrap(), &own())
+            .unwrap();
         assert_eq!(
             idx.search_lexical("SECRETSENTINELXYZ", 5, &SearchFilters::default(), &owner())
                 .unwrap()
@@ -414,7 +415,8 @@ fn vaulted_store_indexes_no_plaintext_and_refuses_fts() {
     // New writes add no FTS text either, and the db file carries no plaintext
     // beyond the 150-char preview the plain index already keeps.
     let m = Memory::new("v", &format!("{} VAULTSENTINEL2", "x".repeat(400)));
-    idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
+    idx.index_memory(&m, &store.path_for(&m).unwrap(), &own())
+        .unwrap();
     idx.connection(&own())
         .execute_batch("PRAGMA wal_checkpoint(TRUNCATE)")
         .unwrap();
@@ -494,16 +496,18 @@ fn reindex_keeps_orphans_unless_forced_and_restores_usage_atomically() {
     let idx = Index::open(store.root(), true).unwrap();
     let a = Memory::new("a", "alpha one");
     let b = Memory::new("b", "beta two");
-    store.save(&a).unwrap();
-    store.save(&b).unwrap();
-    idx.index_memory(&a, &store.path_for(&a).unwrap()).unwrap();
-    idx.index_memory(&b, &store.path_for(&b).unwrap()).unwrap();
+    store.save(&a, &own()).unwrap();
+    store.save(&b, &own()).unwrap();
+    idx.index_memory(&a, &store.path_for(&a).unwrap(), &own())
+        .unwrap();
+    idx.index_memory(&b, &store.path_for(&b).unwrap(), &own())
+        .unwrap();
     // An index-only row (no flat file) and a tombstoned one.
     let orphan = Memory::new("orph", "orphan text");
-    idx.index_memory(&orphan, &store.path_for(&orphan).unwrap())
+    idx.index_memory(&orphan, &store.path_for(&orphan).unwrap(), &own())
         .unwrap();
     let dead = Memory::new("dead", "forgotten text");
-    idx.index_memory(&dead, &store.path_for(&dead).unwrap())
+    idx.index_memory(&dead, &store.path_for(&dead).unwrap(), &own())
         .unwrap();
     store
         .tombstone(&dead.id, "2026-01-01T00:00:00+0000", "test", None, &own())
@@ -573,9 +577,10 @@ fn fts_backfill_indexes_rows_missing_from_a_python_index() {
     let dir = scratch("backfill");
     let store = Store::open(dir.join("m")).unwrap();
     let m = Memory::new("lazy", "needle in haystack");
-    store.save(&m).unwrap();
+    store.save(&m, &own()).unwrap();
     let idx = Index::open(store.root(), true).unwrap();
-    idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
+    idx.index_memory(&m, &store.path_for(&m).unwrap(), &own())
+        .unwrap();
     // Simulate a Python index written before the FTS arm existed.
     idx.connection(&own())
         .execute_batch("DELETE FROM memory_fts; DELETE FROM fts_meta")
@@ -702,7 +707,7 @@ fn bench_reindex() {
         m.layer = skmem::model::Layer::ALL[i % 3];
         m.emotional.intensity = (i % 11) as f64;
         m.tags = vec![format!("t{}", i % 50), "bench".into()];
-        store.save(&m).unwrap();
+        store.save(&m, &own()).unwrap();
     }
     eprintln!("generated {n} files in {:?}", t.elapsed());
     let idx = Index::open(store.root(), true).unwrap();
