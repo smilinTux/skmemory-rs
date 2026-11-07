@@ -16,6 +16,7 @@ expect() { # <crate dir> <regex that must appear in the compiler output>
     echo "FAIL $1: failed, but not for the expected reason ($2):"; echo "$out" | tail -25; status=1
   fi
 }
-expect no_feature 'error\[E0599\]: no .*named `resolve` found for struct' "$@"
+expect no_feature_owner 'error\[E0599\]: no .*named `resolve` found for struct `OwnerScope`' "$@"
+expect no_feature_reader 'error\[E0599\]: no .*named `resolve` found for struct `ReaderScope`' "$@"
 expect testing_feature 'may only be enabled by skmem.s own test builds' "$@"
 exit $status

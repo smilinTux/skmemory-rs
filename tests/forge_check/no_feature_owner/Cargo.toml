@@ -1,5 +1,5 @@
 [package]
-name = "forge_check_no_feature"
+name = "forge_check_no_feature_owner"
 version = "0.0.0"
 edition = "2021"
 publish = false
