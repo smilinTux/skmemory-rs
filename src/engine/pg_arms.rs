@@ -32,6 +32,8 @@ pub struct PgConfig {
     /// `SKMEMORY_PG_ALLOW_REMOTE`: allow a non-loopback host.
     pub allow_remote: bool,
     pub embedder: EmbedderFactory,
+    /// Extra libpq-style connection options, for example `-c search_path=s,public`.
+    pub options: Option<String>,
     pub vector: bool,
     pub lexical: bool,
     pub graph: bool,
@@ -56,6 +58,7 @@ impl PgConfig {
             read_only,
             allow_remote,
             embedder: Arc::new(|| Box::new(EmbedClient::from_env())),
+            options: None,
             vector: true,
             lexical: true,
             graph: true,
@@ -86,13 +89,18 @@ impl PgConfig {
             .dsn
             .parse()
             .map_err(|_| "invalid connection string".to_string())?;
+        let mut opts: Vec<String> = Vec::new();
+        if let Some(o) = c.get_options().filter(|o| !o.is_empty()) {
+            opts.push(o.to_string());
+        }
+        if let Some(o) = self.options.as_deref().filter(|o| !o.is_empty()) {
+            opts.push(o.to_string());
+        }
         if self.read_only {
-            let ro = "-c default_transaction_read_only=on";
-            let opts = match c.get_options() {
-                Some(o) if !o.is_empty() => format!("{o} {ro}"),
-                _ => ro.to_string(),
-            };
-            c.options(&opts);
+            opts.push("-c default_transaction_read_only=on".to_string());
+        }
+        if !opts.is_empty() {
+            c.options(&opts.join(" "));
         }
         Ok(c)
     }
