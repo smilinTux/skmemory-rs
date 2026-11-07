@@ -29,3 +29,22 @@ All notable changes to `skmem` are documented here. The format follows
   restores usage in one transaction, WAL bounds and throttled PASSIVE checkpoint. Vaulted
   mode indexes no plaintext and refuses FTS. Parity is diffed against the real Python
   backend (`tests/golden/index_parity.py`).
+- `skmem::embed`: std-only embedding client (Python `_embed` parity): `SKMEMORY_EMBED_URL`,
+  `_URLS` failover, `_MODEL`, `_TIMEOUT`, `_CONNECT_TIMEOUT`, `_VERIFY`; the unified
+  `embed_text` formula (cut at 1400 chars), 400 halve-and-retry, typed
+  `DimensionMismatch` / `ModelMismatch` / `Unavailable` errors. Plain `http://` only.
+- `skmem::pg` (feature `pg`, off by default): pgvector search arm, `VectorArm::search_semantic`.
+  HNSW cosine in a materialised CTE re-sorted by true distance, `ef_search` 200 and
+  `iterative_scan relaxed_order` per session, agent scope, layer, tags AND, `context_tag`
+  (one or any-of, `[]` fails closed), source and `as_of` pushed into the SQL `WHERE`, with the
+  typed-column and `memory_json` fallback forms. DSN is never logged or in an error. Non-loopback hosts are refused (no TLS) unless
+  `SKMEMORY_PG_ALLOW_REMOTE=1`; search settings are transaction-local (`set_config(..., true)`);
+  a dead connection is re-established; `as_of` is parsed in Rust (`skmem::validity`, Python
+  `normalize_as_of`) so `now`/`yesterday` are typed errors.
+  Parity with Python `PGVectorBackend.search_semantic` on 46 cases, ids and distances (`tests/pg_parity`).
+  Database tests are env-gated on `SKMEM_PG_TEST_DSN`; CI runs them against a pgvector service.
+
+### Fixed
+
+- `index::word_chars` (FTS query sanitiser) now follows Python `\w` through a generated table
+  instead of `char::is_alphanumeric`, which accepted combining marks and circled letters.

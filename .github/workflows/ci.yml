@@ -55,6 +55,44 @@ jobs:
       - name: cargo test (default features, pure Rust)
         run: cargo test --locked --all-targets
 
+  pg:
+    name: pgvector arm (postgres service, rust ${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ["1.85.0", "stable"]
+    services:
+      postgres:
+        # Plain pgvector image: the tests create and drop their own schema, so
+        # they need the `vector` extension (>= 0.8 for iterative scans) and no
+        # skmem-pg extras (pg_search, AGE).
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      SKMEM_PG_TEST_DSN: postgresql://postgres:ci@127.0.0.1:5432/postgres
+      SKMEM_PG_TEST_REQUIRE: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable, toolchain input selects the version
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - name: clippy, pg feature
+        if: matrix.rust == 'stable'
+        run: cargo clippy --locked --all-targets --features pg -- -D warnings
+      - name: cargo test, pg feature (database tests are required, not skipped)
+        run: cargo test --locked --features pg --all-targets
+
   python-wheel:
     name: python feature (maturin)
     runs-on: ubuntu-latest

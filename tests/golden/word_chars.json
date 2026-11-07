@@ -1,0 +1,172 @@
+[
+ {
+  "input": "plain words here",
+  "tokens": [
+   "plain",
+   "words",
+   "here"
+  ]
+ },
+ {
+  "input": "snake_case and CamelCase",
+  "tokens": [
+   "snake_case",
+   "and",
+   "CamelCase"
+  ]
+ },
+ {
+  "input": "cafe\u0301 au lait",
+  "tokens": [
+   "cafe",
+   "au",
+   "lait"
+  ]
+ },
+ {
+  "input": "na\u00efve",
+  "tokens": [
+   "na\u00efve"
+  ]
+ },
+ {
+  "input": "\u0928\u092e\u0938\u094d\u0924\u0947",
+  "tokens": [
+   "\u0928\u092e\u0938",
+   "\u0924"
+  ]
+ },
+ {
+  "input": "\u24b6\u24d0 circled",
+  "tokens": [
+   "circled"
+  ]
+ },
+ {
+  "input": "x\u00b2 y\u00b3 z\u00bd",
+  "tokens": [
+   "x\u00b2",
+   "y\u00b3",
+   "z\u00bd"
+  ]
+ },
+ {
+  "input": "\u2160\u2161 roman",
+  "tokens": [
+   "\u2160\u2161",
+   "roman"
+  ]
+ },
+ {
+  "input": "\u0661\u0662\u0663 arabic-indic digits",
+  "tokens": [
+   "\u0661\u0662\u0663",
+   "arabic",
+   "indic",
+   "digits"
+  ]
+ },
+ {
+  "input": "\u4e00\u4e8c\u4e09 \u3007",
+  "tokens": [
+   "\u4e00\u4e8c\u4e09",
+   "\u3007"
+  ]
+ },
+ {
+  "input": "\u0e01\u0e34\u0e48\u0e07 thai marks",
+  "tokens": [
+   "\u0e01",
+   "\u0e07",
+   "thai",
+   "marks"
+  ]
+ },
+ {
+  "input": "e\u0345 greek ypogegrammeni",
+  "tokens": [
+   "e",
+   "greek",
+   "ypogegrammeni"
+  ]
+ },
+ {
+  "input": "a\u200db zwj",
+  "tokens": [
+   "a",
+   "b",
+   "zwj"
+  ]
+ },
+ {
+  "input": "a\u00adb soft hyphen",
+  "tokens": [
+   "a",
+   "b",
+   "soft",
+   "hyphen"
+  ]
+ },
+ {
+  "input": "tab\tsplit\nnew",
+  "tokens": [
+   "tab",
+   "split",
+   "new"
+  ]
+ },
+ {
+  "input": "emoji \ud83d\ude00 ok",
+  "tokens": [
+   "emoji",
+   "ok"
+  ]
+ },
+ {
+  "input": "\u1d2c\u02b0 modifier letters",
+  "tokens": [
+   "\u1d2c\u02b0",
+   "modifier",
+   "letters"
+  ]
+ },
+ {
+  "input": "\u0300\u0301 lone marks",
+  "tokens": [
+   "lone",
+   "marks"
+  ]
+ },
+ {
+  "input": "prb-6f069c5e",
+  "tokens": [
+   "prb",
+   "6f069c5e"
+  ]
+ },
+ {
+  "input": "a\u0f40\u0f71\u0f72b tibetan",
+  "tokens": [
+   "a\u0f40",
+   "b",
+   "tibetan"
+  ]
+ },
+ {
+  "input": "\ud835\udfce\ud835\udfcf math digits",
+  "tokens": [
+   "\ud835\udfce\ud835\udfcf",
+   "math",
+   "digits"
+  ]
+ },
+ {
+  "input": "\ufb01 ligature \u212a kelvin",
+  "tokens": [
+   "\ufb01",
+   "ligature",
+   "\u212a",
+   "kelvin"
+  ]
+ }
+]

@@ -3,11 +3,16 @@
 //! Storage core: the schema v2 [`model::Memory`] and the flat JSON
 //! [`flat::Store`], byte-compatible with the Python implementation.
 
+pub mod embed;
 pub mod flat;
 pub mod index;
 pub mod model;
+#[cfg(feature = "pg")]
+pub mod pg;
 pub mod pyjson;
 mod util;
+pub mod validity;
+mod wordchars_table;
 
 /// The crate version, as declared in `Cargo.toml`.
 pub fn version() -> &'static str {
