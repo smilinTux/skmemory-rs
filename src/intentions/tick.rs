@@ -301,7 +301,9 @@ pub fn run_tick(store: &IntentionStore, opts: TickOptions<'_>) -> super::Result<
         if want != host {
             return Ok(TickResult {
                 skipped: Some(format!(
-                    "not the tick host (this host {host:?}, tick host {want:?})"
+                    "not the tick host (this host {}, tick host {})",
+                    super::rp(&host),
+                    super::rp(&want)
                 )),
                 ..Default::default()
             });
@@ -316,7 +318,7 @@ pub fn run_tick(store: &IntentionStore, opts: TickOptions<'_>) -> super::Result<
     }
 
     let mut res = TickResult::default();
-    let Ok(_lock) = store.lock_file("_tick.lock", Some(0.0)) else {
+    let Ok(_lock) = store.lock_named("_tick.lock", Some(0.0)) else {
         res.skipped = Some("another tick is running on this host".into());
         return Ok(res);
     };

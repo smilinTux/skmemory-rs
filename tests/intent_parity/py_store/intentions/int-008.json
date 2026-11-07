@@ -1,0 +1,24 @@
+{
+  "id": "int-008",
+  "kind": "event",
+  "title": "Scoped to repo skmemory only",
+  "state": "armed",
+  "created_at": "2026-10-28T12:00:00Z",
+  "origin_session": "sess-fixture-d",
+  "origin_memory_id": "m-4491d78901",
+  "channel": "inline",
+  "due_at": null,
+  "snooze_until": null,
+  "interval_s": null,
+  "trigger_terms": [
+    "fusion"
+  ],
+  "scope": {
+    "repo": "skmemory"
+  },
+  "cooldown_s": 0,
+  "max_fires": 5,
+  "fires": 0,
+  "last_fired_at": null,
+  "expires_at": null
+}

@@ -1,0 +1,23 @@
+{
+ "alpha": {
+  "use_count": 2,
+  "view_count": 1,
+  "last_used_at": "2026-10-20T00:00:00Z",
+  "last_viewed_at": "2026-10-19T00:00:00Z",
+  "patch_count": 3
+ },
+ "beta": {
+  "use_count": 0,
+  "view_count": 3,
+  "last_viewed_at": "2026-10-21T00:00:00Z"
+ },
+ "gamma": {
+  "use_count": 0,
+  "view_count": 0
+ },
+ "delta": "not a dict",
+ "eps": {
+  "use_count": "2",
+  "created_at": "2026-10-22T00:00:00Z"
+ }
+}

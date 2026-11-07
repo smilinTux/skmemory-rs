@@ -1,0 +1,14 @@
+{"skill":"sync-to-clear-red","version":"1.0","event":"followed","at":"2026-10-01T00:00:00+00:00","effect":"harm","session":"s2","id":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+{"skill":"sync-to-clear-red","version":"1.0","event":"followed","at":"2026-10-02T00:00:00+00:00","effect":"harm","session":"s2","id":"ffffffffffffffffffffffffffffffff"}
+{"skill":"sync-to-clear-red","version":"1.0","event":"followed","at":"2026-10-03T00:00:00+00:00","effect":"harm","session":"s2","id":"11111111111111111111111111111111"}
+{"skill":"sync-to-clear-red","version":"1.0","event":"followed_error","at":"2026-10-04T00:00:00+00:00","effect":null,"session":"s2","id":"22222222222222222222222222222222","source":"tool-error:matched-command","missing":"cause unknown"}
+{"skill":"neutral-skill","version":"3","event":"followed","at":"2026-10-05T00:00:00+00:00","effect":"neutral","session":"s3","id":"33333333333333333333333333333333"}
+{"skill":"neutral-skill","version":"3","event":"served","at":"2026-10-05T00:00:00+00:00","effect":null,"session":"s3","id":"44444444444444444444444444444444"}
+{"skill":"caf\u00e9-skill","version":"sha:abc","event":"served","at":"2026-10-06T00:00:00+00:00","effect":null,"session":"s\u00e9","id":"55555555555555555555555555555555","source":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","missing":"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"}
+{"skill":"never-followed","version":"1","event":"served","at":"2026-10-07T00:00:00+00:00","effect":null,"session":"s","id":"77777777777777777777777777777777"}
+{"skill":"never-followed","version":"1","event":"served","at":"2026-10-08T00:00:00+00:00","effect":null,"session":"s","id":"88888888888888888888888888888888"}
+{"skill":"never-followed","version":"1","event":"served","at":"2026-10-09T00:00:00+00:00","effect":null,"session":"s","id":"99999999999999999999999999999999"}
+{"skill":"hermes-skill","version":"patch-2","event":"served","at":"2026-10-09T00:00:00+00:00","effect":null,"session":"hermes-usage","id":"2f7016dd875046789f63c79367a4bb7c","source":"hermes-usage-counter"}
+{"skill":"hermes-skill","version":"patch-2","event":"followed","at":"2026-10-09T00:00:00+00:00","effect":null,"session":"hermes-usage","id":"db2716509d3ed4d947d707808425fe0e","source":"hermes-usage-counter"}
+{"skill":"hermes-skill","version":"patch-2","event":"followed","at":"2026-10-09T00:00:00+00:00","effect":null,"session":"hermes-usage","id":"7b28e24e704b505d1bd0d7152a1a2ecd","source":"hermes-usage-counter"}
+{"skill":"hermes-skill","version":"patch-2","event":"followed","at":"2026-10-09T00:00:00+00:00","effect":null,"session":"hermes-usage","id":"7b1cc69666bf8730f26716e2e044b53a","source":"hermes-usage-counter"}

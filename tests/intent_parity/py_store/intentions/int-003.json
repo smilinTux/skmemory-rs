@@ -1,0 +1,20 @@
+{
+  "id": "int-003",
+  "kind": "time",
+  "title": "Snoozed item",
+  "state": "armed",
+  "created_at": "2026-10-20T12:00:00Z",
+  "origin_session": "sess-fixture-b",
+  "origin_memory_id": null,
+  "channel": "desktop",
+  "due_at": "2026-10-29T12:00:00Z",
+  "snooze_until": "2026-11-03T12:00:00Z",
+  "interval_s": null,
+  "trigger_terms": [],
+  "scope": {},
+  "cooldown_s": 0,
+  "max_fires": null,
+  "fires": 0,
+  "last_fired_at": null,
+  "expires_at": null
+}

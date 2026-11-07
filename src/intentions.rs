@@ -77,6 +77,11 @@ impl From<rusqlite::Error> for IntentionError {
 
 pub(crate) type Result<T> = std::result::Result<T, IntentionError>;
 
+/// Python `repr(str)`.
+pub(crate) fn rp(s: &str) -> String {
+    crate::ledger::py_repr(&Value::String(s.into()))
+}
+
 fn verr<T>(msg: impl Into<String>) -> Result<T> {
     Err(IntentionError::Value(msg.into()))
 }
@@ -587,15 +592,16 @@ pub fn transition(
     snooze_until: Option<Dt>,
 ) -> Result<Intention> {
     if !known_event(event) {
-        return verr(format!("unknown intention event: {event:?}"));
+        return verr(format!("unknown intention event: {}", rp(event)));
     }
     if i.state.is_terminal() {
         return Ok(i.clone());
     }
     let Some(nxt) = next_state(i.state, event) else {
         return verr(format!(
-            "no transition from {:?} on {event:?}",
-            i.state.as_str()
+            "no transition from {} on {}",
+            rp(i.state.as_str()),
+            rp(event)
         ));
     };
     let mut o = i.clone();
@@ -651,7 +657,7 @@ pub fn merge_intentions(a: &Intention, b: &Intention) -> Intention {
 
 /// `^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$`, including Python's `$` that also
 /// matches before one trailing newline.
-fn id_ok(id: &str) -> bool {
+pub fn id_ok(id: &str) -> bool {
     let t = id.strip_suffix('\n').unwrap_or(id);
     let b = t.as_bytes();
     !b.is_empty()
@@ -665,7 +671,7 @@ fn check_id(id: &str) -> Result<&str> {
     if id_ok(id) {
         Ok(id)
     } else {
-        verr(format!("invalid intention id: {id:?}"))
+        verr(format!("invalid intention id: {}", rp(id)))
     }
 }
 
@@ -682,7 +688,8 @@ pub fn parse_due_at(value: &str, now: Option<Dt>) -> Result<Dt> {
     match Dt::parse(py_strip(value)) {
         Some(d) => Ok(d),
         None => verr(format!(
-            "unrecognised due_at {value:?}: use an ISO 8601 time (2026-12-01T09:00:00Z) or 'in N days/hours/minutes/weeks'"
+            "unrecognised due_at {}: use an ISO 8601 time (2026-12-01T09:00:00Z) or 'in N days/hours/minutes/weeks'",
+            rp(value)
         )),
     }
 }
@@ -900,6 +907,18 @@ pub fn lock_root() -> PathBuf {
     root.join(format!("skmemory-intent-locks-{}", sys::uid()))
 }
 
+/// The lock directory for a store at `base`:
+/// `<lock root>/skmemory-intent-locks-<uid>/<sha1(str(base.resolve()))[:16]>`.
+/// `lock_root_dir` overrides the root (default: `$XDG_RUNTIME_DIR`, else the temp dir).
+pub fn lock_dir_for(base: &Path, lock_root_dir: Option<&Path>) -> PathBuf {
+    let root = match lock_root_dir {
+        Some(r) => r.join(format!("skmemory-intent-locks-{}", sys::uid())),
+        None => lock_root(),
+    };
+    let digest = sys::sha1_hex(resolve(base).to_string_lossy().as_bytes());
+    root.join(&digest[..16])
+}
+
 /// `Path(p).resolve()` for a path that exists (non-strict otherwise).
 fn resolve(p: &Path) -> PathBuf {
     if let Ok(c) = fs::canonicalize(p) {
@@ -999,13 +1018,9 @@ impl IntentionStore {
         conn.busy_timeout(Duration::from_millis(busy_ms))?;
         let _ = conn.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()));
         crate::index::wal_apply(&conn);
-        let root = match lock_root_dir {
-            Some(r) => r.join(format!("skmemory-intent-locks-{}", sys::uid())),
-            None => lock_root(),
-        };
-        let digest = sys::sha1_hex(resolve(&base).to_string_lossy().as_bytes());
+        let lock_dir = lock_dir_for(&base, lock_root_dir);
         let st = IntentionStore {
-            lock_dir: root.join(&digest[..16]),
+            lock_dir,
             base,
             dir,
             db_path,
@@ -1152,15 +1167,16 @@ impl IntentionStore {
     /// error) this warns and proceeds unlocked, as Python does.
     pub fn lock(&self, id: &str, timeout: Option<f64>) -> std::result::Result<LockGuard, LockBusy> {
         let name = format!("{}.lock", check_id(id).map_err(|_| LockBusy(id.into()))?);
-        self.lock_file(&name, timeout)
-            .map_err(|_| LockBusy(id.to_string()))
+        self.lock_named(&name, timeout)
     }
 
-    pub(crate) fn lock_file(
+    /// Like [`IntentionStore::lock`] for an arbitrary lock file name in the
+    /// lock directory (the tick takes `_tick.lock`).
+    pub fn lock_named(
         &self,
         name: &str,
         timeout: Option<f64>,
-    ) -> std::result::Result<LockGuard, ()> {
+    ) -> std::result::Result<LockGuard, LockBusy> {
         let setup = || -> std::io::Result<File> {
             fs::create_dir_all(&self.lock_dir)?;
             OpenOptions::new()
@@ -1196,7 +1212,7 @@ impl IntentionStore {
                         Ok(sys::TryLock::Acquired) => break,
                         Ok(sys::TryLock::Busy) => {
                             if Instant::now() >= deadline {
-                                return Err(());
+                                return Err(LockBusy(name.to_string()));
                             }
                             std::thread::sleep(Duration::from_millis(1));
                         }
@@ -1226,14 +1242,14 @@ impl IntentionStore {
     pub fn save(&self, i: &Intention) -> Result<()> {
         let _g = self
             .lock(&i.id, None)
-            .map_err(|_| IntentionError::Value(format!("invalid intention id: {:?}", i.id)))?;
+            .map_err(|_| IntentionError::Value(format!("invalid intention id: {}", rp(&i.id))))?;
         if let Some(on_disk) = self.read(&i.id)? {
             if on_disk.state != i.state {
                 return verr(format!(
-                    "refusing state change {:?} -> {:?} for {:?} via save(); use apply() so transition() decides",
-                    on_disk.state.as_str(),
-                    i.state.as_str(),
-                    i.id
+                    "refusing state change {} -> {} for {} via save(); use apply() so transition() decides",
+                    rp(on_disk.state.as_str()),
+                    rp(i.state.as_str()),
+                    rp(&i.id)
                 ));
             }
         }
@@ -1252,7 +1268,7 @@ impl IntentionStore {
         check_id(id)?;
         let _g = self
             .lock(id, None)
-            .map_err(|_| IntentionError::Value(format!("invalid intention id: {id:?}")))?;
+            .map_err(|_| IntentionError::Value(format!("invalid intention id: {}", rp(id))))?;
         let Some(cur) = self.read(id)? else {
             return Ok(None);
         };

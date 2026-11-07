@@ -137,7 +137,7 @@ pub fn py_str(v: &Value) -> String {
     }
 }
 
-fn py_repr(v: &Value) -> String {
+pub(crate) fn py_repr(v: &Value) -> String {
     match v {
         Value::Null => "None".into(),
         Value::Bool(true) => "True".into(),

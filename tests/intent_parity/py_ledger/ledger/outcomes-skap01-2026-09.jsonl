@@ -1,0 +1,2 @@
+{"skill":"recover-schema","version":"1.2","event":"followed","at":"2026-09-01T22:00:00.500000+00:00","effect":"success","session":"s1","id":"cccccccccccccccccccccccccccccccc","source":"explicit:agent"}
+{"skill":"sync-to-clear-red","version":"1.0","event":"served","at":"2026-09-30T23:59:59+00:00","effect":null,"session":"s2","id":"dddddddddddddddddddddddddddddddd"}
