@@ -17,7 +17,8 @@ use crate::flat::{json_files, Store};
 use crate::model::{Layer, Memory};
 use crate::util::{iso_from_unix, now_iso};
 use rusqlite::{
-    params, params_from_iter, Connection, OptionalExtension, Row, Transaction, TransactionBehavior,
+    params, params_from_iter, Connection, OpenFlags, OptionalExtension, Row, Transaction,
+    TransactionBehavior,
 };
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
@@ -521,6 +522,24 @@ pub struct Index {
     conn: Connection,
     fts_enabled: bool,
     fts_ok: bool,
+    /// Opened with `mode=ro` (or in memory): this handle never writes, and
+    /// [`Index::bump_access`] is a no-op.
+    read_only: bool,
+}
+
+/// `file:` URI for `path` with `mode=ro` (RFC 3986 percent-encoding of every
+/// byte outside the unreserved set and `/`).
+fn ro_uri(path: &Path) -> String {
+    let mut out = String::from("file:");
+    for b in path.to_string_lossy().bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'/' | b'-' | b'_' | b'.' | b'~') {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out.push_str("?mode=ro");
+    out
 }
 
 fn open_conn(path: &Path, busy_ms: u64) -> rusqlite::Result<Connection> {
@@ -550,9 +569,69 @@ impl Index {
             conn,
             fts_enabled,
             fts_ok: false,
+            read_only: false,
         };
         idx.init_schema()?;
         Ok(idx)
+    }
+
+    /// Open `<root>/index.db` READ-ONLY (SQLite URI `mode=ro`, plus
+    /// `PRAGMA query_only`): no schema setup, no migration, no pragma that
+    /// writes, no WAL checkpoint. A process that must not write the index (a
+    /// declared reader, a live diagnostic) uses this. When the file does not
+    /// exist the handle is an EMPTY in-memory index, so a reader never creates
+    /// `index.db`. The FTS arm is on when `fts_enabled` and the file already
+    /// has the FTS tables (a vaulted index is never altered here, only read).
+    ///
+    /// SQLite note: reading a WAL-mode database needs its `-shm` file, which
+    /// SQLite may create beside the database; `index.db` itself is never
+    /// written.
+    pub fn open_readonly(root: impl AsRef<Path>, fts_enabled: bool) -> Result<Index> {
+        Index::open_db_readonly(root.as_ref().join("index.db"), fts_enabled)
+    }
+
+    /// As [`Index::open_readonly`] with an explicit database path.
+    pub fn open_db_readonly(path: impl Into<PathBuf>, fts_enabled: bool) -> Result<Index> {
+        let path = path.into();
+        let (conn, in_memory) = if path.is_file() {
+            let c = Connection::open_with_flags(
+                ro_uri(&path),
+                OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
+            )?;
+            c.busy_timeout(Duration::from_millis(BUSY_TIMEOUT_MS))?;
+            c.execute_batch("PRAGMA query_only=ON")?;
+            (c, false)
+        } else {
+            let c = Connection::open_in_memory()?;
+            c.execute_batch(SCHEMA)?;
+            if fts_enabled {
+                for ddl in FTS_DDL {
+                    c.execute_batch(ddl)?;
+                }
+            }
+            (c, true)
+        };
+        let has_fts = in_memory && fts_enabled
+            || conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE name IN ('memory_fts', 'fts_meta')",
+                    [],
+                    |r| r.get::<_, i64>(0),
+                )
+                .unwrap_or(0)
+                == 2;
+        Ok(Index {
+            path,
+            conn,
+            fts_enabled,
+            fts_ok: fts_enabled && has_fts,
+            read_only: true,
+        })
+    }
+
+    /// Whether this handle was opened read-only.
+    pub fn is_read_only(&self) -> bool {
+        self.read_only
     }
 
     pub fn path(&self) -> &Path {
@@ -952,6 +1031,9 @@ impl Index {
         debounce_s: Option<f64>,
         scope: &ReaderScope,
     ) -> usize {
+        if self.read_only {
+            return 0;
+        }
         let mut seen = BTreeSet::new();
         let ids: Vec<&str> = ids
             .iter()
@@ -1313,6 +1395,156 @@ impl Index {
             unloadable: skipped,
             complete: left == 0,
         })
+    }
+
+    /// `SQLiteBackend.term_doc_freq`: documents holding `token` in the FTS index
+    /// (0 when FTS is off or the token is empty).
+    pub fn term_doc_freq(&self, token: &str) -> i64 {
+        if !self.fts_ok {
+            return 0;
+        }
+        let cleaned = token.replace('"', " ");
+        let cleaned = crate::model::py_strip(&cleaned);
+        if cleaned.is_empty() {
+            return 0;
+        }
+        self.conn
+            .query_row(
+                "SELECT count(*) FROM memory_fts WHERE memory_fts MATCH ?",
+                [format!("\"{cleaned}\"")],
+                |r| r.get(0),
+            )
+            .unwrap_or(0)
+    }
+
+    /// Run `sql` and keep the ids whose tags carry no never-share tag of `scope`.
+    fn ids_visible(&self, sql: &str, args: &[String], scope: &ReaderScope) -> Result<Vec<String>> {
+        let mut st = self.conn.prepare(sql)?;
+        let rows = st.query_map(params_from_iter(args.iter()), |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            let (id, tags) = r?;
+            let tags: Vec<String> = tags.split(',').map(str::to_string).collect();
+            if scope.exclusions().iter().all(|e| !tags.contains(e)) {
+                out.push(id);
+            }
+        }
+        Ok(out)
+    }
+
+    /// `SQLiteBackend.search_text`: the `lexical` arm when no Postgres BM25 is
+    /// attached. Every word must match (AND of per-word `LIKE` over title,
+    /// summary, preview and tags), then any word (OR) ranked by how many match.
+    /// The reader ceiling is in the SQL (a restricted scope fails closed without
+    /// FTS metadata) and the never-share tags are re-checked.
+    pub fn search_text_like(
+        &self,
+        query: &str,
+        limit: usize,
+        scope: &ReaderScope,
+    ) -> Result<Vec<String>> {
+        let words: Vec<&str> = query.split_whitespace().collect();
+        if words.is_empty() || limit == 0 {
+            return Ok(Vec::new());
+        }
+        let Some((join, wh, scope_args)) = self.scope_sql(None, scope) else {
+            return Ok(Vec::new());
+        };
+        let clause =
+            "(m.title LIKE ? OR m.summary LIKE ? OR m.content_preview LIKE ? OR m.tags LIKE ?)";
+        let pats = |ws: &[&str]| -> Vec<String> {
+            ws.iter().flat_map(|w| vec![format!("%{w}%"); 4]).collect()
+        };
+        let scope_cond = if wh.is_empty() {
+            String::new()
+        } else {
+            format!(" AND {}", wh.join(" AND "))
+        };
+        let and = vec![clause; words.len()].join(" AND ");
+        let mut args = pats(&words);
+        args.extend(scope_args.iter().cloned());
+        args.push(limit.to_string());
+        let sql = format!(
+            "SELECT m.id, m.tags FROM memories m{join} WHERE ({and}){scope_cond} \
+             ORDER BY m.created_at DESC LIMIT ?"
+        );
+        let ids = self.ids_visible(&sql, &args, scope)?;
+        if !ids.is_empty() || words.len() < 2 {
+            return Ok(ids);
+        }
+        let or = vec![clause; words.len()].join(" OR ");
+        let score = vec![format!("CASE WHEN {clause} THEN 1 ELSE 0 END"); words.len()].join(" + ");
+        // Bind in textual order: WHERE patterns, scope args, ORDER BY patterns, LIMIT.
+        let mut args = pats(&words);
+        args.extend(scope_args);
+        args.extend(pats(&words));
+        args.push(limit.to_string());
+        let sql = format!(
+            "SELECT m.id, m.tags FROM memories m{join} WHERE ({or}){scope_cond} \
+             ORDER BY ({score}) DESC, m.created_at DESC LIMIT ?"
+        );
+        self.ids_visible(&sql, &args, scope)
+    }
+
+    /// `SQLiteBackend.list_memories` as the temporal arm calls it: ids created
+    /// in `[after, before)` (UTC, `Z` read as `+00:00`), newest first, with
+    /// layer, tags, source and `as_of` applied before `LIMIT`, as `scope` sees
+    /// them. `f.context_tags` is NOT applied here: the arm checks it on the
+    /// hydrated memory, as Python's `_collect(check_ctx=True)` does.
+    pub fn created_between(
+        &self,
+        after: &str,
+        before: &str,
+        f: &SearchFilters<'_>,
+        limit: usize,
+        scope: &ReaderScope,
+    ) -> Result<Vec<String>> {
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let norm = |v: &str| {
+            crate::validity::normalize_as_of(v)
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| v.to_string())
+        };
+        let Some((join, mut wh, mut args)) = self.scope_sql(None, scope) else {
+            return Ok(Vec::new());
+        };
+        if let Some(l) = f.layer {
+            wh.push("m.layer = ?".into());
+            args.push(l.to_string());
+        }
+        for t in f.tags {
+            wh.push("m.tags LIKE ?".into());
+            args.push(format!("%{t}%"));
+        }
+        if let Some(s) = f.source.filter(|s| !s.is_empty()) {
+            wh.push("m.source = ?".into());
+            args.push(s.to_string());
+        }
+        wh.push("replace(m.created_at, 'Z', '+00:00') >= ?".into());
+        args.push(norm(after));
+        wh.push("replace(m.created_at, 'Z', '+00:00') < ?".into());
+        args.push(norm(before));
+        if let Some(a) = f.as_of.filter(|a| !a.is_empty()) {
+            wh.push(
+                "COALESCE(julianday(m.valid_from), julianday(m.created_at), 0) <= julianday(?) \
+                 AND (julianday(m.valid_to) IS NULL OR julianday(m.valid_to) > julianday(?))"
+                    .into(),
+            );
+            args.push(a.to_string());
+            args.push(a.to_string());
+        }
+        args.push(limit.to_string());
+        let sql = format!(
+            "SELECT m.id, m.tags FROM memories m{join} WHERE {} \
+             ORDER BY m.created_at DESC LIMIT ?",
+            wh.join(" AND ")
+        );
+        self.ids_visible(&sql, &args, scope)
     }
 
     /// bm25-ranked full-text search over title, content, summary and tags

@@ -26,6 +26,8 @@
 //! handling see the real fixture values here too.
 
 use crate::audience::OwnerScope;
+use crate::embed::{EmbedError, Embedder, VECTOR_DIM};
+use crate::engine::{Arms, Attach, Engine, EngineOptions, Filters, MemoryArm, SearchRequest};
 use crate::env::{casefold, Env};
 use crate::fusion::{self, ArmInput, ArmOutcome, DEFAULT_ARM_CAP};
 use crate::index::{Index, SearchFilters};
@@ -228,11 +230,17 @@ fn cosine(a: &[f64], b: &[f64]) -> f64 {
     s
 }
 
+/// Unix seconds (UTC) of `dt`, the clock [`time_window`] reads.
+pub(crate) fn unix_secs(dt: Dt) -> i64 {
+    let (y, mo, d, h, mi, s, _) = dt.to_utc().fields();
+    days_from_civil(y, mo, d) * 86_400 + h * 3600 + mi * 60 + s
+}
+
 // ---------------------------------------------------------------------------
 // Time window (subset of fusion.parse_time_window, strict mode)
 // ---------------------------------------------------------------------------
 
-fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+pub(crate) fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     let y = if m <= 2 { y - 1 } else { y };
     let era = y.div_euclid(400);
     let yoe = y - era * 400;
@@ -944,6 +952,168 @@ impl<'a> Store<'a> {
     }
 }
 
+// ---------------------------------------------------------------------------
+// The candidate through the Engine (SKMEM-R-07C)
+// ---------------------------------------------------------------------------
+
+/// `title content tags`, the text the bench embeds for a memory.
+pub fn doc_text(m: &Memory) -> String {
+    format!("{} {} {}", m.title, m.content, m.tags.join(" "))
+}
+
+/// The hashed bag-of-concepts vector, zero-padded from 512 to the 1024 dims of
+/// the pgvector column. Zero padding changes no dot product and no norm, so a
+/// cosine over the padded vectors equals the bench's cosine.
+pub fn hashed_dense(text: &str) -> Vec<f32> {
+    let mut v: Vec<f32> = concept_vector(text).into_iter().map(|x| x as f32).collect();
+    v.resize(VECTOR_DIM, 0.0);
+    v
+}
+
+/// An [`Embedder`] that produces [`hashed_dense`] (the bench's offline "model").
+pub struct HashedEmbedder;
+
+impl Embedder for HashedEmbedder {
+    fn embed(&self, text: &str, _required: bool) -> Result<Vec<f32>, EmbedError> {
+        Ok(hashed_dense(text))
+    }
+}
+
+/// The bench's hashed `semantic` arm as an in-memory [`MemoryArm`]: cosine
+/// above zero, ties by id, with the filters the pgvector arm pushes down
+/// (`context_tag` and `as_of`).
+pub struct HashedSemantic {
+    docs: Vec<(Memory, Vec<f64>)>,
+}
+
+impl HashedSemantic {
+    pub fn new(memories: &[Memory]) -> HashedSemantic {
+        HashedSemantic {
+            docs: memories
+                .iter()
+                .map(|m| (m.clone(), concept_vector(&doc_text(m))))
+                .collect(),
+        }
+    }
+}
+
+impl MemoryArm for HashedSemantic {
+    fn search(
+        &mut self,
+        query: &str,
+        limit: usize,
+        f: &Filters,
+        _scope: &crate::audience::ReaderScope,
+    ) -> Result<Vec<Memory>, String> {
+        let qv = concept_vector(query);
+        let mut scored: Vec<(&Memory, f64)> = self
+            .docs
+            .iter()
+            .filter(|(m, _)| {
+                f.as_of.as_deref().is_none_or(|t| {
+                    valid_at(
+                        m.valid_from.as_deref(),
+                        Some(&m.created_at),
+                        m.valid_to.as_deref(),
+                        t,
+                    )
+                }) && f
+                    .context_tags
+                    .as_ref()
+                    .is_none_or(|c| c.contains(&m.context_tag))
+            })
+            .map(|(m, v)| (m, cosine(&qv, v)))
+            .filter(|(_, s)| *s > 0.0)
+            .collect();
+        scored.sort_by(|a, b| b.1.total_cmp(&a.1).then(a.0.id.cmp(&b.0.id)));
+        Ok(scored
+            .into_iter()
+            .take(limit)
+            .map(|(m, _)| m.clone())
+            .collect())
+    }
+}
+
+/// Which arms the Engine candidate runs with.
+pub enum EngineArms {
+    /// The in-memory hashed `semantic` arm; `lexical` is SQLite `LIKE`. This is
+    /// the configuration Python's bench runs, so its pages are the golden ones.
+    Hashed,
+    /// Arms built from the corpus (for example Postgres arms over a seeded
+    /// throwaway database).
+    Custom(Box<dyn Fn(&[Memory]) -> Result<Arms, String>>),
+}
+
+/// [`run_bench`] with the candidate run through [`Engine::search`].
+pub fn run_bench_engine(fixture_dir: &Path, arms: EngineArms) -> Result<BenchResult, String> {
+    run_bench_inner(fixture_dir, Some(arms))
+}
+
+struct EngineCandidate {
+    engine: Engine,
+    owner: OwnerScope,
+    now: Dt,
+    _tmp: TempDir,
+}
+
+impl EngineCandidate {
+    fn new(docs: &[Doc], arms: EngineArms, now: Dt) -> Result<EngineCandidate, String> {
+        let tmp = TempDir::new()?;
+        let memories: Vec<Memory> = docs.iter().map(|d| d.memory.clone()).collect();
+        let arms = match arms {
+            EngineArms::Hashed => Arms {
+                semantic: Attach::ready(Box::new(HashedSemantic::new(&memories))),
+                lexical: Attach::Absent,
+                graph: Attach::Disabled(
+                    "disabled by config (SKMEMORY_GRAPH_ARM is off, the default)".into(),
+                ),
+            },
+            EngineArms::Custom(f) => f(&memories)?,
+        };
+        let owner = OwnerScope::from_process().map_err(|e| e.to_string())?;
+        let engine = Engine::open(
+            &tmp.0,
+            EngineOptions {
+                audience_config: None,
+                fts: true,
+                read_only: Some(false),
+                arms,
+            },
+        )
+        .map_err(|e| e.to_string())?;
+        for m in &memories {
+            engine.save(m, &owner).map_err(|e| e.to_string())?;
+        }
+        Ok(EngineCandidate {
+            engine,
+            owner,
+            now,
+            _tmp: tmp,
+        })
+    }
+
+    fn search(&self, q: &str, limit: usize, ctx: Option<&str>, as_of: Option<&str>) -> Vec<String> {
+        let as_of = as_of.and_then(|a| normalize_as_of(a).ok().flatten());
+        let ctx_tags: Option<Vec<String>> = ctx.map(|c| vec![c.to_string()]);
+        let out = self.engine.search(
+            &SearchRequest {
+                query: q,
+                limit,
+                layer: None,
+                tags: &[],
+                source: None,
+                context_tags: ctx_tags.as_deref(),
+                as_of: as_of.as_deref(),
+                now: Some(self.now),
+            },
+            self.owner.reader_scope(),
+            &Env::empty(),
+        );
+        out.map(|o| o.memories.into_iter().map(|m| m.id).collect())
+            .unwrap_or_default()
+    }
+}
+
 struct TempDir(PathBuf);
 
 impl TempDir {
@@ -1038,6 +1208,10 @@ pub struct BenchResult {
 /// Score every strategy on every query of the fixtures in `fixture_dir`
 /// (`corpus-v1.jsonl`, `queries-v1.jsonl`). Offline and deterministic.
 pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
+    run_bench_inner(fixture_dir, None)
+}
+
+fn run_bench_inner(fixture_dir: &Path, engine: Option<EngineArms>) -> Result<BenchResult, String> {
     let docs = load_corpus(fixture_dir)?;
     let queries = load_queries(fixture_dir)?;
     let tmp = TempDir::new()?;
@@ -1063,6 +1237,14 @@ pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
         owner,
         now_secs,
     };
+    let cand = engine
+        .map(|a| EngineCandidate::new(&docs, a, now))
+        .transpose()?;
+    let candidate_search =
+        |q: &str, limit: usize, ctx: Option<&str>, as_of: Option<&str>| match &cand {
+            Some(c) => c.search(q, limit, ctx, as_of),
+            None => store.search(q, limit, ctx, as_of),
+        };
     let all: Vec<&Doc> = docs.iter().collect();
     let public: Vec<&Doc> = docs
         .iter()
@@ -1088,7 +1270,7 @@ pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
         for name in ALL_STRATEGIES {
             let got: Vec<String> = match name {
                 ORACLE => oracle(q, visible),
-                CANDIDATE => store.search(&q.query, 10, ctx, q.as_of.as_deref()),
+                CANDIDATE => candidate_search(&q.query, 10, ctx, q.as_of.as_deref()),
                 "bm25_only" => arm_bm25(&q.query, visible, 10),
                 "grep_substring" => strat_grep(&q.query, visible, 10),
                 "vector_only" => arm_semantic(&q.query, visible, 10),
@@ -1129,8 +1311,7 @@ pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
                     .filter(|i| q.must_not.contains(i))
                     .count();
             }
-            unfiltered += store
-                .search(&q.query, 10, None, None)
+            unfiltered += candidate_search(&q.query, 10, None, None)
                 .iter()
                 .filter(|i| q.must_not.contains(i))
                 .count();

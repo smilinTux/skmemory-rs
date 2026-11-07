@@ -8,7 +8,7 @@
 //! Hermetic: no Python, no network, no Postgres.
 
 use serde_json::Value;
-use skmem::bench::{self, BenchResult};
+use skmem::bench::{self, BenchResult, EngineArms};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
@@ -26,6 +26,14 @@ fn golden() -> Value {
 fn result() -> &'static BenchResult {
     static R: OnceLock<BenchResult> = OnceLock::new();
     R.get_or_init(|| bench::run_bench(&dir()).expect("run_bench"))
+}
+
+/// The same candidate run through `skmem::engine::Engine` (hashed `semantic`
+/// arm in memory, `lexical` = SQLite LIKE, FTS5, temporal): the composition the
+/// Python bindings run, over a real flat store and index.
+fn engine_result() -> &'static BenchResult {
+    static R: OnceLock<BenchResult> = OnceLock::new();
+    R.get_or_init(|| bench::run_bench_engine(&dir(), EngineArms::Hashed).expect("engine bench"))
 }
 
 #[test]
@@ -80,7 +88,15 @@ fn time_windows_match_python() {
 
 #[test]
 fn candidate_meets_or_beats_python_per_class() {
-    let res = result();
+    meets_or_beats(result());
+}
+
+#[test]
+fn engine_candidate_meets_or_beats_python_per_class() {
+    meets_or_beats(engine_result());
+}
+
+fn meets_or_beats(res: &BenchResult) {
     let g = golden();
     let mut worse = Vec::new();
     for (class, entry) in g["by_class"].as_object().unwrap() {
@@ -126,7 +142,24 @@ fn privacy_leaks_nothing_to_the_public_reader() {
 
 #[test]
 fn candidate_pages_match_python_page_for_page() {
-    let res = result();
+    pages_match(result());
+}
+
+#[test]
+fn engine_candidate_pages_match_python_page_for_page() {
+    pages_match(engine_result());
+}
+
+#[test]
+fn engine_privacy_leaks_nothing_to_the_public_reader() {
+    assert_eq!(engine_result().leak_count, 0);
+    assert_eq!(
+        engine_result().leak_count_unfiltered,
+        result().leak_count_unfiltered
+    );
+}
+
+fn pages_match(res: &BenchResult) {
     let g = golden();
     let mut diff = Vec::new();
     for row in &res.rows {

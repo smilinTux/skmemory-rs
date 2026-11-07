@@ -7,6 +7,7 @@ pub mod audience;
 pub mod bench;
 pub mod decay;
 pub mod embed;
+pub mod engine;
 pub mod env;
 pub mod flat;
 pub mod fusion;
