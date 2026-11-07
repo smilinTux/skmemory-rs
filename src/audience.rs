@@ -156,16 +156,21 @@ impl AudienceConfig {
         self.config.get("people")?.get(name)
     }
 
-    /// Python `AudienceLevel(person.get("trust_level", 4))`. A value that is
-    /// not an integer 0 to 4 raises in Python; here it is level 0 (public), so
-    /// a malformed config can only narrow.
+    /// A person's trust level, failing closed. Mirrors Python
+    /// `AudienceResolver.get_person_trust` (SKMEM-P0-20): an unknown person, a
+    /// person with no `trust_level`, and a `trust_level` that is not an
+    /// integer 0 to 4 (strings, floats, booleans, null) are all level 0
+    /// (public). A level is never invented upward.
     fn trust_of(&self, name: &str) -> i64 {
-        match self.person(name).and_then(|p| p.get("trust_level")) {
-            None => 4,
-            Some(v) => match v.as_i64() {
-                Some(l) if (0..=4).contains(&l) => l,
-                _ => 0,
-            },
+        let Some(person) = self
+            .person(name)
+            .filter(|p| p.as_object().is_some_and(|o| !o.is_empty()))
+        else {
+            return 0;
+        };
+        match person.get("trust_level").and_then(Value::as_i64) {
+            Some(l) if (0..=4).contains(&l) => l,
+            _ => 0,
         }
     }
 }
@@ -621,6 +626,30 @@ mod tests {
                 "people":{"A":{"trust_level":"4"}}}"#,
         );
         let sc = ReaderScope::resolve_in(Some("channel:c"), &Env::empty(), &cfg);
+        assert_eq!(sc.allowed_tags().unwrap(), ["@public"]);
+    }
+
+    #[test]
+    fn unknown_member_and_missing_level_fail_closed() {
+        for people in [
+            r#"{}"#,
+            r#"{"A":{"never_share":[]}}"#,
+            r#"{"A":{"trust_level":null}}"#,
+            r#"{"A":{"trust_level":2.0}}"#,
+            r#"{"A":{"trust_level":true}}"#,
+            r#"{"A":{"trust_level":9}}"#,
+        ] {
+            let cfg = AudienceConfig::from_json(&format!(
+                r#"{{"channels":{{"c":{{"context_tag":"@chef-only","members":["A"]}}}},"people":{people}}}"#
+            ));
+            let sc = ReaderScope::resolve(Some("channel:c"), &Env::empty(), &cfg);
+            assert_eq!(sc.allowed_tags().unwrap(), ["@public"], "{people}");
+        }
+        // one unknown member drags a trusted channel to public
+        let cfg = AudienceConfig::from_json(
+            r#"{"channels":{"c":{"members":["A","Ghost"]}},"people":{"A":{"trust_level":4}}}"#,
+        );
+        let sc = ReaderScope::resolve(Some("channel:c"), &Env::empty(), &cfg);
         assert_eq!(sc.allowed_tags().unwrap(), ["@public"]);
     }
 
