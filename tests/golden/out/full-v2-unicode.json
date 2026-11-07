@@ -1,0 +1,57 @@
+{
+  "id": "11111111-1111-4111-8111-111111111111",
+  "created_at": "2026-10-02T12:00:00+00:00",
+  "updated_at": "2026-10-02T12:00:00+00:00",
+  "layer": "long-term",
+  "role": "ai",
+  "title": "Caf\u00e9 \u65e5\u672c\u8a9e \ud83d\ude00 \"quoted\" back\\slash",
+  "content": "line1\nline2\ttab\r\n\u0001ctl \u007fdel \u2028sep \ud7ff end",
+  "summary": "s",
+  "tags": [
+    "b",
+    "a",
+    "\u00fc"
+  ],
+  "source": "session",
+  "source_ref": "sess-1",
+  "emotional": {
+    "intensity": 8.5,
+    "valence": 0.9,
+    "labels": [
+      "trust",
+      "joy",
+      "love"
+    ],
+    "resonance_note": "felt \u2665",
+    "cloud9_achieved": true
+  },
+  "related_ids": [
+    "x",
+    "y"
+  ],
+  "parent_id": "p-1",
+  "context_tag": "@work:chiro",
+  "intent": "why",
+  "integrity_hash": "",
+  "metadata": {
+    "k": "v",
+    "n": 1,
+    "f": 0.1,
+    "nested": {
+      "z": [
+        1,
+        2.5,
+        null,
+        true
+      ]
+    }
+  },
+  "kind": "fact",
+  "outcome": "success",
+  "event_at": "2026-10-01T00:00:00+00:00",
+  "valid_from": "2026-10-02T12:00:00+00:00",
+  "valid_to": "2027-01-01T00:00:00+00:00",
+  "supersedes_id": "old-1",
+  "source_tier": "web",
+  "schema_version": 2
+}

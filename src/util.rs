@@ -1,0 +1,88 @@
+//! Small std-only helpers: UTC timestamp in Python's `isoformat()` shape and
+//! a random UUID v4, so the crate needs no clock or RNG dependency.
+
+use std::io::Read;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+/// `datetime.now(timezone.utc).isoformat()`, e.g. `2026-11-07T12:34:56.123456+00:00`
+/// (the fraction is omitted when the microsecond part is zero, as in Python).
+pub fn now_iso() -> String {
+    let d = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    iso_from_unix(d.as_secs() as i64, d.subsec_micros())
+}
+
+/// Format a UTC instant like Python's `isoformat()`.
+pub fn iso_from_unix(secs: i64, micros: u32) -> String {
+    let days = secs.div_euclid(86_400);
+    let rem = secs.rem_euclid(86_400);
+    // Howard Hinnant's civil-from-days.
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    let (h, mi, s) = (rem / 3600, rem % 3600 / 60, rem % 60);
+    let frac = if micros == 0 {
+        String::new()
+    } else {
+        format!(".{micros:06}")
+    };
+    format!("{y:04}-{m:02}-{d:02}T{h:02}:{mi:02}:{s:02}{frac}+00:00")
+}
+
+/// A random (version 4) UUID in canonical lowercase form.
+pub fn uuid4() -> String {
+    let mut b = [0u8; 16];
+    let ok = std::fs::File::open("/dev/urandom")
+        .and_then(|mut f| f.read_exact(&mut b))
+        .is_ok();
+    if !ok {
+        // Fallback: clock + address entropy. Unique enough for an id, not secret.
+        let t = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let a = &b as *const _ as u128;
+        b = (t ^ a.rotate_left(64)).to_le_bytes();
+    }
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    let h: String = b.iter().map(|x| format!("{x:02x}")).collect();
+    format!(
+        "{}-{}-{}-{}-{}",
+        &h[0..8],
+        &h[8..12],
+        &h[12..16],
+        &h[16..20],
+        &h[20..32]
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn iso_shapes() {
+        assert_eq!(iso_from_unix(0, 0), "1970-01-01T00:00:00+00:00");
+        assert_eq!(
+            iso_from_unix(1_700_000_000, 123_456),
+            "2023-11-14T22:13:20.123456+00:00"
+        );
+        assert_eq!(iso_from_unix(951_782_400, 0), "2000-02-29T00:00:00+00:00");
+    }
+
+    #[test]
+    fn uuid_shape() {
+        let u = uuid4();
+        assert_eq!(u.len(), 36);
+        assert_eq!(&u[14..15], "4");
+    }
+}

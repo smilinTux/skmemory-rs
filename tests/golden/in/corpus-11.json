@@ -1,0 +1,24 @@
+{
+  "id": "m-70685de515",
+  "title": "Context budget rationale",
+  "content": "Loading everything into the prompt degrades answers as the window grows. Load the few slices that matter, just in time, and keep the ritual under eight thousand characters.",
+  "layer": "mid-term",
+  "tags": [
+    "design",
+    "context"
+  ],
+  "created_at": "2026-09-24T12:00:00+00:00",
+  "event_at": "2026-09-24T12:00:00+00:00",
+  "kind": "fact",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-09-24T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-09-24T12:00:00+00:00"
+}

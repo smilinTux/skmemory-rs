@@ -1,0 +1,37 @@
+{
+  "id": "m-449a549be1",
+  "created_at": "2026-10-31T12:00:00+00:00",
+  "updated_at": "2026-10-31T12:00:00+00:00",
+  "layer": "mid-term",
+  "role": "general",
+  "title": "Next time we touch the rollout ring, add skap10 last",
+  "content": "Decision: when the rollout HOSTS list is next edited, append skap10 as the final host and add a reachability pre-filter.",
+  "summary": "",
+  "tags": [
+    "rollout",
+    "decision"
+  ],
+  "source": "manual",
+  "source_ref": "",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0,
+    "labels": [],
+    "resonance_note": "",
+    "cloud9_achieved": false
+  },
+  "related_ids": [],
+  "parent_id": null,
+  "context_tag": "@public",
+  "intent": "",
+  "integrity_hash": "",
+  "metadata": {},
+  "kind": "rule",
+  "outcome": null,
+  "event_at": "2026-10-31T12:00:00+00:00",
+  "valid_from": "2026-10-31T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "source_tier": "user-stated",
+  "schema_version": 2
+}

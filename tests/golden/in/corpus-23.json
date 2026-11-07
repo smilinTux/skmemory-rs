@@ -1,0 +1,23 @@
+{
+  "id": "m-06159e9b16",
+  "title": "Embedding model was bge-legal-v2 (June)",
+  "content": "As of June the embedding model is bge-legal-v2 at 1024 dims, served remotely.",
+  "layer": "mid-term",
+  "tags": [
+    "embedding"
+  ],
+  "created_at": "2026-06-14T12:00:00+00:00",
+  "event_at": "2026-06-14T12:00:00+00:00",
+  "kind": "fact",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-06-14T12:00:00+00:00",
+  "valid_to": "2026-10-25T12:00:00+00:00",
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-06-14T12:00:00+00:00"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "m-5044ed823e",
+  "title": "skap08 disk pressure note",
+  "content": "skap08 root disk hit 135 MB free after pytest temp dirs piled up. Clean /tmp/pytest-of-* first.",
+  "layer": "mid-term",
+  "tags": [
+    "host",
+    "skap08",
+    "ops"
+  ],
+  "created_at": "2026-10-20T12:00:00+00:00",
+  "event_at": "2026-10-20T12:00:00+00:00",
+  "kind": "fact",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-10-20T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-10-20T12:00:00+00:00"
+}

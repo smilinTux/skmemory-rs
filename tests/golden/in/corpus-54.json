@@ -1,0 +1,23 @@
+{
+  "id": "m-64b92520da",
+  "title": "Filler note 07 about dashboard tiles",
+  "content": "Tile 7 renders at 1x and 2x. Icon mask added. No dependency change. Build 1007 green.",
+  "layer": "mid-term",
+  "tags": [
+    "dashboard"
+  ],
+  "created_at": "2026-07-31T12:00:00+00:00",
+  "event_at": "2026-07-31T12:00:00+00:00",
+  "kind": "episode",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-07-31T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-07-31T12:00:00+00:00"
+}

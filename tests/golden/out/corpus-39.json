@@ -1,0 +1,37 @@
+{
+  "id": "m-e4e1ea1ff2",
+  "created_at": "2026-08-28T12:00:00+00:00",
+  "updated_at": "2026-08-28T12:00:00+00:00",
+  "layer": "mid-term",
+  "role": "general",
+  "title": "Dream job config",
+  "content": "Dream synthesis runs nightly via the scheduler; model is routed through the gateway.",
+  "summary": "",
+  "tags": [
+    "dream",
+    "config"
+  ],
+  "source": "manual",
+  "source_ref": "",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0,
+    "labels": [],
+    "resonance_note": "",
+    "cloud9_achieved": false
+  },
+  "related_ids": [],
+  "parent_id": null,
+  "context_tag": "@public",
+  "intent": "",
+  "integrity_hash": "",
+  "metadata": {},
+  "kind": "procedure",
+  "outcome": null,
+  "event_at": "2026-08-28T12:00:00+00:00",
+  "valid_from": "2026-08-28T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "source_tier": "user-stated",
+  "schema_version": 2
+}

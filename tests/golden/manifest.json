@@ -1,0 +1,334 @@
+{
+  "cases": {
+    "corpus-00": {
+      "integrity_hash": "abeab5a3fd3b1b51fba20b87ba962a3e33c3b8491f039702395fb20436718d51",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-01": {
+      "integrity_hash": "104cb12398e89ca8d28efc7c9f129636f1608e8343e23c5ada8d7f7fe2d17f65",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-02": {
+      "integrity_hash": "c59991cf3bffceeb69dd1c724d41d298afee8aaad187185b18b10d87ccd9569b",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-03": {
+      "integrity_hash": "f24f70331ae3c78b21ae2fb9650bc2d7e4310cb374d160997862807ba6f9b41b",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-04": {
+      "integrity_hash": "da46c6878e539a61321ffd9d4fe681039eee3bdcf245f8284cb5d29f8eaaaa27",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-05": {
+      "integrity_hash": "d1b74de9644c414f5e4131446697e6ca95c71358f151d7cafcf8f92b74f3274b",
+      "signature": "neutral@0.7/+0.0"
+    },
+    "corpus-06": {
+      "integrity_hash": "8b173d963273222d476679b3f773de6c33f87271ea6da187f37d54cf68895c7d",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-07": {
+      "integrity_hash": "5c77c922c1b3889f8219a0458cb8d15b746529e6061ee1baa6739d91f83a6a7e",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-08": {
+      "integrity_hash": "68a1205aafbae927b9962005f23c40ae20d22e249e221d87d33665a8d57ae57e",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-09": {
+      "integrity_hash": "03bbd5521a21b4302a772dbb7b50368357a6d70f56efc9ab83a6cc499822bcfd",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-10": {
+      "integrity_hash": "bf7c2c3a9a3ca221cc8f63455594230a9660ba5072193e19724d418f0bd6b4cc",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-11": {
+      "integrity_hash": "e0fe32c4db65c95967962db034a357c96faa446ff86ba9cfb47007bbeccc26e0",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-12": {
+      "integrity_hash": "8b4c3e33d79f94f20eaffbf2d30b207152d5728c343b0ffa94f21d0db92782e3",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-13": {
+      "integrity_hash": "d9048f195466888e7193e009a058e863b645efb52236e047845c95790ba4a103",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-14": {
+      "integrity_hash": "4d71dbd6196ddc217972aa1d79eb646fa2ef281324395f2962bed5511b5f2f4c",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-15": {
+      "integrity_hash": "7cb87b1a499c0de1e84e7d3ef7fe0014fff33121dada7210f56aa2474506f232",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-16": {
+      "integrity_hash": "04d72a7c662f70786837cfaf8fc9b1e12b1c136e0639c27a44f5a0913bcb42d7",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-17": {
+      "integrity_hash": "18533257808ec8b206821139411e4c15519873e7a24bea629bb7effb093fb540",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-18": {
+      "integrity_hash": "2c83d6b5b8dd7cf648d9b7487cd81fc8fabcdf4f5c1ee276eefcaea39711f46f",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-19": {
+      "integrity_hash": "5ddfd8dbf6e0f67efaa30ca2101f54c57205b8ba67c8d3b94ad3696c72fd1e08",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-20": {
+      "integrity_hash": "6388759f232b63ad70b9326d0d84f0739437a8c0e798e4bf41b70f1d4cf4ad35",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-21": {
+      "integrity_hash": "7a9af145eac3caba1a4986f3d0459e20d6455d7e4b90acb216a0fd1059c4fd40",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-22": {
+      "integrity_hash": "1d0bbe8e94e6ca76526bbc6b012ed52086ddf57f73d855a402ca243a65a14725",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-23": {
+      "integrity_hash": "720b3063695d08f38afa58cf73466652c12ebf3c05a7f3b3f9a878e9c141e78f",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-24": {
+      "integrity_hash": "b36bc352ff0b857d3235b614421a110b4edb17e0eac7e25f4b6312c4fe9c1755",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-25": {
+      "integrity_hash": "1ddf64e1b942029b1c9a018c295abce5b5684acd171a353f9c682b4eabe62a8f",
+      "signature": "neutral@0.6/+0.0"
+    },
+    "corpus-26": {
+      "integrity_hash": "1b60ff0df57f4605176aa2a41b104bb7d68576a6002844f7149fc316b46be0bc",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-27": {
+      "integrity_hash": "d406c59b79b2f888ef1280d0e916849ce0f3236bac31e32e1dceb192d0e23229",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-28": {
+      "integrity_hash": "c179ee894b6979fd7ee544502f93a6a76dcea8ca945fec4920af072de8aa016a",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-29": {
+      "integrity_hash": "6b4ef78db8fc7c6e930a1dd526e0723d0a466d6d4830868786ba7c8097d28f06",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-30": {
+      "integrity_hash": "152f2e76c7aca5b62d9e32b3509afecceac3f780a817fa7a449794bc47712c52",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-31": {
+      "integrity_hash": "31fa7aa5bd03d147aa6900eb156abc07454118c7675c0a01a11a4533748e2e96",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-32": {
+      "integrity_hash": "5e885c11f8db987cf39ce061f729d275331613882fe6dfc82b5e16f48cd9eeab",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-33": {
+      "integrity_hash": "32f39ea4744fa399ab8b3485524aa0e133420143f58afd8c08d5b06bd7932f33",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-34": {
+      "integrity_hash": "0d4780001b315014652dff656c4e58581a7ab391a6e908ca70aa9de3ac330865",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-35": {
+      "integrity_hash": "75e3264eae853f59b5c3d13187e73c69a83a80dfab45466b1c1f8d94754f6026",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-36": {
+      "integrity_hash": "32d7c954d29d5c17d0ab04213198e9f9dd8e07880691414b840c225c7a2bcb08",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-37": {
+      "integrity_hash": "e974c749bf349f5f1d9acdbfee064261974c7b1470d97a61c147b25e1f8679e5",
+      "signature": "neutral@0.9/+0.0"
+    },
+    "corpus-38": {
+      "integrity_hash": "32a91b5da4e26949f2275718e5181e3ec60ae47574f6c3df7b365496b6ed5b52",
+      "signature": "neutral@0.1/+0.0"
+    },
+    "corpus-39": {
+      "integrity_hash": "eff814cadad38f42c35e5d4919000f9ea2f0886257a89cbd9554849a0af3deab",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-40": {
+      "integrity_hash": "998d0af76e92a8bc60b1e55159902f7e1a6821ad99a57b4eb14006b63c595700",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-41": {
+      "integrity_hash": "56fb952f1189f97d1fb87892c027ffafc6537cf923968ed60647de544ca43947",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-42": {
+      "integrity_hash": "ba34d31a638f7e27e0349f9b8ec27075f4b708a5255f4881cc244c6ad8162da0",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-43": {
+      "integrity_hash": "4de7de4a7f468a30b3e38e8ec92cf9081e81ccba513cb0c1910afaa9218be730",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-44": {
+      "integrity_hash": "808e96a658c619cf52a9bdedeade18a369e5a7efc32f8bc31832421cc806edfe",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-45": {
+      "integrity_hash": "21e7afbc2b125398cce9e2549f471e04c57f4aa7597d9829ef3ce2fdcf7174d0",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-46": {
+      "integrity_hash": "cb10eb9d4026d8efad3dab2bac070ecefea1a0a32b2989b6da2b4f6fd612c07d",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-47": {
+      "integrity_hash": "e58b48d23303a839271dbe46d472d22344547c2fb2ee5c5174c66e3ba7b87d54",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-48": {
+      "integrity_hash": "009520909b8a0776086e4269b9296bc2717a1c85a957d99037ec636a2862c91f",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-49": {
+      "integrity_hash": "d4507f948814e72d761e321b942a3b8b75b8cabaf3d7f495cf4466194496564f",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-50": {
+      "integrity_hash": "df7c28ec083dbb5a060f1e8a9e21186f251a6e187bf8ad17f9e7f98313350c42",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-51": {
+      "integrity_hash": "c201c4132e4beabba25e86ed61d95b875fe9df3dde757e7a8fb3894522b158d8",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-52": {
+      "integrity_hash": "4ac011bfd1996f50afe8b1a998970aa4ca8a66cc7c3a13035d8f530d6261b3bc",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-53": {
+      "integrity_hash": "9e2cb4fc10f28332738a56c8d28ec82350d9cfae93b772f25fd370b2c96a64a6",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-54": {
+      "integrity_hash": "6d85c7090c3cdf6971c27f9675c91e8abdedd0f12165e5adfd0be5c6b47f8450",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-55": {
+      "integrity_hash": "d3c718705dfcd36ee0b9125d19e15929ebadf1a0ebeb53c4dfc6b0d0fb126148",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-56": {
+      "integrity_hash": "ce1029724aa345b1083deed905a3fd0a2ea8bfa2539f12f41e6c3d7391d3d349",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-57": {
+      "integrity_hash": "43d2995ea666cb25820bc2b6bf648daa5af557b1b63e866c06bd9b363a7dd031",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "corpus-58": {
+      "integrity_hash": "24d34796c480ada17b96711de7b028f5d85bf08a8741f23074353b4a809cc443",
+      "signature": "neutral@0.3/+0.0"
+    },
+    "empty-containers": {
+      "integrity_hash": "63c7b494c7178928fccfafdf21664e30dfdd5394e6cf3232e2e983751053db55",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "explicit-null-temporal": {
+      "integrity_hash": "f100b3a2785761ab9d0d249c9b9d500a3125ef293c46dab8d9da5885537a9b69",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "extra-fields-order": {
+      "integrity_hash": "00ad7fa85c3d07ea2f472f86ca8978381bd6708b9d877898680fd1c1be1ce0a7",
+      "signature": "neutral@1.0/+0.0"
+    },
+    "float-formats": {
+      "integrity_hash": "596ce9148fe7018ab656a719d3a02ae640dc8a84eb5a0b2cbbfc48050c9d8273",
+      "signature": "neutral@5.0/+0.0"
+    },
+    "full-v2-unicode": {
+      "integrity_hash": "f0cdd0b4af4cef67e96e92bfa7b14751b486b622382a2d42c112b6aab65a8195",
+      "signature": "joy+love+trust@8.5/+0.9"
+    },
+    "rounding-half": {
+      "integrity_hash": "4e8595425b4b1f5de082a9edf0eda7a9aa8e09df362e637c587ee809e04b18ea",
+      "signature": "a+b@0.2/-0.0"
+    },
+    "rounding-half-2": {
+      "integrity_hash": "5ae073122f6e19030f33f96dc7230f28bf42010fd48065dff5cf7d32e9ff5c1e",
+      "signature": "neutral@0.3/+0.1"
+    },
+    "sealed": {
+      "integrity_hash": "09c1668f182fca18691f344732fc8a08a326079900579a47c2f9cbdb85dc7a96",
+      "signature": "joy+trust@7.2/+0.6"
+    },
+    "string-schema-keys-last": {
+      "integrity_hash": "8926901f948a5464c8e73748b12ac431ebe8dcff31ac9344f88ead12619a7d1f",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "strip-title-id": {
+      "integrity_hash": "d1b4f8a8a37e820dd65b0b57e61ccd8e8c254a0b697358b0af0feb0cb51dbc6d",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "unknown-kind-null": {
+      "integrity_hash": "43b7c0e5e11a83ea50b34460f854bf47e4a8d9ae4b40c8be0e15e9a16b43958b",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "unknown-preexisting-stash": {
+      "integrity_hash": "8e7ef7d7b236c83bd283cb63101cb6cf8fef3b95d017e610d159c070fe7ae6ba",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "unknown-vocab": {
+      "integrity_hash": "1253d08120cfc035c8234fd0ef3ec4816e133fee3124db648456ff2716b74f85",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "v1-minimal": {
+      "integrity_hash": "77eecb547815eee65590e99aedc4eb6200992d8206df2ce19117e596f888250d",
+      "signature": "neutral@0.0/+0.0"
+    },
+    "v1-no-v2-keys": {
+      "integrity_hash": "236eb8bd11f29b9ea68006a8e15c8c4e3f4ec12e00de29ad7d1e98d0d30e4361",
+      "signature": "neutral@3.0/-1.0"
+    }
+  },
+  "invalid": [
+    "invalid-bad-layer",
+    "invalid-bad-role",
+    "invalid-empty-title",
+    "invalid-intensity-range",
+    "invalid-valence-range",
+    "invalid-metadata-list",
+    "invalid-empty-id",
+    "invalid-tags-not-list",
+    "invalid-missing-title"
+  ],
+  "sealed_saved": {
+    "integrity_hash": "09c1668f182fca18691f344732fc8a08a326079900579a47c2f9cbdb85dc7a96",
+    "source": "sealed"
+  },
+  "tombstones": {
+    "no-agent": {
+      "bytes": "{\"id\": \"tomb-2\", \"forgotten_at\": \"2026-11-07T14:30:00+0000\", \"reason\": \"dedupe\"}",
+      "payload": {
+        "forgotten_at": "2026-11-07T14:30:00+0000",
+        "id": "tomb-2",
+        "reason": "dedupe"
+      }
+    },
+    "with-agent": {
+      "bytes": "{\"id\": \"tomb-1\", \"forgotten_at\": \"2026-11-07T09:30:00-0500\", \"reason\": \"forget\", \"agent\": \"lumina\"}",
+      "payload": {
+        "agent": "lumina",
+        "forgotten_at": "2026-11-07T09:30:00-0500",
+        "id": "tomb-1",
+        "reason": "forget"
+      }
+    }
+  }
+}
