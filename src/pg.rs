@@ -12,6 +12,9 @@
 //! arm, never put in an error, and never in `Debug` output. No TLS (`NoTls`):
 //! skmem-pg is per-node on loopback.
 
+pub mod graph_arm;
+pub mod lexical_arm;
+
 use crate::embed::{EmbedError, Embedder, VECTOR_DIM};
 use crate::model::{Layer, Memory};
 use pgvector::Vector;
@@ -58,6 +61,16 @@ pub enum PgError {
     RemoteDsn {
         host: String,
     },
+    /// The connection's effective `search_path` names no existing schema, so
+    /// an unqualified `memories` cannot resolve. Postgres says only
+    /// `relation "memories" does not exist`; this says why.
+    EmptySearchPath,
+    /// The graph name is not a plain identifier (it is the one piece of text
+    /// AGE requires inline in the query, so it is validated, never bound).
+    BadGraphName(String),
+    /// A statement hit its `statement_timeout` (SQLSTATE 57014). The graph
+    /// search arm treats this as abstaining, not as a failure.
+    Timeout(String),
 }
 
 impl fmt::Display for PgError {
@@ -72,6 +85,15 @@ impl fmt::Display for PgError {
                 "query vector has {actual} dimensions, expected {expected}"
             ),
             PgError::BadAsOf(v) => write!(f, "as_of is not an ISO-8601 timestamp: {v:?}"),
+            PgError::EmptySearchPath => write!(
+                f,
+                "the connection's search_path resolves to no existing schema (empty or all names missing): set search_path to the schema that holds memories, for example `public`"
+            ),
+            PgError::Timeout(m) => write!(f, "postgres statement timed out: {m}"),
+            PgError::BadGraphName(n) => write!(
+                f,
+                "refusing graph name {n:?}: it must match [A-Za-z_][A-Za-z0-9_]*"
+            ),
             PgError::RemoteDsn { host } => write!(
                 f,
                 "refusing to connect to non-loopback host {host:?}: skmem-pg is per-node and this client does not use TLS, so the password would cross the network in plaintext; point SKMEMORY_PG_DSN at localhost or set SKMEMORY_PG_ALLOW_REMOTE=1 for an audited exception"
@@ -151,7 +173,7 @@ impl fmt::Debug for VectorArm {
 }
 
 /// Remove each non-empty secret (the password) from an error message.
-fn scrub(msg: &str, secrets: &[&str]) -> String {
+pub(crate) fn scrub(msg: &str, secrets: &[&str]) -> String {
     let mut out = msg.to_string();
     for s in secrets.iter().filter(|s| !s.is_empty()) {
         out = out.replace(s, "<redacted>");
@@ -218,6 +240,116 @@ pub fn as_of_clause(v2_columns: bool, p: usize) -> String {
     )
 }
 
+pub(crate) type Binds = Vec<Box<dyn ToSql + Sync>>;
+
+/// Append a bind and return its 1-based placeholder number.
+pub(crate) fn push_bind(binds: &mut Binds, b: Box<dyn ToSql + Sync>) -> usize {
+    binds.push(b);
+    binds.len()
+}
+
+/// The `WHERE` clauses every arm shares (agent, layer, tags AND, context_tag,
+/// source), each value a bound parameter. `as_of` is the caller's business: it
+/// differs per arm. An empty tag list, empty source and `None` are "no
+/// filter"; an empty `context_tag` list matches nothing (fail closed).
+pub(crate) fn filter_clauses(agent: &str, filters: &Filters, binds: &mut Binds) -> Vec<String> {
+    let mut clauses = Vec::new();
+    let p = push_bind(binds, Box::new(agent.to_string()));
+    clauses.push(format!("agent=${p}"));
+    if let Some(layer) = filters.layer {
+        let p = push_bind(binds, Box::new(layer.as_str().to_string()));
+        clauses.push(format!("layer=${p}"));
+    }
+    if !filters.tags.is_empty() {
+        let p = push_bind(binds, Box::new(filters.tags.clone()));
+        clauses.push(format!("tags @> ${p}"));
+    }
+    match &filters.context_tag {
+        None => {}
+        Some(ContextTag::One(t)) => {
+            let p = push_bind(binds, Box::new(t.clone()));
+            clauses.push(format!("memory_json->>'context_tag' = ${p}"));
+        }
+        Some(ContextTag::AnyOf(list)) => {
+            let p = push_bind(binds, Box::new(list.clone()));
+            clauses.push(format!("memory_json->>'context_tag' = ANY(${p})"));
+        }
+    }
+    if let Some(src) = filters.source.as_deref().filter(|s| !s.is_empty()) {
+        let p = push_bind(binds, Box::new(src.to_string()));
+        clauses.push(format!("source=${p}"));
+    }
+    clauses
+}
+
+/// Whether the schema-v2 typed columns exist in the connection's schema.
+pub(crate) fn probe_v2_columns(client: &mut Client) -> Result<bool, PgError> {
+    let cols: Vec<String> = V2_COLUMNS.iter().map(|s| s.to_string()).collect();
+    let row = client
+        .query_one(
+            "SELECT count(*) FROM information_schema.columns \
+             WHERE table_schema = current_schema() AND table_name = 'memories' \
+             AND column_name = ANY($1)",
+            &[&cols],
+        )
+        .map_err(|e| PgError::Query(e.to_string()))?;
+    let n: i64 = row.get(0);
+    Ok(n == V2_COLUMNS.len() as i64)
+}
+
+/// Fail with [`PgError::EmptySearchPath`] when no schema on the effective
+/// `search_path` exists. Run inside the query's transaction so it sees the
+/// same path the query will.
+pub(crate) fn check_search_path(tx: &mut postgres::Transaction<'_>) -> Result<(), PgError> {
+    let row = tx
+        .query_one("SELECT cardinality(current_schemas(false))::int8", &[])
+        .map_err(|e| PgError::Query(e.to_string()))?;
+    let n: i64 = row.get(0);
+    if n == 0 {
+        Err(PgError::EmptySearchPath)
+    } else {
+        Ok(())
+    }
+}
+
+/// Parse a `memory_json` cell, `None` for a row that will not parse.
+pub(crate) fn parse_memory_cell(json: Value) -> Option<Memory> {
+    match json {
+        Value::String(s) => Memory::from_stored_json(s.as_bytes()),
+        other => Memory::from_stored(other),
+    }
+    .ok()
+}
+
+/// Connect from parsed settings with the loopback guard and a scrubbed error.
+pub(crate) fn open_client(
+    config: &postgres::Config,
+    allow_remote: bool,
+) -> Result<Client, PgError> {
+    let password = config
+        .get_password()
+        .map(|p| String::from_utf8_lossy(p).to_string())
+        .unwrap_or_default();
+    if !allow_remote {
+        check_dsn_is_local(config)?;
+    }
+    config
+        .connect(NoTls)
+        .map_err(|e| PgError::Connect(scrub(&e.to_string(), &[&password])))
+}
+
+/// `SKMEMORY_PG_ALLOW_REMOTE` as the vector arm reads it.
+pub(crate) fn allow_remote_from_env() -> bool {
+    matches!(
+        std::env::var("SKMEMORY_PG_ALLOW_REMOTE")
+            .unwrap_or_default()
+            .trim()
+            .to_lowercase()
+            .as_str(),
+        "1" | "true" | "yes" | "on"
+    )
+}
+
 impl VectorArm {
     /// Connect with `SKMEMORY_PG_DSN`.
     pub fn from_env(agent: &str, embedder: Box<dyn Embedder + Send>) -> Result<VectorArm, PgError> {
@@ -235,15 +367,7 @@ impl VectorArm {
         agent: &str,
         embedder: Box<dyn Embedder + Send>,
     ) -> Result<VectorArm, PgError> {
-        let allow = matches!(
-            std::env::var("SKMEMORY_PG_ALLOW_REMOTE")
-                .unwrap_or_default()
-                .trim()
-                .to_lowercase()
-                .as_str(),
-            "1" | "true" | "yes" | "on"
-        );
-        VectorArm::connect_with(dsn, agent, embedder, allow)
+        VectorArm::connect_with(dsn, agent, embedder, allow_remote_from_env())
     }
 
     /// Connect with an explicit remote-host decision.
@@ -268,16 +392,7 @@ impl VectorArm {
         embedder: Box<dyn Embedder + Send>,
         allow_remote: bool,
     ) -> Result<VectorArm, PgError> {
-        let password = config
-            .get_password()
-            .map(|p| String::from_utf8_lossy(p).to_string())
-            .unwrap_or_default();
-        if !allow_remote {
-            check_dsn_is_local(&config)?;
-        }
-        let client = config
-            .connect(NoTls)
-            .map_err(|e| PgError::Connect(scrub(&e.to_string(), &[&password])))?;
+        let client = open_client(&config, allow_remote)?;
         Ok(VectorArm {
             client,
             agent: agent.to_string(),
@@ -347,18 +462,7 @@ impl VectorArm {
         if let Some(v) = self.v2_columns {
             return Ok(v);
         }
-        let cols: Vec<String> = V2_COLUMNS.iter().map(|s| s.to_string()).collect();
-        let row = self
-            .client
-            .query_one(
-                "SELECT count(*) FROM information_schema.columns \
-                 WHERE table_schema = current_schema() AND table_name = 'memories' \
-                 AND column_name = ANY($1)",
-                &[&cols],
-            )
-            .map_err(|e| PgError::Query(e.to_string()))?;
-        let n: i64 = row.get(0);
-        let v = n == V2_COLUMNS.len() as i64;
+        let v = probe_v2_columns(&mut self.client)?;
         self.v2_columns = Some(v);
         Ok(v)
     }
@@ -381,44 +485,15 @@ impl VectorArm {
         limit: i64,
         as_of: Option<String>,
     ) -> Result<(String, Vec<Box<dyn ToSql + Sync>>), PgError> {
-        let mut binds: Vec<Box<dyn ToSql + Sync>> = vec![Box::new(Vector::from(qvec))];
-        let push = |b: Box<dyn ToSql + Sync>, binds: &mut Vec<Box<dyn ToSql + Sync>>| {
-            binds.push(b);
-            binds.len()
-        };
-        let mut clauses: Vec<String> = Vec::new();
-        let p = push(Box::new(self.agent.clone()), &mut binds);
-        clauses.push(format!("agent=${p}"));
-        clauses.push("embedding IS NOT NULL".to_string());
-        if let Some(layer) = filters.layer {
-            let p = push(Box::new(layer.as_str().to_string()), &mut binds);
-            clauses.push(format!("layer=${p}"));
-        }
-        if !filters.tags.is_empty() {
-            let p = push(Box::new(filters.tags.clone()), &mut binds);
-            clauses.push(format!("tags @> ${p}"));
-        }
-        match &filters.context_tag {
-            None => {}
-            Some(ContextTag::One(t)) => {
-                let p = push(Box::new(t.clone()), &mut binds);
-                clauses.push(format!("memory_json->>'context_tag' = ${p}"));
-            }
-            Some(ContextTag::AnyOf(list)) => {
-                let p = push(Box::new(list.clone()), &mut binds);
-                clauses.push(format!("memory_json->>'context_tag' = ANY(${p})"));
-            }
-        }
-        if let Some(src) = filters.source.as_deref().filter(|s| !s.is_empty()) {
-            let p = push(Box::new(src.to_string()), &mut binds);
-            clauses.push(format!("source=${p}"));
-        }
+        let mut binds: Binds = vec![Box::new(Vector::from(qvec))];
+        let mut clauses = filter_clauses(&self.agent, filters, &mut binds);
+        clauses.insert(1, "embedding IS NOT NULL".to_string());
         if let Some(as_of) = as_of {
             let v2 = self.has_v2_columns()?;
-            let p = push(Box::new(as_of), &mut binds);
+            let p = push_bind(&mut binds, Box::new(as_of));
             clauses.push(as_of_clause(v2, p));
         }
-        let pl = push(Box::new(limit), &mut binds);
+        let pl = push_bind(&mut binds, Box::new(limit));
         let sql = format!(
             "WITH knn AS MATERIALIZED (SELECT memory_json, embedding <=> $1::vector AS _d \
              FROM memories WHERE {} ORDER BY embedding <=> $1::vector LIMIT ${pl}) \
@@ -481,16 +556,12 @@ impl VectorArm {
         for row in rows {
             let json: Value = row.get(0);
             let dist: f64 = row.get(1);
-            let parsed = match json {
-                Value::String(s) => Memory::from_stored_json(s.as_bytes()),
-                other => Memory::from_stored(other),
-            };
-            match parsed {
-                Ok(memory) => out.push(Hit {
+            match parse_memory_cell(json) {
+                Some(memory) => out.push(Hit {
                     memory,
                     distance: dist,
                 }),
-                Err(_) => self.unparseable += 1,
+                None => self.unparseable += 1,
             }
         }
         Ok(out)

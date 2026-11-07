@@ -92,11 +92,42 @@ pub fn normalize_as_of(value: &str) -> Result<Option<String>, BadAsOf> {
         return Ok(None);
     }
     parse(text)
-        .map(Some)
+        .map(|(secs, us)| Some(iso_from_unix(secs, us)))
         .ok_or_else(|| BadAsOf(value.to_string()))
 }
 
-fn parse(text: &str) -> Option<String> {
+/// `skmemory.validity.parse_ts`: an ISO-8601 string as UTC microseconds since
+/// the epoch, or `None` when it cannot be read (empty, `now`, garbage). The
+/// comparison key for every temporal rule: parsed instants, never text.
+pub fn parse_ts(value: &str) -> Option<i128> {
+    let text = crate::model::py_strip(value);
+    if text.is_empty() {
+        return None;
+    }
+    parse(text).map(|(secs, us)| secs as i128 * 1_000_000 + us as i128)
+}
+
+/// `skmemory.validity.valid_at`: `coalesce(valid_from, created_at) <= T AND
+/// (valid_to IS NULL OR valid_to > T)`, on parsed instants. An unparseable
+/// `valid_from` falls through to `created_at`, an unparseable `valid_to`
+/// means still open, and an unparseable `t` keeps everything (as Python).
+pub fn valid_at(
+    valid_from: Option<&str>,
+    created_at: Option<&str>,
+    valid_to: Option<&str>,
+    t: &str,
+) -> bool {
+    let Some(t) = parse_ts(t) else { return true };
+    let start = valid_from
+        .and_then(parse_ts)
+        .or_else(|| created_at.and_then(parse_ts));
+    if start.is_some_and(|s| s > t) {
+        return false;
+    }
+    valid_to.and_then(parse_ts).is_none_or(|e| e > t)
+}
+
+fn parse(text: &str) -> Option<(i64, u32)> {
     let b = text.as_bytes();
     if !text.is_ascii() {
         return None;
@@ -161,7 +192,7 @@ fn parse(text: &str) -> Option<String> {
     if !(-62_135_596_800..=253_402_300_799).contains(&secs) {
         return None;
     }
-    Some(iso_from_unix(secs, us))
+    Some((secs, us))
 }
 
 /// `""`, `Z`, `z`, or `+/-HH[:MM[:SS[.f]]]` (also compact) as seconds east of UTC.
@@ -203,6 +234,35 @@ fn parse_offset(tz: &[u8]) -> Option<i64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parsed_instants_not_text() {
+        // +02:00 sorts before Z as text but is the LATER instant here.
+        let a = parse_ts("2026-06-01T01:00:00+02:00").unwrap();
+        let b = parse_ts("2026-06-01T00:30:00Z").unwrap();
+        assert!(a < b);
+        assert_eq!(
+            parse_ts("2026-06-01"),
+            parse_ts("2026-06-01T00:00:00+00:00")
+        );
+        assert_eq!(parse_ts("not a time"), None);
+        let t = "2026-06-01T00:00:00Z";
+        // closed AT t is already closed; opened AT t is valid
+        assert!(!valid_at(
+            None,
+            Some("2026-01-01"),
+            Some("2026-06-01T02:00:00+02:00"),
+            t
+        ));
+        assert!(valid_at(Some("2026-05-31T22:00:00-02:00"), None, None, t));
+        assert!(valid_at(
+            Some("garbage"),
+            Some("2026-01-01"),
+            Some("garbage"),
+            t
+        ));
+        assert!(!valid_at(None, Some("2026-09-01"), None, t));
+    }
 
     #[test]
     fn shapes() {
