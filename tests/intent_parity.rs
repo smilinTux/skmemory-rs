@@ -551,3 +551,210 @@ fn hermes_import_matches_python() {
         assert!(!sc.anti_pattern && sc.flag.is_none());
     }
 }
+
+// ------------------------------------------------- live cross-engine tests
+
+/// `(python, PYTHONPATH)` when a Python that can import skmemory is named.
+fn python() -> Option<(String, String)> {
+    let py = std::env::var("SKMEM_PYTHON").ok()?;
+    let pp = std::env::var("SKMEM_PYTHONPATH").unwrap_or_default();
+    Some((py, pp))
+}
+
+fn py_cmd(py: &(String, String), xdg: &Path) -> std::process::Command {
+    let mut c = std::process::Command::new(&py.0);
+    c.env("PYTHONPATH", &py.1)
+        .env("XDG_RUNTIME_DIR", xdg)
+        .env_remove("SKMEMORY_TICK_HOST");
+    c
+}
+
+fn run_py(py: &(String, String), xdg: &Path, code: &str, args: &[&Path]) -> String {
+    let out = py_cmd(py, xdg)
+        .arg("-c")
+        .arg(code)
+        .args(args)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "python failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&out.stdout).trim().to_string()
+}
+
+#[test]
+fn live_python_and_rust_share_one_lock_file() {
+    let Some(py) = python() else {
+        eprintln!("SKMEM_PYTHON unset: skipping the live lock test");
+        return;
+    };
+    use std::io::{BufRead, BufReader};
+    let d = scratch("live-lock");
+    let (base, run) = (d.join("base"), d.join("run"));
+    fs::create_dir_all(&run).unwrap();
+    // Rust opens first so the base exists; both resolve the same lock dir from the same env.
+    let st = IntentionStore::open_with(&base, 30_000, Some(&run)).unwrap();
+    let pyd = run_py(
+        &py,
+        &run,
+        "import sys\nfrom skmemory.intentions import IntentionStore as S\nprint(S(sys.argv[1])._lock_dir)",
+        &[&base],
+    );
+    assert_eq!(
+        PathBuf::from(&pyd),
+        st.lock_dir(),
+        "lock dir differs between engines: that would be a data race"
+    );
+
+    // an armed event intention, written by Rust
+    let mut i = Intention::new("i1", skmem::intentions::Kind::Event, "t");
+    i.state = skmem::intentions::State::Armed;
+    i.trigger_terms = vec!["zzword".into()];
+    st.save(&i).unwrap();
+
+    // Python holds the lock; Rust must see it busy and skip the fire
+    let held = "import sys, time\nfrom skmemory.intentions import IntentionStore as S\ns = S(sys.argv[1])\nwith s._lock('i1'):\n    print('held', flush=True)\n    time.sleep(60)";
+    let mut child = py_cmd(&py, &run)
+        .arg("-c")
+        .arg(held)
+        .arg(&base)
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut line = String::new();
+    BufReader::new(child.stdout.take().unwrap())
+        .read_line(&mut line)
+        .unwrap();
+    assert_eq!(line.trim(), "held");
+    assert!(
+        st.lock("i1", Some(0.0)).is_err(),
+        "Rust must contend with Python's flock"
+    );
+    let got = st
+        .prefilter(
+            "zzword here",
+            &HashMap::new(),
+            None,
+            &PrefilterOpts::default(),
+        )
+        .unwrap();
+    assert!(
+        got.is_empty(),
+        "a Python-held lock must make the Rust prefilter skip"
+    );
+    child.kill().unwrap();
+    child.wait().unwrap();
+    assert!(
+        st.lock("i1", Some(1.0)).is_ok(),
+        "released when Python exits"
+    );
+
+    // Rust holds it; Python must see it busy, for the intention and for the tick
+    let g = st.lock("i1", None).unwrap();
+    let probe = "import sys\nfrom skmemory import intentions as I\ns = I.IntentionStore(sys.argv[1])\ntry:\n    with s._lock('i1', timeout=0):\n        print('acquired')\nexcept I._LockBusy:\n    print('busy')";
+    assert_eq!(run_py(&py, &run, probe, &[&base]), "busy");
+    drop(g);
+    assert_eq!(run_py(&py, &run, probe, &[&base]), "acquired");
+    let tl = st.lock_named("_tick.lock", Some(0.0)).unwrap();
+    let tick_probe = "import sys\nfrom skmemory import intention_tick as T, intentions as I\ns = I.IntentionStore(sys.argv[1])\nr = T.run_tick(s, deliver=lambda t: True, any_host=True)\nprint(r.skipped)";
+    assert_eq!(
+        run_py(&py, &run, tick_probe, &[&base]),
+        "another tick is running on this host"
+    );
+    drop(tl);
+}
+
+#[test]
+fn live_python_loads_what_rust_wrote() {
+    let Some(py) = python() else {
+        eprintln!("SKMEM_PYTHON unset: skipping the live round-trip test");
+        return;
+    };
+    let d = scratch("live-files");
+    let (base, run) = (d.join("base"), d.join("run"));
+    fs::create_dir_all(&run).unwrap();
+    let st = IntentionStore::open_with(&base, 30_000, Some(&run)).unwrap();
+    for row in jsonl(&fixtures().join("intentions-v1.jsonl")) {
+        st.save(&Intention::from_value(&row).unwrap()).unwrap();
+    }
+    let mut u = Intention::new(
+        "u1",
+        skmem::intentions::Kind::Event,
+        "Caf\u{e9} \u{2603} \"q\" \\ \t",
+    );
+    u.state = skmem::intentions::State::Armed;
+    u.trigger_terms = vec!["Caf\u{e9} au lait".into(), "STRASSE".into()];
+    u.scope = vec![("z".into(), "1".into()), ("a".into(), "2".into())];
+    u.created_at = dt("2026-10-01T10:00:00.25+05:30");
+    u.extra.insert("note".into(), json!({"k": [1, 2.5, null]}));
+    st.save(&u).unwrap();
+    let now = dt("2026-11-01T12:00:00Z");
+    let scope = HashMap::from([("repo".to_string(), "skcapstone".to_string())]);
+    st.prefilter("edit HOSTS=", &scope, Some(now), &PrefilterOpts::default())
+        .unwrap();
+    st.prefilter(
+        "CAF\u{c9} AU LAIT",
+        &HashMap::from([("z".into(), "1".into()), ("a".into(), "2".into())]),
+        Some(now),
+        &PrefilterOpts::default(),
+    )
+    .unwrap();
+    st.apply(
+        "int-005",
+        "snooze",
+        Some(now),
+        Some(dt("2026-12-01T00:00:00-03:00")),
+    )
+    .unwrap();
+    st.sweep_supersession(Some(now)).unwrap();
+    let mut ok = |_: &str| true;
+    run_tick(
+        &st,
+        TickOptions {
+            now: Some(now),
+            deliver: Some(&mut ok),
+            any_host: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    drop(st);
+    let l = Ledger::new(&base, Some("skap01"));
+    for (n, (ev, eff)) in [
+        ("served", None),
+        ("followed", Some("success")),
+        ("followed_error", None),
+        ("followed", Some("harm")),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        l.record(
+            "skill-\u{e9}",
+            "sha:abc",
+            ev,
+            &Record {
+                effect: eff,
+                session: "s\"1",
+                at: Some(dt(&format!("2026-10-0{}T00:00:00.5+02:00", n + 1))),
+                source: Some("heuristic:bash-command-match"),
+                missing: Some("m\u{2603}"),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    }
+    let out = py_cmd(&py, &run)
+        .arg(parity().join("verify_rust_intent.py"))
+        .arg(&base)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
