@@ -1,5 +1,9 @@
 {
   "cases": {
+    "bigint-extras": {
+      "integrity_hash": "487ae882f167a462db3d2c1569df11fe78414897612d7f43d342aca82ba70d89",
+      "signature": "neutral@0.0/+0.0"
+    },
     "corpus-00": {
       "integrity_hash": "abeab5a3fd3b1b51fba20b87ba962a3e33c3b8491f039702395fb20436718d51",
       "signature": "neutral@0.3/+0.0"

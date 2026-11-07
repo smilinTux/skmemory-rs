@@ -40,9 +40,9 @@ fn save_load_list_roundtrip_and_layout() {
     assert_eq!(s.load("a").unwrap().unwrap(), a);
     assert_eq!(s.load("b").unwrap().unwrap(), b);
     assert!(s.load("nope").unwrap().is_none());
-    let ids: Vec<String> = s.list(None).into_iter().map(|m| m.id).collect();
+    let ids: Vec<String> = s.list(None).memories.into_iter().map(|m| m.id).collect();
     assert_eq!(ids, ["b", "a"], "newest first");
-    assert_eq!(s.list(Some(Layer::Short)).len(), 1);
+    assert_eq!(s.list(Some(Layer::Short)).memories.len(), 1);
     // The saved bytes are exactly the Python dump and carry no trailing newline.
     let raw = fs::read_to_string(d.join("short-term/a.json")).unwrap();
     assert_eq!(raw, a.to_json());
@@ -76,7 +76,11 @@ fn invalid_files_are_skipped_by_list_and_reported_by_load() {
     fs::write(d.join("short-term/.hidden.json"), b"{}").unwrap();
     s.save(&mem("ok", Layer::Short, "2026-01-01T00:00:00+00:00"))
         .unwrap();
-    assert_eq!(s.list(None).len(), 1);
+    let l = s.list(None);
+    assert_eq!(l.memories.len(), 1);
+    assert_eq!(l.unloadable.len(), 1, "a bad file is reported, not dropped");
+    assert!(l.unloadable[0].path.ends_with("bad.json"));
+    assert!(!l.unloadable[0].reason.is_empty());
     assert!(s.load("bad").is_err());
     assert_eq!(s.flat_id_set().len(), 2, "dotfiles are not memories");
     let _ = fs::remove_dir_all(&d);
@@ -111,7 +115,7 @@ fn sync_conflict_copies_are_skipped_unless_only_copy() {
     )
     .unwrap();
 
-    let listed = s.list(None);
+    let listed = s.list(None).memories;
     let titles: Vec<&str> = listed.iter().map(|m| m.title.as_str()).collect();
     assert_eq!(listed.len(), 2, "{titles:?}");
     assert!(titles.contains(&"title"), "canonical copy listed");
@@ -194,7 +198,7 @@ fn crash_before_rename_leaves_prior_file_intact_and_temp_invisible() {
             })
             .count();
         assert_eq!(temps, 1, "crash leaves the temp behind, as a kill would");
-        assert_eq!(s.list(None).len(), 1);
+        assert_eq!(s.list(None).memories.len(), 1);
         assert_eq!(s.flat_id_set().len(), 1);
         assert_eq!(s.load("k").unwrap().unwrap().content, "content");
         let _ = fs::remove_dir_all(&d);
@@ -275,7 +279,75 @@ fn sigkill_mid_save_never_leaves_a_partial_file() {
             );
         }
         // Any temp a kill orphaned is invisible to list/load.
-        assert!(s.list(None).len() <= 1);
+        assert!(s.list(None).memories.len() <= 1);
     }
+    let _ = fs::remove_dir_all(&d);
+}
+
+fn put_raw(d: &std::path::Path, id: &str, extra_field: &str) {
+    let body = format!(
+        r#"{{"id": "{id}", "title": "T", "content": "C", "created_at": "2026-01-01T00:00:00+00:00", "updated_at": "2026-01-01T00:00:00+00:00", {extra_field}}}"#
+    );
+    fs::write(d.join(format!("short-term/{id}.json")), body).unwrap();
+}
+
+#[test]
+fn big_integers_load_and_round_trip_exactly() {
+    let d = scratch("bigint");
+    let s = Store::open(&d).unwrap();
+    put_raw(
+        &d,
+        "big",
+        r#""huge": 123456789012345678901234567890, "metadata": {"n": -9223372036854775809}"#,
+    );
+    let l = s.list(None);
+    assert!(l.unloadable.is_empty());
+    let m = &l.memories[0];
+    assert_eq!(
+        m.extra["huge"].to_string(),
+        "123456789012345678901234567890"
+    );
+    assert!(m
+        .to_json()
+        .contains("\"huge\": 123456789012345678901234567890"));
+    assert!(m.to_json().contains("\"n\": -9223372036854775809"));
+    let _ = fs::remove_dir_all(&d);
+}
+
+#[test]
+fn nan_and_lone_surrogates_are_reported_not_dropped() {
+    let d = scratch("unsupported");
+    let s = Store::open(&d).unwrap();
+    put_raw(&d, "nan", r#""x": NaN"#);
+    put_raw(&d, "inf", r#""metadata": {"x": -Infinity}"#);
+    put_raw(&d, "lone-high", r#""x": "a\ud800b""#);
+    put_raw(&d, "lone-low", r#""x": "\udc00""#);
+    put_raw(&d, "paired", r#""x": "\ud83d\ude00""#);
+    let l = s.list(None);
+    assert_eq!(l.memories.len(), 1, "valid surrogate pair still loads");
+    assert_eq!(l.unloadable.len(), 4);
+    for u in &l.unloadable {
+        let n = u.path.file_name().unwrap().to_string_lossy().into_owned();
+        let want = if n.starts_with("lone") {
+            "lone surrogate"
+        } else {
+            "NaN/Infinity"
+        };
+        assert!(u.reason.contains(want), "{n}: {}", u.reason);
+    }
+    let _ = fs::remove_dir_all(&d);
+}
+
+#[test]
+fn archive_and_delete_remove_the_source_entry() {
+    let d = scratch("fsyncdirs");
+    let s = Store::open(&d).unwrap();
+    s.save(&mem("a1", Layer::Short, "2026-01-01T00:00:00+00:00"))
+        .unwrap();
+    s.save(&mem("d1", Layer::Mid, "2026-01-01T00:00:00+00:00"))
+        .unwrap();
+    assert!(s.archive("a1", None).unwrap().is_some());
+    assert!(s.delete("d1").unwrap());
+    assert!(!d.join("short-term/a1.json").exists() && !d.join("mid-term/d1.json").exists());
     let _ = fs::remove_dir_all(&d);
 }

@@ -135,6 +135,26 @@ fn json_files(dir: &Path) -> Vec<PathBuf> {
     v
 }
 
+/// A file `list` could not turn into a memory.
+#[derive(Debug, Clone)]
+pub struct Unloadable {
+    pub path: PathBuf,
+    pub reason: String,
+}
+
+/// Result of [`Store::list`]: what loaded, and what did not and why.
+#[derive(Debug, Clone, Default)]
+pub struct Listing {
+    pub memories: Vec<Memory>,
+    pub unloadable: Vec<Unloadable>,
+}
+
+fn fsync_dir(dir: &Path) {
+    if let Ok(d) = fs::File::open(dir) {
+        let _ = d.sync_all();
+    }
+}
+
 /// A flat memory store rooted at `<agent>/memory/`.
 #[derive(Clone, Debug)]
 pub struct Store {
@@ -239,23 +259,33 @@ impl Store {
         false
     }
 
-    /// List valid memories (all layers when `layer` is None), conflict copies
-    /// that are not the only copy skipped, invalid files skipped, newest first.
-    pub fn list(&self, layer: Option<Layer>) -> Vec<Memory> {
+    /// List memories (all layers when `layer` is None), newest first. Conflict
+    /// copies that are not the only copy are skipped on purpose; a file that
+    /// cannot be loaded is never dropped silently: it is reported in
+    /// [`Listing::unloadable`] with its path and the reason.
+    pub fn list(&self, layer: Option<Layer>) -> Listing {
         let layers: Vec<Layer> = layer.map_or_else(|| Layer::ALL.to_vec(), |l| vec![l]);
-        let mut out = Vec::new();
+        let mut memories = Vec::new();
+        let mut unloadable = Vec::new();
         for l in layers {
             for p in json_files(&self.layer_dir(l)) {
                 if self.is_hidden_conflict_copy(&p) {
                     continue;
                 }
-                if let Ok(m) = self.load_path(&p) {
-                    out.push(m);
+                match self.load_path(&p) {
+                    Ok(m) => memories.push(m),
+                    Err(e) => unloadable.push(Unloadable {
+                        path: p,
+                        reason: e.to_string(),
+                    }),
                 }
             }
         }
-        out.sort_by(|a, b| b.created_at.cmp(&a.created_at).then(a.id.cmp(&b.id)));
-        out
+        memories.sort_by(|a, b| b.created_at.cmp(&a.created_at).then(a.id.cmp(&b.id)));
+        Listing {
+            memories,
+            unloadable,
+        }
     }
 
     /// Filename stems of every flat JSON file across the active layers.
@@ -275,7 +305,10 @@ impl Store {
         match self.find_file(id) {
             None => Ok(false),
             Some(p) => {
-                fs::remove_file(p)?;
+                fs::remove_file(&p)?;
+                if let Some(parent) = p.parent() {
+                    fsync_dir(parent);
+                }
                 Ok(true)
             }
         }
@@ -333,8 +366,10 @@ impl Store {
         fs::create_dir_all(&dir)?;
         let dest = dir.join(file_name(&src));
         fs::rename(&src, &dest)?;
-        if let Ok(d) = fs::File::open(&dir) {
-            let _ = d.sync_all();
+        // Make both directory entries durable: the new one and the removed one.
+        fsync_dir(&dir);
+        if let Some(parent) = src.parent() {
+            fsync_dir(parent);
         }
         Ok(Some(dest))
     }

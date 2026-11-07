@@ -338,7 +338,8 @@ impl Memory {
     /// Python `Memory.from_stored_json`: parse bytes read from storage.
     pub fn from_stored_json(raw: &[u8]) -> Result<Memory, ModelError> {
         let text = std::str::from_utf8(raw).map_err(|e| ModelError(format!("utf-8: {e}")))?;
-        let v: Value = serde_json::from_str(text).map_err(|e| ModelError(format!("json: {e}")))?;
+        let v: Value = serde_json::from_str(text)
+            .map_err(|e| ModelError(format!("json: {e}{}", unsupported_hint(text))))?;
         Memory::from_stored(v)
     }
 
@@ -558,4 +559,66 @@ fn restore_unknown(out: &mut Map<String, Value>) {
         meta.insert(UNKNOWN_KEY.into(), Value::Object(remaining));
     }
     out.insert("metadata".into(), Value::Object(meta));
+}
+
+/// When parsing fails, say whether the cause is a construct Python accepts but
+/// this reader cannot represent: bare `NaN`/`Infinity` tokens, or a lone
+/// UTF-16 surrogate escape inside a string. Returns "" when neither is found.
+fn unsupported_hint(text: &str) -> &'static str {
+    let b = text.as_bytes();
+    let mut i = 0;
+    let (mut nonfinite, mut surrogate) = (false, false);
+    while i < b.len() {
+        match b[i] {
+            b'"' => {
+                i += 1;
+                while i < b.len() && b[i] != b'"' {
+                    if b[i] == b'\\' {
+                        if b.get(i + 1) == Some(&b'u') && i + 6 <= b.len() {
+                            if let Ok(u) = text
+                                .get(i + 2..i + 6)
+                                .map_or(Err(()), |h| u16::from_str_radix(h, 16).map_err(|_| ()))
+                            {
+                                let lone_high = (0xD800..0xDC00).contains(&u)
+                                    && !(b.get(i + 6) == Some(&b'\\')
+                                        && b.get(i + 7) == Some(&b'u')
+                                        && text
+                                            .get(i + 8..i + 12)
+                                            .and_then(|h| u16::from_str_radix(h, 16).ok())
+                                            .is_some_and(|l| (0xDC00..0xE000).contains(&l)));
+                                let lone_low = (0xDC00..0xE000).contains(&u)
+                                    && !(i >= 6
+                                        && b[i - 6] == b'\\'
+                                        && text
+                                            .get(i - 4..i)
+                                            .and_then(|h| u16::from_str_radix(h, 16).ok())
+                                            .is_some_and(|h| (0xD800..0xDC00).contains(&h)));
+                                surrogate |= lone_high || lone_low;
+                            }
+                            i += 6;
+                        } else {
+                            i += 2;
+                        }
+                    } else {
+                        i += 1;
+                    }
+                }
+                i += 1;
+            }
+            b'N' if text.as_bytes()[i..].starts_with(b"NaN") => {
+                nonfinite = true;
+                i += 3;
+            }
+            b'I' if text.as_bytes()[i..].starts_with(b"Infinity") => {
+                nonfinite = true;
+                i += 8;
+            }
+            _ => i += 1,
+        }
+    }
+    match (nonfinite, surrogate) {
+        (true, _) => " (unsupported: NaN/Infinity literal)",
+        (_, true) => " (unsupported: lone surrogate escape)",
+        _ => "",
+    }
 }

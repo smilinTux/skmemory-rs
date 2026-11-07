@@ -117,6 +117,14 @@ case(
         },
     ),
 )
+case(
+    "bigint-extras",
+    {
+        "id": "big-1", "title": "T", "content": "C", "created_at": TS, "updated_at": TS,
+        "huge": 123456789012345678901234567890,
+        "metadata": {"n": -170141183460469231731687303715884105728, "f": 1e300, "z": 12345678901234567890123.5},
+    },
+)
 case("rounding-half", base(id="round-1", emotional={"intensity": 0.25, "valence": -0.04, "labels": ["b", "a"]}))
 case("rounding-half-2", base(id="round-2", emotional={"intensity": 0.35, "valence": 0.05}))
 case("strip-title-id", base(id="  padded-id  ", title="  padded title 　"))

@@ -24,7 +24,7 @@ path = "src/main.rs"
 # OPTIONAL PyO3 bindings (feature `python`). abi3 gives one wheel for CPython
 # 3.9+. Default `cargo build` / `cargo test` never compile pyo3.
 pyo3 = { version = "0.24", features = ["abi3-py39"], optional = true }
-serde_json = { version = "1.0.154", features = ["preserve_order", "float_roundtrip"] }
+serde_json = { version = "1.0.154", features = ["preserve_order", "float_roundtrip", "arbitrary_precision"] }
 sha2 = "0.11.0"
 
 [features]

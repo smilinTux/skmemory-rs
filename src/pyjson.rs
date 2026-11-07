@@ -116,13 +116,18 @@ pub fn write_string(out: &mut String, s: &str) {
     out.push('"');
 }
 
+/// Python `json` number output. The crate runs serde_json with
+/// `arbitrary_precision`, so a number keeps its source text: an integer
+/// literal (any size) is emitted as Python's `int` would be, anything with a
+/// fraction or exponent goes through `float` and `repr`.
 fn number_repr(n: &Number) -> String {
-    if let Some(i) = n.as_i64() {
-        i.to_string()
-    } else if let Some(u) = n.as_u64() {
-        u.to_string()
+    let text = n.to_string();
+    if text.bytes().any(|b| matches!(b, b'.' | b'e' | b'E')) {
+        float_repr(text.parse::<f64>().unwrap_or(f64::NAN))
+    } else if text == "-0" {
+        "0".into()
     } else {
-        float_repr(n.as_f64().unwrap_or(f64::NAN))
+        text
     }
 }
 
@@ -212,6 +217,18 @@ mod tests {
         for (x, want) in cases {
             assert_eq!(float_repr(*x), *want, "{x:e}");
         }
+    }
+
+    #[test]
+    fn integers_keep_arbitrary_precision() {
+        let v: Value = serde_json::from_str(
+            r#"[123456789012345678901234567890, -0, 1E5, 1e400, 7, -9223372036854775809]"#,
+        )
+        .unwrap();
+        assert_eq!(
+            dumps_compact(&v),
+            "[123456789012345678901234567890, 0, 100000.0, Infinity, 7, -9223372036854775809]"
+        );
     }
 
     #[test]
