@@ -1,0 +1,12 @@
+[package]
+name = "forge_check_testing_extension"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Deliberately NOT a workspace member. A wheel build (`extension-module`) that
+# also enables `testing` must FAIL to build (see check.sh).
+[workspace]
+
+[dependencies]
+skmem = { path = "../../..", features = ["extension-module", "testing"] }

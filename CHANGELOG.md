@@ -14,6 +14,15 @@ All notable changes to `skmem` are documented here. The format follows
 
 ### Added
 
+- PyO3 bindings (SKMEM-R-07B): `skmem_core.Engine`, the scoped store API for the R-08 shim
+  (`search`, `recall`, `list`, `history`, `reader_can_see`, `health`, and owner-only `snapshot`,
+  `save`, `delete`, `archive`, `reindex`, `remind`, `intentions`, `intention_done`, `ledger_record`,
+  `ledger_top`). No scope object is exposed: reads derive a `ReaderScope` from the process on every
+  call (the per-call `reader` only narrows `SKMEMORY_READER`), owner-only calls raise
+  `PermissionError` under a ceiling, and a hidden id reads like a missing one. Results are
+  `model_dump()`-shaped dicts. `docs/PYTHON_BINDINGS.md` has the field mapping; `tests/python` runs
+  against the built wheel in the `python-wheel` CI job; `tests/forge_check/testing_extension`
+  proves `testing` + `extension-module` cannot build. `Index::ids_superseding` (crate-private) added.
 - Class bench (SKMEM-R-06B): `skmem::bench::run_bench` and `format_table` score `bm25_only`,
   `grep_substring`, `vector_only`, `fallback_chain`, the `full_context` oracle and the `candidate`
   (the Rust arms plus `skmem::search` over a real SQLite index) per query class on the vendored

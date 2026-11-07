@@ -1,5 +1,9 @@
-"""Python bindings for the skmemory Rust engine (skmem)."""
+"""Python bindings for the skmemory Rust engine (skmem).
 
-from ._skmem_core import __version__, version
+``Engine`` is the scoped store API. Scope is always derived from the process
+(``SKMEMORY_READER``); no scope object is exposed.
+"""
 
-__all__ = ["__version__", "version"]
+from ._skmem_core import Engine, __version__, version
+
+__all__ = ["Engine", "__version__", "version"]

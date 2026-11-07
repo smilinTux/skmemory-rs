@@ -19,4 +19,5 @@ expect() { # <crate dir> <regex that must appear in the compiler output>
 expect no_feature_owner 'error\[E0599\]: no .*named `resolve` found for struct `OwnerScope`' "$@"
 expect no_feature_reader 'error\[E0599\]: no .*named `resolve` found for struct `ReaderScope`' "$@"
 expect testing_feature 'may only be enabled by skmem.s own test builds' "$@"
+expect testing_extension 'must never be combined with .extension-module' "$@"
 exit $status
