@@ -19,7 +19,7 @@ decay, demote, tier cap, procedure order) rather than a replay of it.
 
 Run (read-only against the skmemory checkout, no bytecode written there):
 
-    PYTHONDONTWRITEBYTECODE=1 ~/.skenv/bin/python tests/golden/gen_fusion_golden.py
+    PYTHONDONTWRITEBYTECODE=1 python tests/golden/gen_fusion_golden.py   # a python with skmemory importable
 
 The skmemory commit used is recorded in the output's ``meta``.
 """

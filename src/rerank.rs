@@ -211,7 +211,8 @@ mod tests {
             .collect();
         let r = Reranker::from_env(&Env::empty()).rerank("zioap01", &docs);
         assert!(r.applied());
-        assert_eq!(r.order[0], 2);
+        // rank 3 / 5 floors at 1.0: it ties the head and cannot displace it
+        assert_eq!(r.order, vec![0, 2, 1, 3]);
     }
 
     #[test]
