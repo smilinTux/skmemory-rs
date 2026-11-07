@@ -35,23 +35,7 @@ pub fn version() -> &'static str {
 }
 
 #[cfg(feature = "python")]
-mod python {
-    use pyo3::prelude::*;
-
-    /// Return the engine version.
-    #[pyfunction]
-    fn version() -> &'static str {
-        super::version()
-    }
-
-    #[pymodule]
-    #[pyo3(name = "_skmem_core")]
-    fn skmem_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-        m.add_function(wrap_pyfunction!(version, m)?)?;
-        m.add("__version__", super::version())?;
-        Ok(())
-    }
-}
+mod python;
 
 #[cfg(test)]
 mod tests {

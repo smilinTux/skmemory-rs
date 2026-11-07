@@ -774,6 +774,20 @@ impl Index {
         Ok(rows.pop())
     }
 
+    /// Ids of the rows whose `supersedes_id` names `id` (Python
+    /// `ids_superseding`). Crate-private and unscoped: the caller must run
+    /// every id it returns through a reader check before using it, since the
+    /// answer says a successor exists.
+    pub(crate) fn ids_superseding(&self, id: &str) -> Result<Vec<String>> {
+        let mut st = self
+            .conn
+            .prepare("SELECT id FROM memories WHERE supersedes_id = ? ORDER BY created_at, id")?;
+        let ids = st
+            .query_map([id], |r| r.get::<_, String>(0))?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(ids)
+    }
+
     /// Every row ordered by id, as `scope` sees them.
     pub fn all_rows(&self, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
         self.rows_for(None, scope)
