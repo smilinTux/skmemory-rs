@@ -105,6 +105,9 @@ fn with_schema(dsn: &str, bm25: bool, f: impl FnOnce(&str, &PgConfigFactory)) {
     let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let schema = format!("skrs_r07c_{}_{n}", std::process::id());
     let mut c = Client::connect(dsn, NoTls).unwrap();
+    // A fresh CI database has no pgvector yet; the other pg test files create it the same way.
+    c.batch_execute("SELECT pg_advisory_xact_lock(5304); CREATE EXTENSION IF NOT EXISTS vector")
+        .expect("pgvector is required (use the skmem-pg image)");
     c.batch_execute(&format!(
         "DROP SCHEMA IF EXISTS {schema} CASCADE; CREATE SCHEMA {schema}"
     ))
