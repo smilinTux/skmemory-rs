@@ -145,7 +145,7 @@ fn tombstone_and_archive() {
     let m = mem("gone", Layer::Short, "2026-01-01T00:00:00+00:00");
     s.save(&m).unwrap();
     let before = fs::read(d.join("short-term/gone.json")).unwrap();
-    let dest = s.archive("gone", Some("deduped")).unwrap().unwrap();
+    let dest = s.archive("gone", Some("deduped"), &own()).unwrap().unwrap();
     assert_eq!(dest, d.join("archive/deduped/gone.json"));
     assert_eq!(
         fs::read(&dest).unwrap(),
@@ -153,15 +153,15 @@ fn tombstone_and_archive() {
         "bytes untouched by archive"
     );
     assert!(s.load("gone", &owner()).unwrap().is_none());
-    assert!(s.archive("gone", None).unwrap().is_none());
-    s.tombstone("gone", "2026-11-07T00:00:00+0000", "forget", None)
+    assert!(s.archive("gone", None, &own()).unwrap().is_none());
+    s.tombstone("gone", "2026-11-07T00:00:00+0000", "forget", None, &own())
         .unwrap();
-    assert!(s.is_tombstoned("gone"));
+    assert!(s.is_tombstoned("gone", &own()));
     let m2 = mem("plain", Layer::Mid, "2026-01-01T00:00:00+00:00");
     s.save(&m2).unwrap();
-    let p = s.archive("plain", None).unwrap().unwrap();
+    let p = s.archive("plain", None, &own()).unwrap().unwrap();
     assert_eq!(p, d.join("archive/plain.json"));
-    assert!(!s.delete("plain").unwrap());
+    assert!(!s.delete("plain", &own()).unwrap());
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -355,17 +355,17 @@ fn archive_and_delete_remove_the_source_entry() {
         .unwrap();
     s.save(&mem("d1", Layer::Mid, "2026-01-01T00:00:00+00:00"))
         .unwrap();
-    assert!(s.archive("a1", None).unwrap().is_some());
-    assert!(s.delete("d1").unwrap());
+    assert!(s.archive("a1", None, &own()).unwrap().is_some());
+    assert!(s.delete("d1", &own()).unwrap());
     assert!(!d.join("short-term/a1.json").exists() && !d.join("mid-term/d1.json").exists());
     let _ = fs::remove_dir_all(&d);
 }
 
 /// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
+}
+
 fn owner() -> skmem::audience::ReaderScope {
-    skmem::audience::ReaderScope::resolve(
-        None,
-        &skmem::env::Env::empty(),
-        &skmem::audience::AudienceConfig::empty(),
-    )
+    own().reader_scope().clone()
 }

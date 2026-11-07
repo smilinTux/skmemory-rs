@@ -12,7 +12,7 @@
 //! * a vaulted store (`fts_enabled == false`) indexes no plaintext and refuses
 //!   FTS, exactly as Python's vaulted backend does.
 
-use crate::audience::ReaderScope;
+use crate::audience::{OwnerScope, ReaderScope};
 use crate::flat::{json_files, Store};
 use crate::model::{Layer, Memory};
 use crate::util::{iso_from_unix, now_iso};
@@ -379,6 +379,19 @@ fn row_tags_ok(r: &MemoryRow, scope: &ReaderScope) -> bool {
     scope.exclusions().iter().all(|e| !tags.contains(e))
 }
 
+/// The ids a row names: `related_ids`, `parent_id` and `supersedes_id`.
+fn row_links(r: &MemoryRow) -> Vec<String> {
+    let mut v: Vec<String> = r
+        .related_ids
+        .split(',')
+        .filter(|i| !i.is_empty())
+        .map(str::to_string)
+        .collect();
+    v.extend(r.parent_id.clone());
+    v.extend(r.supersedes_id.clone());
+    v
+}
+
 /// One `memories` row, every column (no rowid).
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemoryRow {
@@ -555,8 +568,9 @@ impl Index {
         self.fts_ok
     }
 
-    /// Direct access for read-only inspection and tests.
-    pub fn connection(&self) -> &Connection {
+    /// Direct access for read-only inspection and tests. RAW ACCESS: it
+    /// bypasses the reader ceiling, so it takes an [`OwnerScope`].
+    pub fn connection(&self, _owner: &OwnerScope) -> &Connection {
         &self.conn
     }
 
@@ -733,7 +747,8 @@ impl Index {
     }
 
     /// Remove an index row (the AFTER DELETE trigger clears the FTS rows).
-    pub fn delete(&self, id: &str) -> Result<bool> {
+    /// The result says whether the row existed, so it is owner only.
+    pub fn delete(&self, id: &str, _owner: &OwnerScope) -> Result<bool> {
         Ok(self
             .conn
             .execute("DELETE FROM memories WHERE id = ?", [id])?
@@ -747,7 +762,8 @@ impl Index {
     /// One row by id as `scope` sees it. A hidden id is `Ok(None)`, exactly
     /// like a missing one. A restricted reader needs the memory's
     /// `context_tag`, which lives in `fts_meta`: with FTS off or a row not yet
-    /// in `fts_meta` the answer is `None` (fail closed).
+    /// in `fts_meta` the answer is `None` (fail closed). Links to memories the
+    /// reader cannot see are redacted from the row.
     pub fn get(&self, id: &str, scope: &ReaderScope) -> Result<Option<MemoryRow>> {
         let mut rows = self.rows_for(Some(id), scope)?;
         Ok(rows.pop())
@@ -758,7 +774,14 @@ impl Index {
         self.rows_for(None, scope)
     }
 
-    fn rows_for(&self, id: Option<&str>, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
+    /// The FROM-side filter for `scope`: `(join, where clauses, args)`, or
+    /// `None` when the reader can see nothing (restricted with no usable FTS
+    /// metadata: fail closed).
+    fn scope_sql(
+        &self,
+        id: Option<&str>,
+        scope: &ReaderScope,
+    ) -> Option<(&'static str, Vec<String>, Vec<String>)> {
         let mut wh: Vec<String> = Vec::new();
         let mut args: Vec<String> = Vec::new();
         if let Some(i) = id {
@@ -768,10 +791,18 @@ impl Index {
         let join = if scope.unrestricted() {
             ""
         } else if !self.fts_ok {
-            return Ok(Vec::new());
+            return None;
         } else {
             push_scope(scope, None, &mut wh, &mut args);
             " JOIN fts_meta f ON f.id = m.id"
+        };
+        Some((join, wh, args))
+    }
+
+    /// Rows `scope` may see, links NOT redacted (the visibility oracle).
+    fn rows_for_raw(&self, id: Option<&str>, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
+        let Some((join, wh, args)) = self.scope_sql(id, scope) else {
+            return Ok(Vec::new());
         };
         let where_ = if wh.is_empty() {
             String::new()
@@ -787,7 +818,94 @@ impl Index {
         Ok(rows.into_iter().filter(|r| row_tags_ok(r, scope)).collect())
     }
 
-    pub fn count(&self) -> Result<i64> {
+    fn rows_for(&self, id: Option<&str>, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
+        let rows = self.rows_for_raw(id, scope)?;
+        self.redact_rows(rows, scope)
+    }
+
+    /// Redact the links of `rows` that name rows `scope` cannot see: an id is
+    /// kept only when it is itself a row this reader may see (an unknown id is
+    /// dropped too, so a dangling link and a hidden one read the same).
+    fn redact_rows(&self, mut rows: Vec<MemoryRow>, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
+        if scope.unrestricted() {
+            return Ok(rows);
+        }
+        let mut wanted: BTreeSet<String> = BTreeSet::new();
+        for r in &rows {
+            wanted.extend(row_links(r));
+        }
+        let wanted: Vec<&str> = wanted.iter().map(String::as_str).collect();
+        let visible = self.visible_ids(&wanted, scope)?;
+        for r in &mut rows {
+            r.related_ids = r
+                .related_ids
+                .split(',')
+                .filter(|i| !i.is_empty() && visible.contains(*i))
+                .collect::<Vec<_>>()
+                .join(",");
+            if r.parent_id.as_deref().is_some_and(|i| !visible.contains(i)) {
+                r.parent_id = None;
+            }
+            if r.supersedes_id
+                .as_deref()
+                .is_some_and(|i| !visible.contains(i))
+            {
+                r.supersedes_id = None;
+            }
+        }
+        Ok(rows)
+    }
+
+    /// Which of `ids` name a row `scope` may see (the owner sees every row
+    /// that exists). Unknown and hidden ids are both absent from the answer.
+    fn visible_ids(&self, ids: &[&str], scope: &ReaderScope) -> Result<BTreeSet<String>> {
+        let mut out = BTreeSet::new();
+        let ids: Vec<&str> = ids.iter().copied().filter(|i| !i.is_empty()).collect();
+        for chunk in ids.chunks(BUMP_CHUNK) {
+            let Some((join, mut wh, mut args)) = self.scope_sql(None, scope) else {
+                return Ok(out);
+            };
+            wh.push(format!("m.id IN ({})", vec!["?"; chunk.len()].join(",")));
+            args.extend(chunk.iter().map(|i| i.to_string()));
+            let sql = format!(
+                "SELECT m.id, m.tags FROM memories m{join} WHERE {}",
+                wh.join(" AND ")
+            );
+            let mut st = self.conn.prepare(&sql)?;
+            let rows = st.query_map(params_from_iter(args.iter()), |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            })?;
+            for r in rows {
+                let (id, tags) = r?;
+                let tags: Vec<String> = tags.split(',').map(str::to_string).collect();
+                if scope.exclusions().iter().all(|e| !tags.contains(e)) {
+                    out.insert(id);
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// How many rows `scope` may see. The owner gets the table total; a
+    /// restricted reader gets only its own count, never the store-wide one
+    /// (which would say how many memories are hidden).
+    pub fn count(&self, scope: &ReaderScope) -> Result<i64> {
+        let Some((join, wh, args)) = self.scope_sql(None, scope) else {
+            return Ok(0);
+        };
+        let where_ = if wh.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", wh.join(" AND "))
+        };
+        let sql = format!("SELECT COUNT(*) FROM memories m{join}{where_}");
+        Ok(self
+            .conn
+            .query_row(&sql, params_from_iter(args.iter()), |r| r.get(0))?)
+    }
+
+    /// The table total, for the crate's own maintenance.
+    fn count_all(&self) -> Result<i64> {
         Ok(self
             .conn
             .query_row("SELECT COUNT(*) FROM memories", [], |r| r.get(0))?)
@@ -803,13 +921,28 @@ impl Index {
     /// `last_accessed` is NULL or older than that. Runs on its OWN short-lived
     /// connection with a 200 ms busy timeout and NEVER fails: under contention
     /// or a broken index the bump is skipped and 0 returned.
-    pub fn bump_access(&self, ids: &[&str], now: Option<&str>, debounce_s: Option<f64>) -> usize {
+    ///
+    /// Only ids `scope` may see are bumped, and the return value counts only
+    /// those: a hidden id returns 0 and is left untouched, exactly like a
+    /// missing one (the count and the counter are both existence oracles).
+    pub fn bump_access(
+        &self,
+        ids: &[&str],
+        now: Option<&str>,
+        debounce_s: Option<f64>,
+        scope: &ReaderScope,
+    ) -> usize {
         let mut seen = BTreeSet::new();
         let ids: Vec<&str> = ids
             .iter()
             .copied()
             .filter(|i| !i.is_empty() && seen.insert(*i))
             .collect();
+        let ids = match self.only_visible(&ids, scope) {
+            Some(v) => v,
+            None => return 0,
+        };
+        let ids: Vec<&str> = ids.iter().map(String::as_str).collect();
         if ids.is_empty() {
             return 0;
         }
@@ -847,8 +980,25 @@ impl Index {
         run().unwrap_or(0)
     }
 
-    /// `(access_count, last_accessed)` per id; unindexed ids are absent.
-    pub fn get_usage(&self, ids: &[&str]) -> HashMap<String, (i64, Option<String>)> {
+    /// `ids` narrowed to those `scope` may see (all of them for the owner).
+    /// `None` when the visibility check itself failed: callers then do nothing
+    /// (fail closed).
+    fn only_visible(&self, ids: &[&str], scope: &ReaderScope) -> Option<Vec<String>> {
+        if scope.unrestricted() {
+            return Some(ids.iter().map(|i| i.to_string()).collect());
+        }
+        self.visible_ids(ids, scope)
+            .ok()
+            .map(|s| s.into_iter().collect())
+    }
+
+    /// `(access_count, last_accessed)` per id `scope` may see; unindexed and
+    /// hidden ids are both absent.
+    pub fn get_usage(
+        &self,
+        ids: &[&str],
+        scope: &ReaderScope,
+    ) -> HashMap<String, (i64, Option<String>)> {
         let mut out = HashMap::new();
         let mut seen = BTreeSet::new();
         let ids: Vec<&str> = ids
@@ -856,6 +1006,10 @@ impl Index {
             .copied()
             .filter(|i| !i.is_empty() && seen.insert(*i))
             .collect();
+        let Some(ids) = self.only_visible(&ids, scope) else {
+            return out;
+        };
+        let ids: Vec<&str> = ids.iter().map(String::as_str).collect();
         for chunk in ids.chunks(BUMP_CHUNK) {
             let marks = vec!["?"; chunk.len()].join(",");
             let sql = format!(
@@ -882,8 +1036,12 @@ impl Index {
 
     /// Recompute legacy importance (exactly 0.5 with no accesses) from layer
     /// and intensity, index only, in small batches with a commit each.
-    pub fn backfill_importance(&self, batch_size: usize) -> Result<ImportanceBackfill> {
-        let total = self.count()?;
+    pub fn backfill_importance(
+        &self,
+        batch_size: usize,
+        _owner: &OwnerScope,
+    ) -> Result<ImportanceBackfill> {
+        let total = self.count_all()?;
         let batch = batch_size.max(1) as i64;
         let (mut scanned, mut updated) = (0i64, 0i64);
         let mut last = String::new();
@@ -952,7 +1110,7 @@ impl Index {
     /// Holds the write lock for the whole rebuild: concurrent Python writers
     /// wait up to their 5 s busy timeout, then skip their index write (the
     /// flat file is intact and the next reindex picks it up).
-    pub fn reindex(&self, store: &Store, force: bool) -> Result<ReindexReport> {
+    pub fn reindex(&self, store: &Store, force: bool, owner: &OwnerScope) -> Result<ReindexReport> {
         let flat_ids = store.flat_id_set_unscoped();
         let mut report = ReindexReport::default();
 
@@ -970,7 +1128,7 @@ impl Index {
             snapshot
                 .iter()
                 .map(|s| s.0.as_str())
-                .filter(|id| !flat_ids.contains(*id) && !store.is_tombstoned(id))
+                .filter(|id| !flat_ids.contains(*id) && !store.is_tombstoned(id, owner))
                 .collect()
         };
         report.orphans_kept = keep.len();
@@ -1047,11 +1205,12 @@ impl Index {
     // ------------------------------------------------------------------
 
     /// Indexed vs total (`fts_local.coverage`); `None` when FTS is off.
-    pub fn fts_status(&self) -> Result<Option<Coverage>> {
+    /// Totals for the whole store, so owner only.
+    pub fn fts_status(&self, _owner: &OwnerScope) -> Result<Option<Coverage>> {
         if !self.fts_ok {
             return Ok(None);
         }
-        let total = self.count()?;
+        let total = self.count_all()?;
         let indexed: i64 = self.conn.query_row(
             "SELECT COUNT(*) FROM memories m JOIN fts_meta f ON f.id = m.id",
             [],
@@ -1072,6 +1231,7 @@ impl Index {
         store: &Store,
         max_rows: Option<usize>,
         budget: Option<Duration>,
+        _owner: &OwnerScope,
     ) -> Result<BackfillReport> {
         if !self.fts_ok {
             return Ok(BackfillReport::default());
@@ -1201,7 +1361,8 @@ impl Index {
                 .query_map(params_from_iter(all), MemoryRow::from_row)?
                 .collect::<rusqlite::Result<_>>()?;
             if !rows.is_empty() || m == match_or {
-                return Ok(rows.into_iter().filter(|r| row_tags_ok(r, scope)).collect());
+                let rows = rows.into_iter().filter(|r| row_tags_ok(r, scope)).collect();
+                return self.redact_rows(rows, scope);
             }
         }
         Ok(Vec::new())

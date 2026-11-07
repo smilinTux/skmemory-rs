@@ -121,7 +121,7 @@ fn all_json(idx: &Index, root: &Path) -> Vec<Value> {
 
 fn schema_json(idx: &Index) -> Vec<Value> {
     let mut st = idx
-        .connection()
+        .connection(&own())
         .prepare(
             "SELECT type, name, tbl_name, sql FROM sqlite_master \
              WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE 'memory_fts_%' ORDER BY type, name",
@@ -140,7 +140,7 @@ fn schema_json(idx: &Index) -> Vec<Value> {
 
 fn fts_meta_json(idx: &Index) -> Vec<Value> {
     let mut st = idx
-        .connection()
+        .connection(&own())
         .prepare("SELECT rowid, id, content_hash, context_tag FROM fts_meta ORDER BY rowid")
         .unwrap();
     st.query_map([], |r| {
@@ -182,7 +182,7 @@ fn schema_rows_fts_and_search_match_python() {
         want["fts_meta"],
         "fts_meta"
     );
-    let cov = idx.fts_status().unwrap().unwrap();
+    let cov = idx.fts_status(&own()).unwrap().unwrap();
     assert_eq!(
         (cov.total, cov.indexed, cov.missing),
         (75, 75, 0),
@@ -227,22 +227,27 @@ fn counters_reindex_and_backfill_match_python() {
     let id35: Vec<&str> = ids[3..5].iter().map(String::as_str).collect();
     let fut = "2999-01-01T00:00:00+00:00";
     let bumps = [
-        idx.bump_access(&id3, Some(fut), None),
-        idx.bump_access(&id3, Some(fut), None),
-        idx.bump_access(&id2, None, Some(3600.0)),
-        idx.bump_access(&id35, Some("2026-01-01T00:00:00+00:00"), Some(3600.0)),
+        idx.bump_access(&id3, Some(fut), None, &owner()),
+        idx.bump_access(&id3, Some(fut), None, &owner()),
+        idx.bump_access(&id2, None, Some(3600.0), &owner()),
+        idx.bump_access(
+            &id35,
+            Some("2026-01-01T00:00:00+00:00"),
+            Some(3600.0),
+            &owner(),
+        ),
     ];
     assert_eq!(json!(bumps), want["bumps"], "bump row counts");
 
     let legacy = want["legacy_id"].as_str().unwrap();
-    idx.connection()
+    idx.connection(&own())
         .execute(
             "UPDATE memories SET importance = 0.5 WHERE id = ?",
             [legacy],
         )
         .unwrap();
     let six: Vec<&str> = ids[..6].iter().map(String::as_str).collect();
-    let usage = idx.get_usage(&six);
+    let usage = idx.get_usage(&six, &owner());
     for (k, v) in want["usage"].as_object().unwrap() {
         let (c, la) = &usage[k];
         assert_eq!(*c, v["access_count"].as_i64().unwrap(), "usage count {k}");
@@ -254,7 +259,7 @@ fn counters_reindex_and_backfill_match_python() {
         "after bump",
     );
 
-    let rep = idx.reindex(&store, true).unwrap();
+    let rep = idx.reindex(&store, true, &own()).unwrap();
     assert_eq!(json!(rep.indexed), want["reindex_count"]);
     diff_rows(
         &all_json(&idx, store.root()),
@@ -263,10 +268,10 @@ fn counters_reindex_and_backfill_match_python() {
     );
 
     let l2 = want["legacy2_id"].as_str().unwrap();
-    idx.connection()
+    idx.connection(&own())
         .execute("UPDATE memories SET importance = 0.5 WHERE id = ?", [l2])
         .unwrap();
-    let b = idx.backfill_importance(500).unwrap();
+    let b = idx.backfill_importance(500, &own()).unwrap();
     let wb = &want["backfill_importance"];
     assert_eq!(
         (b.total, b.scanned, b.updated, b.unchanged),
@@ -300,7 +305,7 @@ fn upsert_preserves_usage_and_reinforcement_step() {
     assert_eq!(start.access_count, 0);
 
     assert_eq!(
-        idx.bump_access(&[&m.id], Some("2030-01-01T00:00:00+00:00"), None),
+        idx.bump_access(&[&m.id], Some("2030-01-01T00:00:00+00:00"), None, &owner()),
         1
     );
     let bumped = idx.get(&m.id, &owner()).unwrap().unwrap();
@@ -329,11 +334,14 @@ fn upsert_preserves_usage_and_reinforcement_step() {
         .is_empty());
 
     // Debounce: last_accessed is in the future, so an hour guard skips it.
-    assert_eq!(idx.bump_access(&[&m.id], None, Some(3600.0)), 0);
+    assert_eq!(idx.bump_access(&[&m.id], None, Some(3600.0), &owner()), 0);
     // Empty and duplicate ids are ignored and never fail.
-    assert_eq!(idx.bump_access(&["", &m.id, &m.id], None, None), 1);
-    assert_eq!(idx.bump_access(&[], None, None), 0);
-    assert_eq!(idx.bump_access(&["nope"], None, None), 0);
+    assert_eq!(
+        idx.bump_access(&["", &m.id, &m.id], None, None, &owner()),
+        1
+    );
+    assert_eq!(idx.bump_access(&[], None, None, &owner()), 0);
+    assert_eq!(idx.bump_access(&["nope"], None, None, &owner()), 0);
     let _ = fs::remove_dir_all(dir);
 }
 
@@ -390,7 +398,7 @@ fn vaulted_store_indexes_no_plaintext_and_refuses_fts() {
     let idx = Index::open(store.root(), false).unwrap();
     assert!(!idx.fts_ok() && !idx.fts_enabled());
     let n: i64 = idx
-        .connection()
+        .connection(&own())
         .query_row(
             "SELECT COUNT(*) FROM sqlite_master WHERE name LIKE 'memory_fts%' OR name='fts_meta' OR name='memories_fts_ad'",
             [],
@@ -402,12 +410,12 @@ fn vaulted_store_indexes_no_plaintext_and_refuses_fts() {
         .search_lexical("SECRETSENTINELXYZ", 5, &SearchFilters::default(), &owner())
         .unwrap()
         .is_empty());
-    assert!(idx.fts_status().unwrap().is_none());
+    assert!(idx.fts_status(&own()).unwrap().is_none());
     // New writes add no FTS text either, and the db file carries no plaintext
     // beyond the 150-char preview the plain index already keeps.
     let m = Memory::new("v", &format!("{} VAULTSENTINEL2", "x".repeat(400)));
     idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
-    idx.connection()
+    idx.connection(&own())
         .execute_batch("PRAGMA wal_checkpoint(TRUNCATE)")
         .unwrap();
     drop(idx);
@@ -463,7 +471,7 @@ fn open_is_idempotent_migrates_old_schema_and_survives_concurrent_openers() {
     assert_eq!(r.schema_version, 1);
     // A node's own view is left alone (Python recreates it; Rust never drops).
     let view: String = idx
-        .connection()
+        .connection(&own())
         .query_row(
             "SELECT sql FROM sqlite_master WHERE name='active_memories'",
             [],
@@ -498,13 +506,23 @@ fn reindex_keeps_orphans_unless_forced_and_restores_usage_atomically() {
     idx.index_memory(&dead, &store.path_for(&dead).unwrap())
         .unwrap();
     store
-        .tombstone(&dead.id, "2026-01-01T00:00:00+0000", "test", None)
+        .tombstone(&dead.id, "2026-01-01T00:00:00+0000", "test", None, &own())
         .unwrap();
-    idx.bump_access(&[&a.id, &a.id], Some("2031-01-01T00:00:00+00:00"), None);
-    idx.bump_access(&[&orphan.id], Some("2031-01-01T00:00:00+00:00"), None);
+    idx.bump_access(
+        &[&a.id, &a.id],
+        Some("2031-01-01T00:00:00+00:00"),
+        None,
+        &owner(),
+    );
+    idx.bump_access(
+        &[&orphan.id],
+        Some("2031-01-01T00:00:00+00:00"),
+        None,
+        &owner(),
+    );
     let imp_a = idx.get(&a.id, &owner()).unwrap().unwrap().importance;
 
-    let rep = idx.reindex(&store, false).unwrap();
+    let rep = idx.reindex(&store, false, &own()).unwrap();
     assert_eq!((rep.indexed, rep.orphans_kept), (2, 1));
     assert!(
         idx.get(&orphan.id, &owner()).unwrap().is_some(),
@@ -541,12 +559,12 @@ fn reindex_keeps_orphans_unless_forced_and_restores_usage_atomically() {
         1
     );
 
-    idx.reindex(&store, true).unwrap();
+    idx.reindex(&store, true, &own()).unwrap();
     assert!(
         idx.get(&orphan.id, &owner()).unwrap().is_none(),
         "force drops orphans"
     );
-    assert_eq!(idx.count().unwrap(), 2);
+    assert_eq!(idx.count(&owner()).unwrap(), 2);
     let _ = fs::remove_dir_all(dir);
 }
 
@@ -559,15 +577,15 @@ fn fts_backfill_indexes_rows_missing_from_a_python_index() {
     let idx = Index::open(store.root(), true).unwrap();
     idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
     // Simulate a Python index written before the FTS arm existed.
-    idx.connection()
+    idx.connection(&own())
         .execute_batch("DELETE FROM memory_fts; DELETE FROM fts_meta")
         .unwrap();
-    assert_eq!(idx.fts_status().unwrap().unwrap().missing, 1);
+    assert_eq!(idx.fts_status(&own()).unwrap().unwrap().missing, 1);
     assert!(idx
         .search_lexical("needle", 5, &SearchFilters::default(), &owner())
         .unwrap()
         .is_empty());
-    let r = idx.fts_backfill(&store, None, None).unwrap();
+    let r = idx.fts_backfill(&store, None, None, &own()).unwrap();
     assert!(r.complete && r.indexed == 1);
     assert_eq!(
         idx.search_lexical("needle", 5, &SearchFilters::default(), &owner())
@@ -582,7 +600,7 @@ fn fts_backfill_indexes_rows_missing_from_a_python_index() {
 fn wal_is_bounded() {
     let dir = scratch("wal");
     let idx = Index::open(dir.as_path(), true).unwrap();
-    let c = idx.connection();
+    let c = idx.connection(&own());
     let lim: i64 = c
         .query_row("PRAGMA journal_size_limit", [], |r| r.get(0))
         .unwrap();
@@ -628,12 +646,12 @@ fn python_cross_open_and_golden_is_current() {
     {
         let idx = Index::open(store.root(), true).unwrap();
         index_sorted(&idx, &store);
-        idx.bump_access(&[&first], Some("2030-01-01T00:00:00+00:00"), None);
+        idx.bump_access(&[&first], Some("2030-01-01T00:00:00+00:00"), None, &owner());
     }
     let script = "import sys\nfrom skmemory.backends.sqlite_backend import SQLiteBackend\n\
         b=SQLiteBackend(base_path=sys.argv[1])\nu=b.get_usage([sys.argv[2]])\n\
         n=b.reindex(force=True)\nu2=b.get_usage([sys.argv[2]])\n\
-        assert u==u2, (u,u2)\nassert b.fts_status()['indexed']==n\nprint(n)";
+        assert u==u2, (u,u2)\nassert b.fts_status(&own())['indexed']==n\nprint(n)";
     let o = std::process::Command::new(&py)
         .args(["-c", script])
         .arg(store.root())
@@ -643,9 +661,11 @@ fn python_cross_open_and_golden_is_current() {
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
     // And Rust still opens what Python rewrote, without changing the schema.
     let idx = Index::open(store.root(), true).unwrap();
-    assert!(idx.count().unwrap() >= 70);
+    assert!(idx.count(&owner()).unwrap() >= 70);
     assert_eq!(
-        idx.get_usage(&[first.as_str()]).get(&first).map(|u| u.0),
+        idx.get_usage(&[first.as_str()], &owner())
+            .get(&first)
+            .map(|u| u.0),
         Some(1)
     );
     let _ = fs::remove_dir_all(dir);
@@ -687,11 +707,11 @@ fn bench_reindex() {
     eprintln!("generated {n} files in {:?}", t.elapsed());
     let idx = Index::open(store.root(), true).unwrap();
     let t = std::time::Instant::now();
-    let r = idx.reindex(&store, false).unwrap();
+    let r = idx.reindex(&store, false, &own()).unwrap();
     let cold = t.elapsed();
     eprintln!("reindex cold: {} rows in {cold:?}", r.indexed);
     let t = std::time::Instant::now();
-    let r = idx.reindex(&store, false).unwrap();
+    let r = idx.reindex(&store, false, &own()).unwrap();
     eprintln!(
         "reindex rebuild over existing index: {} rows in {:?}",
         r.indexed,
@@ -711,7 +731,7 @@ fn bench_reindex() {
         .collect();
     let refs: Vec<&str> = ids.iter().map(String::as_str).collect();
     let t = std::time::Instant::now();
-    let u = idx.bump_access(&refs, None, None);
+    let u = idx.bump_access(&refs, None, None, &owner());
     eprintln!("bump 500: {u} rows in {:?}", t.elapsed());
 }
 
@@ -732,10 +752,10 @@ fn word_chars_matches_python_w() {
 }
 
 /// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
+}
+
 fn owner() -> skmem::audience::ReaderScope {
-    skmem::audience::ReaderScope::resolve(
-        None,
-        &skmem::env::Env::empty(),
-        &skmem::audience::AudienceConfig::empty(),
-    )
+    own().reader_scope().clone()
 }

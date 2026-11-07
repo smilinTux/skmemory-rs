@@ -24,7 +24,7 @@ use super::{
     allow_remote_from_env, as_of_clause, check_dsn_is_local, check_search_path, filter_clauses,
     open_client, parse_memory_cell, probe_v2_columns, push_bind, Binds, Filters, PgError,
 };
-use crate::audience::ReaderScope;
+use crate::audience::{OwnerScope, ReaderScope};
 use crate::model::Memory;
 use crate::validity::{normalize_as_of, valid_at};
 use postgres::types::ToSql;
@@ -136,8 +136,9 @@ impl LexicalArm {
         &self.agent
     }
 
-    /// The underlying client.
-    pub fn client_mut(&mut self) -> &mut Client {
+    /// The underlying client. RAW ACCESS: bypasses the reader ceiling, so it
+    /// takes an [`OwnerScope`].
+    pub fn client_mut(&mut self, _owner: &OwnerScope) -> &mut Client {
         &mut self.client
     }
 
@@ -293,11 +294,16 @@ impl LexicalArm {
         }
         let (rows, path) = attempt?;
         self.last_run = Some(path);
-        Ok(rows
+        let mut hits: Vec<LexicalHit> = rows
             .into_iter()
             .filter(|(m, _)| scope.allows_memory(m))
             .map(|(memory, score)| LexicalHit { memory, score })
-            .collect())
+            .collect();
+        {
+            let mut refs: Vec<&mut Memory> = hits.iter_mut().map(|h| &mut h.memory).collect();
+            super::redact_memories(&mut self.client, &self.agent, &mut refs, scope)?;
+        }
+        Ok(hits)
     }
 
     fn search_once(

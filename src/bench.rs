@@ -25,7 +25,7 @@
 //! `kind` or `outcome` to the `Memory`, so every stored memory is an
 //! `episode` and procedure ordering never fires.
 
-use crate::audience::{AudienceConfig, ReaderScope};
+use crate::audience::OwnerScope;
 use crate::env::{casefold, Env};
 use crate::fusion::{self, ArmInput, ArmOutcome, DEFAULT_ARM_CAP};
 use crate::index::{Index, SearchFilters};
@@ -719,6 +719,8 @@ struct Store<'a> {
     docs: &'a [Doc],
     by_id: HashMap<&'a str, &'a Doc>,
     index: Index,
+    /// The bench is an owner run over synthetic fixtures: it says so explicitly.
+    owner: OwnerScope,
     found: HashMap<String, Candidate>,
     now_secs: i64,
 }
@@ -774,7 +776,7 @@ impl<'a> Store<'a> {
         };
         let run = |sql: String, mut args: Vec<String>| -> Vec<String> {
             args.push(limit.to_string());
-            let mut st = match self.index.connection().prepare(&sql) {
+            let mut st = match self.index.connection(&self.owner).prepare(&sql) {
                 Ok(s) => s,
                 Err(_) => return Vec::new(),
             };
@@ -808,7 +810,7 @@ impl<'a> Store<'a> {
             return 0;
         }
         self.index
-            .connection()
+            .connection(&self.owner)
             .query_row(
                 "SELECT count(*) FROM memory_fts WHERE memory_fts MATCH ?",
                 [format!("\"{cleaned}\"")],
@@ -846,7 +848,7 @@ impl<'a> Store<'a> {
         }
         sql.push_str(" ORDER BY created_at DESC LIMIT ?");
         args.push(limit.to_string());
-        let Ok(mut st) = self.index.connection().prepare(&sql) else {
+        let Ok(mut st) = self.index.connection(&self.owner).prepare(&sql) else {
             return Vec::new();
         };
         st.query_map(params_from_iter(args), |r| r.get::<_, String>(0))
@@ -878,8 +880,7 @@ impl<'a> Store<'a> {
         let semantic = collect(self.semantic(query, arm_limit, ctx, as_of), false);
         let lexical = collect(self.like(query, arm_limit), true);
         let ctx_tags: Option<Vec<String>> = ctx.map(|c| vec![c.to_string()]);
-        // The bench is an owner run over synthetic fixtures: no reader declared.
-        let owner = ReaderScope::resolve(None, &Env::empty(), &AudienceConfig::empty());
+        let owner = self.owner.reader_scope();
         let local: Vec<String> = self
             .index
             .search_lexical(
@@ -892,7 +893,7 @@ impl<'a> Store<'a> {
                     context_tags: ctx_tags.as_deref(),
                     as_of,
                 },
-                &owner,
+                owner,
             )
             .map(|rows| rows.into_iter().map(|r| r.id).collect())
             .unwrap_or_default();
@@ -918,7 +919,7 @@ impl<'a> Store<'a> {
         let df = |t: &str| self.term_df(t);
         let input = SearchInput {
             query,
-            scope: &owner,
+            scope: owner,
             limit,
             arms: &arms,
             found: &self.found,
@@ -1058,6 +1059,7 @@ pub fn run_bench(fixture_dir: &Path) -> Result<BenchResult, String> {
             .collect(),
         docs: &docs,
         index,
+        owner: OwnerScope::resolve(&Env::empty()).map_err(|e| e.to_string())?,
         now_secs,
     };
     let all: Vec<&Doc> = docs.iter().collect();

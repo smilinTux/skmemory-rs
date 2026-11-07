@@ -15,7 +15,7 @@
 pub mod graph_arm;
 pub mod lexical_arm;
 
-use crate::audience::ReaderScope;
+use crate::audience::{OwnerScope, ReaderScope};
 use crate::embed::{EmbedError, Embedder, VECTOR_DIM};
 use crate::model::{Layer, Memory};
 use pgvector::Vector;
@@ -341,6 +341,78 @@ pub(crate) fn filter_clauses(
     clauses
 }
 
+/// Which of `ids` name a memory (of `agent`) that `scope` may see. The owner
+/// sees every id that exists; an unknown id and a hidden one are BOTH absent
+/// from the answer, so a link redacted with this reads the same either way.
+pub(crate) fn visible_ids(
+    client: &mut Client,
+    agent: &str,
+    ids: &[String],
+    scope: &ReaderScope,
+) -> Result<std::collections::HashSet<String>, PgError> {
+    use std::collections::HashSet;
+    let ids: Vec<String> = ids.iter().filter(|i| !i.is_empty()).cloned().collect();
+    if ids.is_empty() {
+        return Ok(HashSet::new());
+    }
+    let mut binds: Binds = Vec::new();
+    let mut clauses = filter_clauses(agent, &Filters::default(), scope, &mut binds);
+    let p = push_bind(&mut binds, Box::new(ids));
+    clauses.push(format!("id = ANY(${p})"));
+    let sql = format!(
+        "SELECT id, memory_json FROM memories WHERE {}",
+        clauses.join(" AND ")
+    );
+    let refs: Vec<&(dyn ToSql + Sync)> = binds.iter().map(|b| b.as_ref()).collect();
+    let rows = client
+        .query(sql.as_str(), &refs)
+        .map_err(|e| PgError::Query(e.to_string()))?;
+    let mut out = HashSet::new();
+    for row in rows {
+        let id: String = row.get(0);
+        let json: Value = row.get(1);
+        // Last gate on the authoritative document.
+        if parse_memory_cell(json).is_some_and(|m| scope.allows_memory(&m)) {
+            out.insert(id);
+        }
+    }
+    Ok(out)
+}
+
+/// Redact, in place, the links of `memories` that name rows `scope` cannot
+/// see. The owner is a no-op.
+pub(crate) fn redact_memories(
+    client: &mut Client,
+    agent: &str,
+    memories: &mut [&mut Memory],
+    scope: &ReaderScope,
+) -> Result<(), PgError> {
+    if scope.unrestricted() {
+        return Ok(());
+    }
+    let mut wanted: Vec<String> = Vec::new();
+    for m in memories.iter() {
+        wanted.extend(m.related_ids.iter().cloned());
+        wanted.extend(m.parent_id.clone());
+        wanted.extend(m.supersedes_id.clone());
+        if let Some(i) = m
+            .metadata
+            .get("superseded_by")
+            .and_then(|v| v.get("id"))
+            .and_then(Value::as_str)
+        {
+            wanted.push(i.to_string());
+        }
+    }
+    wanted.sort();
+    wanted.dedup();
+    let visible = visible_ids(client, agent, &wanted, scope)?;
+    for m in memories.iter_mut() {
+        scope.redact_links(m, &mut |i| visible.contains(i));
+    }
+    Ok(())
+}
+
 /// Whether the schema-v2 typed columns exist in the connection's schema.
 pub(crate) fn probe_v2_columns(client: &mut Client) -> Result<bool, PgError> {
     let cols: Vec<String> = V2_COLUMNS.iter().map(|s| s.to_string()).collect();
@@ -528,8 +600,9 @@ impl VectorArm {
     }
 
     /// The underlying client (tests inspect session state through it). RAW
-    /// ACCESS: bypasses the reader ceiling; a seeding and diagnostics handle.
-    pub fn client_mut(&mut self) -> &mut Client {
+    /// ACCESS: bypasses the reader ceiling; a seeding and diagnostics handle,
+    /// so it takes an [`OwnerScope`].
+    pub fn client_mut(&mut self, _owner: &OwnerScope) -> &mut Client {
         &mut self.client
     }
 
@@ -621,7 +694,7 @@ impl VectorArm {
             other => other,
         }
         .map_err(|e| PgError::Query(e.to_string()))?;
-        let mut out = Vec::with_capacity(rows.len());
+        let mut out: Vec<Hit> = Vec::with_capacity(rows.len());
         for row in rows {
             let json: Value = row.get(0);
             let dist: f64 = row.get(1);
@@ -634,6 +707,10 @@ impl VectorArm {
                 }),
                 None => self.unparseable += 1,
             }
+        }
+        {
+            let mut refs: Vec<&mut Memory> = out.iter_mut().map(|h| &mut h.memory).collect();
+            redact_memories(&mut self.client, &self.agent, &mut refs, scope)?;
         }
         Ok(out)
     }

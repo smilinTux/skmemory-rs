@@ -15,6 +15,27 @@
 //!   which always applies it, and the fields are private.
 //! - A hidden id must read exactly like a missing one: callers return the same
 //!   `None` / empty result for both, never a "forbidden" error.
+//! - A visible memory never NAMES a hidden one: [`ReaderScope::redact_links`]
+//!   drops `related_ids`, `parent_id`, `supersedes_id` and `metadata.superseded_by`
+//!   entries whose target the reader cannot see (an unknown target is dropped
+//!   too, so a dangling link and a hidden one read the same).
+//! - Raw handles (a Cypher or SQL client, the SQLite connection, anything that
+//!   returns counts or existence for the whole store) take an [`OwnerScope`],
+//!   which only [`OwnerScope::resolve`] can build and which refuses when a
+//!   `SKMEMORY_READER` ceiling is declared.
+//!
+//! # The R-08 shim must pass the audience config
+//!
+//! Python ships `audience_config.json` inside its package and loads it by
+//! default. This crate ships no config: [`AudienceConfig::from_env`] reads
+//! `SKMEMORY_AUDIENCE_CONFIG` only, and an unset variable is the EMPTY config,
+//! under which every `channel:<id>` reader resolves to `@public`. That is safe
+//! (it only narrows) but it silently stops `channel:` readers and `never_share`
+//! tags from working. The R-08 shim that wires this crate behind the Python API
+//! MUST therefore set `SKMEMORY_AUDIENCE_CONFIG` to the packaged
+//! `skmemory/data/audience_config.json` (or load it with
+//! [`AudienceConfig::load`]) before building any scope, and a parity test should
+//! assert that a configured `channel:` reader sees more than `@public`.
 //!
 //! Reader grammar (the string a caller declares):
 //!
@@ -135,6 +156,69 @@ impl AudienceConfig {
     }
 }
 
+/// The caller is not the owner: a `SKMEMORY_READER` ceiling is declared.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotOwner {
+    /// The declared ceiling, as written.
+    pub declared: String,
+}
+
+impl std::fmt::Display for NotOwner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "owner access refused: {READER_ENV} declares a reader ceiling ({:?})",
+            self.declared
+        )
+    }
+}
+
+impl std::error::Error for NotOwner {}
+
+/// Proof that the caller is the owner. Every raw handle (a SQL or Cypher
+/// client, the SQLite connection) and every store-wide count or existence
+/// answer takes one, so a reader-facing code path cannot reach them.
+///
+/// The field is private and there is no `Default`, `Clone` or deserializer:
+/// the only constructors are [`OwnerScope::resolve`] and
+/// [`OwnerScope::from_process`], and both REFUSE when `SKMEMORY_READER`
+/// declares anything but an owner reader. A process serving a group chat
+/// therefore cannot obtain one by accident.
+#[derive(Debug)]
+pub struct OwnerScope {
+    scope: ReaderScope,
+}
+
+impl OwnerScope {
+    /// The owner, unless `env` declares a reader ceiling that is not an owner
+    /// reader (`@chef`, `@chef-only`, `owner`).
+    pub fn resolve(env: &Env) -> Result<OwnerScope, NotOwner> {
+        let declared = env.get(READER_ENV).map(py_strip).filter(|e| !e.is_empty());
+        if let Some(d) = declared {
+            let scope = scope_for(d, &AudienceConfig::empty());
+            if !scope.unrestricted() {
+                return Err(NotOwner {
+                    declared: d.to_string(),
+                });
+            }
+        }
+        Ok(OwnerScope {
+            scope: ReaderScope::owner_scope(),
+        })
+    }
+
+    /// [`OwnerScope::resolve`] against the live process environment.
+    pub fn from_process() -> Result<OwnerScope, NotOwner> {
+        OwnerScope::resolve(&Env::process())
+    }
+
+    /// The unrestricted read scope, for the read APIs that take a
+    /// [`ReaderScope`].
+    pub fn reader_scope(&self) -> &ReaderScope {
+        &self.scope
+    }
+}
+
 /// What a declared reader may receive.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReaderScope {
@@ -178,6 +262,41 @@ impl ReaderScope {
         let env = Env::process();
         let cfg = AudienceConfig::from_env(&env);
         ReaderScope::resolve(reader, &env, &cfg)
+    }
+
+    /// Drop the links of `m` that name a memory this reader cannot see:
+    /// `related_ids` entries, `parent_id`, `supersedes_id` and
+    /// `metadata.superseded_by` (removed whole when its `id` is hidden, since
+    /// its other fields would still say a hidden successor exists).
+    /// `visible(id)` answers for the TARGET and must be false for an id it
+    /// cannot find, so a dangling link reads like a hidden one. The owner is a
+    /// no-op. Python does not do this yet (see the card notes).
+    pub fn redact_links(
+        &self,
+        m: &mut crate::model::Memory,
+        visible: &mut dyn FnMut(&str) -> bool,
+    ) {
+        if self.unrestricted() {
+            return;
+        }
+        m.related_ids.retain(|i| visible(i));
+        if m.parent_id.as_deref().is_some_and(|i| !visible(i)) {
+            m.parent_id = None;
+        }
+        if m.supersedes_id.as_deref().is_some_and(|i| !visible(i)) {
+            m.supersedes_id = None;
+        }
+        let hidden_successor = match m.metadata.get("superseded_by") {
+            None => false,
+            Some(v) => match v.get("id").and_then(Value::as_str) {
+                Some(id) => !visible(id),
+                // a link with no readable id cannot be vetted
+                None => true,
+            },
+        };
+        if hidden_successor {
+            m.metadata.remove("superseded_by");
+        }
     }
 
     /// The intersection of two scopes (most restrictive of each dimension).

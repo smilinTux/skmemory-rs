@@ -35,8 +35,12 @@ fn scope(reader: Option<&str>, env_reader: Option<&str>) -> ReaderScope {
     ReaderScope::resolve(reader, &env, &AudienceConfig::empty())
 }
 
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&Env::empty()).unwrap()
+}
+
 fn owner() -> ReaderScope {
-    scope(None, None)
+    own().reader_scope().clone()
 }
 
 fn public() -> ReaderScope {
@@ -944,6 +948,7 @@ mod pg {
                         &json!({"id": id, "t": format!("node {id}")}),
                         1,
                         None,
+                        &own(),
                     )
                     .unwrap();
                 }
@@ -962,6 +967,7 @@ mod pg {
                         &json!({"a": a, "b": b}),
                         1,
                         None,
+                        &own(),
                     )
                     .unwrap();
                 }
@@ -1067,6 +1073,7 @@ mod pg {
                 &json!({}),
                 1,
                 None,
+                &own(),
             )
             .unwrap();
             assert!(!hits(arm, &p).contains(&"orphan".to_string()));

@@ -449,7 +449,7 @@ fn search_settings_do_not_leak_onto_the_connection() {
     with_schema(&dsn, true, |schema, path, c| {
         seed(c, &format!("{schema}.memories"), true);
         let mut arm = arm_on(&dsn, path, "skrs-r04-a");
-        arm.client_mut()
+        arm.client_mut(&own())
             .batch_execute("SET TimeZone = 'Asia/Tokyo'; SET hnsw.ef_search = 77")
             .unwrap();
         let hits = arm
@@ -457,7 +457,7 @@ fn search_settings_do_not_leak_onto_the_connection() {
             .unwrap();
         assert!(!hits.is_empty());
         let show = |arm: &mut VectorArm, what: &str| -> String {
-            arm.client_mut()
+            arm.client_mut(&own())
                 .query_one(&format!("SHOW {what}"), &[])
                 .unwrap()
                 .get(0)
@@ -487,7 +487,7 @@ fn dead_connection_is_re_established() {
             .search_semantic("river stone", 5, &Filters::default(), &owner())
             .unwrap();
         let pid: i32 = arm
-            .client_mut()
+            .client_mut(&own())
             .query_one("SELECT pg_backend_pid()", &[])
             .unwrap()
             .get(0);
@@ -516,10 +516,10 @@ fn dead_connection_is_re_established() {
 }
 
 /// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
+}
+
 fn owner() -> skmem::audience::ReaderScope {
-    skmem::audience::ReaderScope::resolve(
-        None,
-        &skmem::env::Env::empty(),
-        &skmem::audience::AudienceConfig::empty(),
-    )
+    own().reader_scope().clone()
 }
