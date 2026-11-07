@@ -244,12 +244,14 @@ pub fn content_hash(content: &str) -> String {
     d.iter().take(8).map(|b| format!("{b:02x}")).collect()
 }
 
-fn word_chars(chunk: &str) -> Vec<String> {
-    // Python `\w+` (Unicode): alphanumerics and underscore.
+/// Python `re.findall(r"\w+", chunk)`. Uses the generated `\w` table, not
+/// `char::is_alphanumeric`, which also accepts combining marks and circled
+/// letters that Python's `\w` rejects.
+pub fn word_chars(chunk: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = String::new();
     for c in chunk.chars() {
-        if c.is_alphanumeric() || c == '_' {
+        if crate::util::is_py_word_char(c) {
             cur.push(c);
         } else if !cur.is_empty() {
             out.push(std::mem::take(&mut cur));

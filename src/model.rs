@@ -55,7 +55,8 @@ impl Layer {
         }
     }
 
-    fn parse(s: &str) -> Option<Layer> {
+    /// Inverse of [`Layer::as_str`].
+    pub fn parse(s: &str) -> Option<Layer> {
         Layer::ALL.into_iter().find(|l| l.as_str() == s)
     }
 }

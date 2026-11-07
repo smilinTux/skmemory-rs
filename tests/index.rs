@@ -702,3 +702,19 @@ fn bench_reindex() {
     let u = idx.bump_access(&refs, None, None);
     eprintln!("bump 500: {u} rows in {:?}", t.elapsed());
 }
+
+#[test]
+fn word_chars_matches_python_w() {
+    let raw = fs::read_to_string(golden().join("word_chars.json")).unwrap();
+    let cases: Value = serde_json::from_str(&raw).unwrap();
+    for case in cases.as_array().unwrap() {
+        let input = case["input"].as_str().unwrap();
+        let want: Vec<String> = case["tokens"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(skmem::index::word_chars(input), want, "input {input:?}");
+    }
+}
