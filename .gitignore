@@ -1,0 +1,14 @@
+/target/
+**/*.rs.bk
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+/dist/
+/build/
+*.egg-info/
+.venv/
+wheels/
+.pytest_cache/
+.DS_Store
+*.swp
