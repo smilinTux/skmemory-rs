@@ -1034,6 +1034,9 @@ impl MemoryArm for HashedSemantic {
     }
 }
 
+/// Builds the Engine's arms from the corpus.
+pub type ArmsFactory = Box<dyn Fn(&[Memory]) -> Result<Arms, String>>;
+
 /// Which arms the Engine candidate runs with.
 pub enum EngineArms {
     /// The in-memory hashed `semantic` arm; `lexical` is SQLite `LIKE`. This is
@@ -1041,7 +1044,7 @@ pub enum EngineArms {
     Hashed,
     /// Arms built from the corpus (for example Postgres arms over a seeded
     /// throwaway database).
-    Custom(Box<dyn Fn(&[Memory]) -> Result<Arms, String>>),
+    Custom(ArmsFactory),
 }
 
 /// [`run_bench`] with the candidate run through [`Engine::search`].
