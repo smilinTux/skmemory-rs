@@ -153,7 +153,9 @@ fn prefilter_matches_python() {
             .collect();
         let kw = c["kwargs"].as_object().unwrap();
         let opts = PrefilterOpts {
-            deadline_s: kw.get("deadline_s").and_then(Value::as_f64),
+            // The default 50 ms deadline is wall-clock: a slow fsync must not decide a
+            // parity case, so only an explicit deadline in the vector overrides this.
+            deadline_s: Some(kw.get("deadline_s").and_then(Value::as_f64).unwrap_or(30.0)),
             max_fires: kw.get("max_fires").and_then(Value::as_i64),
             t0: None,
         };

@@ -31,6 +31,7 @@ use std::fmt;
 use std::fs::{self, File, OpenOptions};
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 pub mod tick;
@@ -988,7 +989,7 @@ pub struct IntentionStore {
     db_path: PathBuf,
     conn: Connection,
     gen: Cell<u64>,
-    pf_cache: RefCell<Option<(Stamp, Matcher)>>,
+    pf_cache: RefCell<Option<(Stamp, Rc<Matcher>)>>,
     lock_dir: PathBuf,
     /// Unreadable files or rows skipped by this store instance.
     pub unreadable: Cell<u64>,
@@ -1482,11 +1483,11 @@ impl IntentionStore {
     /// index stamp. Every term with a word char starts at a whole token of the
     /// prompt, so one tokenisation plus lookups finds every candidate and the
     /// phrase check only verifies those. Terms with no word char are always verified.
-    fn matcher(&self) -> Result<Matcher> {
+    fn matcher(&self) -> Result<Rc<Matcher>> {
         let key = self.stamp();
         if let Some((k, m)) = &*self.pf_cache.borrow() {
             if *k == key {
-                return Ok(m.clone());
+                return Ok(Rc::clone(m));
             }
         }
         let mut m = Matcher::default();
@@ -1518,7 +1519,8 @@ impl IntentionStore {
             }
             m.terms_of.insert(iid, ts);
         }
-        *self.pf_cache.borrow_mut() = Some((key, m.clone()));
+        let m = Rc::new(m);
+        *self.pf_cache.borrow_mut() = Some((key, Rc::clone(&m)));
         Ok(m)
     }
 
@@ -1761,26 +1763,33 @@ pub(crate) fn parse_dt_lenient(s: &str) -> Option<Dt> {
 /// (`limit` chars in all) joined by NUL (which cannot join two words into a
 /// phrase). A token split by the cut is dropped from the stub.
 pub fn scan_text(text: &str, limit: i64) -> String {
-    let chars: Vec<char> = text.chars().collect();
-    if (chars.len() as i64) <= limit {
+    // Bytes bound chars: a short-enough text needs no count at all.
+    if (text.len() as i64) <= limit {
+        return text.to_string();
+    }
+    let total = text.chars().count();
+    if (total as i64) <= limit {
         return text.to_string();
     }
     let half = ((limit / 2).max(1)) as usize;
-    let mut head: Vec<char> = chars[..half].to_vec();
-    let mut tail: Vec<char> = chars[chars.len() - half..].to_vec();
-    if is_word(chars[half - 1]) && is_word(chars[half]) {
-        while head.last().is_some_and(|c| is_word(*c)) {
-            head.pop();
-        }
+    let head_end = text.char_indices().nth(half).map_or(text.len(), |(i, _)| i);
+    let tail_start = text
+        .char_indices()
+        .rev()
+        .nth(half - 1)
+        .map_or(0, |(i, _)| i);
+    let mut head = &text[..head_end];
+    let mut tail = &text[tail_start..];
+    let before = |end: usize| text[..end].chars().next_back();
+    // The cut split a token: drop its stub.
+    if before(head_end).is_some_and(is_word) && text[head_end..].chars().next().is_some_and(is_word)
+    {
+        head = head.trim_end_matches(is_word);
     }
-    if is_word(chars[chars.len() - half - 1]) && is_word(chars[chars.len() - half]) {
-        let n = tail.iter().take_while(|c| is_word(**c)).count();
-        tail.drain(..n);
+    if before(tail_start).is_some_and(is_word) && tail.chars().next().is_some_and(is_word) {
+        tail = tail.trim_start_matches(is_word);
     }
-    head.into_iter()
-        .chain(std::iter::once('\0'))
-        .chain(tail)
-        .collect()
+    format!("{head}\0{tail}")
 }
 
 fn prefilter_vals(i: &Intention) -> Vec<SqlValue> {
