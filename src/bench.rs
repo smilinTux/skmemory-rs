@@ -25,6 +25,7 @@
 //! `kind` or `outcome` to the `Memory`, so every stored memory is an
 //! `episode` and procedure ordering never fires.
 
+use crate::audience::{AudienceConfig, ReaderScope};
 use crate::env::{casefold, Env};
 use crate::fusion::{self, ArmInput, ArmOutcome, DEFAULT_ARM_CAP};
 use crate::index::{Index, SearchFilters};
@@ -877,6 +878,8 @@ impl<'a> Store<'a> {
         let semantic = collect(self.semantic(query, arm_limit, ctx, as_of), false);
         let lexical = collect(self.like(query, arm_limit), true);
         let ctx_tags: Option<Vec<String>> = ctx.map(|c| vec![c.to_string()]);
+        // The bench is an owner run over synthetic fixtures: no reader declared.
+        let owner = ReaderScope::resolve(None, &Env::empty(), &AudienceConfig::empty());
         let local: Vec<String> = self
             .index
             .search_lexical(
@@ -889,6 +892,7 @@ impl<'a> Store<'a> {
                     context_tags: ctx_tags.as_deref(),
                     as_of,
                 },
+                &owner,
             )
             .map(|rows| rows.into_iter().map(|r| r.id).collect())
             .unwrap_or_default();
@@ -914,6 +918,7 @@ impl<'a> Store<'a> {
         let df = |t: &str| self.term_df(t);
         let input = SearchInput {
             query,
+            scope: &owner,
             limit,
             arms: &arms,
             found: &self.found,
