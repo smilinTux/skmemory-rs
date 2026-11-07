@@ -1,0 +1,2048 @@
+[
+ {
+  "name": "q_river",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-018",
+   "skrs-r05-027",
+   "skrs-r05-045",
+   "skrs-r05-042",
+   "skrs-r05-013",
+   "skrs-r05-064",
+   "skrs-r05-008",
+   "skrs-r05-029",
+   "skrs-r05-003"
+  ],
+  "expect_scores": [
+   6.568736553192139,
+   5.602580547332764,
+   4.969669818878174,
+   4.84153413772583,
+   4.45460319519043,
+   4.415371417999268,
+   4.1961236000061035,
+   3.6454949378967285,
+   3.457237482070923
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_falcon",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-024",
+   "skrs-r05-003",
+   "skrs-r05-035",
+   "skrs-r05-012",
+   "skrs-r05-047",
+   "skrs-r05-040",
+   "skrs-r05-065",
+   "skrs-r05-027",
+   "skrs-r05-000",
+   "skrs-r05-011"
+  ],
+  "expect_scores": [
+   7.385660648345947,
+   6.527998447418213,
+   6.52061653137207,
+   5.133119583129883,
+   4.862954139709473,
+   4.62969970703125,
+   4.18889045715332,
+   4.089128017425537,
+   4.0014567375183105,
+   3.663769245147705
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_single",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-003",
+   "skrs-r05-007",
+   "skrs-r05-045",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-018",
+   "skrs-r05-011"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.457237482070923,
+   3.409951686859131,
+   3.366482734680176,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2947560548782349,
+   1.2324318885803223
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_zurich",
+  "query": "zürich café",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-060",
+   "skrs-r05-072"
+  ],
+  "expect_scores": [
+   12.264406204223633,
+   11.857062339782715
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_zurich_upper",
+  "query": "ZÜRICH",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-060",
+   "skrs-r05-072"
+  ],
+  "expect_scores": [
+   8.033203125,
+   7.829531669616699
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_tokyo",
+  "query": "東京",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-061"
+  ],
+  "expect_scores": [
+   9.519240379333496
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_strasse",
+  "query": "straße",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-062"
+  ],
+  "expect_scores": [
+   9.519240379333496
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_cyrillic",
+  "query": "Привет",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064"
+  ],
+  "expect_scores": [
+   9.519240379333496
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_ident",
+  "query": "prb-6f069c5e",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-070"
+  ],
+  "expect_scores": [
+   8.764750480651855
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_plan",
+  "query": "per node postgres rebuild remediation plan prb-6f069c5e",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-071",
+   "skrs-r05-070",
+   "skrs-r05-072"
+  ],
+  "expect_scores": [
+   29.95125389099121,
+   14.068868637084961,
+   7.829531669616699
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_stop",
+  "query": "the and of",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_none",
+  "query": "qqqzzzxxx",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_empty",
+  "query": "",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_space",
+  "query": "   ",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_sql",
+  "query": "'; DROP TABLE memories; --",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_tsops",
+  "query": "river & !stone | falcon:* <-> harbor",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-027",
+   "skrs-r05-003",
+   "skrs-r05-024",
+   "skrs-r05-018",
+   "skrs-r05-012",
+   "skrs-r05-045",
+   "skrs-r05-014",
+   "skrs-r05-011",
+   "skrs-r05-022",
+   "skrs-r05-064"
+  ],
+  "expect_scores": [
+   8.688522338867188,
+   8.447715759277344,
+   7.385660648345947,
+   6.568736553192139,
+   6.308952331542969,
+   5.964297771453857,
+   5.45539665222168,
+   4.896201133728027,
+   4.826726913452148,
+   4.415371417999268
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_like",
+  "query": "100%_\\ river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-003",
+   "skrs-r05-007",
+   "skrs-r05-045",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-018",
+   "skrs-r05-011"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.457237482070923,
+   3.409951686859131,
+   3.366482734680176,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2947560548782349,
+   1.2324318885803223
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_dollar",
+  "query": "$$ river $1 $2",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-003",
+   "skrs-r05-007",
+   "skrs-r05-045",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-018",
+   "skrs-r05-011"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.457237482070923,
+   3.409951686859131,
+   3.366482734680176,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2947560548782349,
+   1.2324318885803223
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "q_long",
+  "query": "river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-044",
+   "skrs-r05-030",
+   "skrs-r05-038",
+   "skrs-r05-013",
+   "skrs-r05-029",
+   "skrs-r05-043",
+   "skrs-r05-041",
+   "skrs-r05-006",
+   "skrs-r05-014",
+   "skrs-r05-039"
+  ],
+  "expect_scores": [
+   173.52090454101562,
+   171.5924072265625,
+   165.14236450195312,
+   164.21029663085938,
+   163.1734161376953,
+   161.01690673828125,
+   159.27479553222656,
+   158.2379150390625,
+   154.5193328857422,
+   154.38845825195312
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "limit1",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 1,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-018"
+  ],
+  "expect_scores": [
+   6.568736553192139
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "limit100",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-003",
+   "skrs-r05-007",
+   "skrs-r05-045",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-018",
+   "skrs-r05-011",
+   "skrs-r05-072",
+   "skrs-r05-012",
+   "skrs-r05-046",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-014",
+   "skrs-r05-044",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.457237482070923,
+   3.409951686859131,
+   3.366482734680176,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2947560548782349,
+   1.2324318885803223,
+   1.2324318885803223,
+   1.1758326292037964,
+   0.9933532476425171,
+   0.9562526345252991,
+   0.8897876143455505,
+   0.8599035143852234,
+   0.8599035143852234,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "agent_b",
+  "query": "river stone amber",
+  "agent": "skrs-r05-b",
+  "limit": 20,
+  "filters": {},
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-049",
+   "skrs-r05-054",
+   "skrs-r05-052",
+   "skrs-r05-051",
+   "skrs-r05-055",
+   "skrs-r05-059",
+   "skrs-r05-053",
+   "skrs-r05-058"
+  ],
+  "expect_scores": [
+   5.50155782699585,
+   4.026815414428711,
+   2.1938700675964355,
+   1.8025496006011963,
+   1.435570478439331,
+   1.2324318885803223,
+   1.1588720083236694,
+   0.8897876143455505
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "layer",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "layer": "short-term"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-018",
+   "skrs-r05-027",
+   "skrs-r05-045",
+   "skrs-r05-042",
+   "skrs-r05-003",
+   "skrs-r05-006",
+   "skrs-r05-024",
+   "skrs-r05-072",
+   "skrs-r05-012",
+   "skrs-r05-009",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   13.137473106384277,
+   11.205161094665527,
+   9.939339637756348,
+   9.68306827545166,
+   6.914474964141846,
+   6.537637710571289,
+   2.8352816104888916,
+   2.4648637771606445,
+   2.3516652584075928,
+   2.1508474349975586,
+   1.663922905921936
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "tags_and",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "tags": [
+    "alpha",
+    "gamma"
+   ]
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-045",
+   "skrs-r05-013",
+   "skrs-r05-029",
+   "skrs-r05-007",
+   "skrs-r05-047",
+   "skrs-r05-023",
+   "skrs-r05-037"
+  ],
+  "expect_scores": [
+   9.939339637756348,
+   8.90920639038086,
+   7.290989875793457,
+   6.819903373718262,
+   6.393162250518799,
+   2.0063719749450684,
+   2.0063719749450684
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "tags_empty",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "tags": []
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-018",
+   "skrs-r05-027",
+   "skrs-r05-045",
+   "skrs-r05-042",
+   "skrs-r05-013",
+   "skrs-r05-064",
+   "skrs-r05-008",
+   "skrs-r05-029",
+   "skrs-r05-003",
+   "skrs-r05-007",
+   "skrs-r05-006",
+   "skrs-r05-016",
+   "skrs-r05-043",
+   "skrs-r05-014",
+   "skrs-r05-047",
+   "skrs-r05-001",
+   "skrs-r05-040",
+   "skrs-r05-004",
+   "skrs-r05-022",
+   "skrs-r05-017",
+   "skrs-r05-024",
+   "skrs-r05-035",
+   "skrs-r05-020",
+   "skrs-r05-011",
+   "skrs-r05-072",
+   "skrs-r05-012",
+   "skrs-r05-028",
+   "skrs-r05-009",
+   "skrs-r05-032",
+   "skrs-r05-023",
+   "skrs-r05-037",
+   "skrs-r05-038",
+   "skrs-r05-046",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-044",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   6.568736553192139,
+   5.602580547332764,
+   4.969669818878174,
+   4.84153413772583,
+   4.45460319519043,
+   4.415371417999268,
+   4.1961236000061035,
+   3.6454949378967285,
+   3.457237482070923,
+   3.409951686859131,
+   3.2688188552856445,
+   3.2688188552856445,
+   3.2228217124938965,
+   3.1970560550689697,
+   3.1965811252593994,
+   1.6706199645996094,
+   1.603187084197998,
+   1.5409868955612183,
+   1.4572292566299438,
+   1.4300230741500854,
+   1.4176408052444458,
+   1.3339664936065674,
+   1.2563602924346924,
+   1.2324318885803223,
+   1.2324318885803223,
+   1.1758326292037964,
+   1.1588720083236694,
+   1.0754237174987793,
+   1.038049578666687,
+   1.0031859874725342,
+   1.0031859874725342,
+   1.0031859874725342,
+   0.9933532476425171,
+   0.9562526345252991,
+   0.8897876143455505,
+   0.8599035143852234,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "tags_none",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "tags": [
+    "nosuch"
+   ]
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "source",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "source": "chat"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-040",
+   "skrs-r05-022",
+   "skrs-r05-034",
+   "skrs-r05-013",
+   "skrs-r05-016",
+   "skrs-r05-028",
+   "skrs-r05-004",
+   "skrs-r05-037"
+  ],
+  "expect_scores": [
+   9.2593994140625,
+   6.73899507522583,
+   4.649396896362305,
+   4.614701271057129,
+   4.295861721038818,
+   2.977461814880371,
+   2.1451735496520996,
+   1.856985092163086
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "source_empty",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "source": ""
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-024",
+   "skrs-r05-003",
+   "skrs-r05-035",
+   "skrs-r05-012",
+   "skrs-r05-047",
+   "skrs-r05-040",
+   "skrs-r05-065",
+   "skrs-r05-027",
+   "skrs-r05-000",
+   "skrs-r05-011",
+   "skrs-r05-022",
+   "skrs-r05-014",
+   "skrs-r05-039",
+   "skrs-r05-045",
+   "skrs-r05-034",
+   "skrs-r05-013",
+   "skrs-r05-033",
+   "skrs-r05-032",
+   "skrs-r05-016",
+   "skrs-r05-044",
+   "skrs-r05-009",
+   "skrs-r05-015",
+   "skrs-r05-023",
+   "skrs-r05-028",
+   "skrs-r05-072",
+   "skrs-r05-062",
+   "skrs-r05-063",
+   "skrs-r05-042",
+   "skrs-r05-029",
+   "skrs-r05-004",
+   "skrs-r05-020",
+   "skrs-r05-026",
+   "skrs-r05-037",
+   "skrs-r05-002",
+   "skrs-r05-038"
+  ],
+  "expect_scores": [
+   7.385660648345947,
+   6.527998447418213,
+   6.52061653137207,
+   5.133119583129883,
+   4.862954139709473,
+   4.62969970703125,
+   4.18889045715332,
+   4.089128017425537,
+   4.0014567375183105,
+   3.663769245147705,
+   3.369497537612915,
+   3.261526584625244,
+   3.2202296257019043,
+   2.4080276489257812,
+   2.3246984481811523,
+   2.3073506355285645,
+   2.295846939086914,
+   2.1885480880737305,
+   2.147930860519409,
+   2.1045424938201904,
+   1.8825472593307495,
+   1.7707775831222534,
+   1.702318549156189,
+   1.4887309074401855,
+   1.330735206604004,
+   1.3124914169311523,
+   1.3124914169311523,
+   1.2696212530136108,
+   1.1760499477386475,
+   1.0725867748260498,
+   1.0364634990692139,
+   1.0325268507003784,
+   0.928492546081543,
+   0.85636305809021,
+   0.8276015520095825
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "all_filters",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "layer": "mid-term",
+   "tags": [
+    "beta"
+   ],
+   "source": "chat"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-007",
+   "skrs-r05-043",
+   "skrs-r05-022",
+   "skrs-r05-046",
+   "skrs-r05-034"
+  ],
+  "expect_scores": [
+   13.639806747436523,
+   12.891286849975586,
+   5.828917026519775,
+   3.9734129905700684,
+   3.8250105381011963
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_date",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-04-10"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-022",
+   "skrs-r05-011",
+   "skrs-r05-012",
+   "skrs-r05-041",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   3.457237482070923,
+   1.4572292566299438,
+   1.2324318885803223,
+   1.1758326292037964,
+   0.8897876143455505,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_date_limit3",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 3,
+  "filters": {
+   "as_of": "2026-04-10"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-022",
+   "skrs-r05-011"
+  ],
+  "expect_scores": [
+   3.457237482070923,
+   1.4572292566299438,
+   1.2324318885803223
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_boundary_closed",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-06-01T00:00:00+00:00"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-011",
+   "skrs-r05-012",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-014",
+   "skrs-r05-044",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2324318885803223,
+   1.1758326292037964,
+   0.9562526345252991,
+   0.8897876143455505,
+   0.8599035143852234,
+   0.8599035143852234,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_boundary_offset",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-06-01T00:00:00Z"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-011",
+   "skrs-r05-012",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-014",
+   "skrs-r05-044",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2324318885803223,
+   1.1758326292037964,
+   0.9562526345252991,
+   0.8897876143455505,
+   0.8599035143852234,
+   0.8599035143852234,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_naive",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-04-10T05:00:00"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-042",
+   "skrs-r05-003",
+   "skrs-r05-001",
+   "skrs-r05-040",
+   "skrs-r05-022",
+   "skrs-r05-020",
+   "skrs-r05-011",
+   "skrs-r05-012",
+   "skrs-r05-032",
+   "skrs-r05-041",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.84153413772583,
+   3.457237482070923,
+   1.6706199645996094,
+   1.603187084197998,
+   1.4572292566299438,
+   1.2563602924346924,
+   1.2324318885803223,
+   1.1758326292037964,
+   1.038049578666687,
+   0.8897876143455505,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_offset",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-04-10T05:00:00+05:00"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-042",
+   "skrs-r05-003",
+   "skrs-r05-001",
+   "skrs-r05-040",
+   "skrs-r05-022",
+   "skrs-r05-020",
+   "skrs-r05-011",
+   "skrs-r05-012",
+   "skrs-r05-032",
+   "skrs-r05-041",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.84153413772583,
+   3.457237482070923,
+   1.6706199645996094,
+   1.603187084197998,
+   1.4572292566299438,
+   1.2563602924346924,
+   1.2324318885803223,
+   1.1758326292037964,
+   1.038049578666687,
+   0.8897876143455505,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_before_all",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2025-01-01"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_future",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2030-01-01"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-045",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-018",
+   "skrs-r05-046",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-014",
+   "skrs-r05-044",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.366482734680176,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2947560548782349,
+   0.9933532476425171,
+   0.9562526345252991,
+   0.8897876143455505,
+   0.8599035143852234,
+   0.8599035143852234,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_empty",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": ""
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-003",
+   "skrs-r05-007",
+   "skrs-r05-045",
+   "skrs-r05-043",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-018",
+   "skrs-r05-011",
+   "skrs-r05-072",
+   "skrs-r05-012",
+   "skrs-r05-046",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-014",
+   "skrs-r05-044",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   4.415371417999268,
+   3.457237482070923,
+   3.409951686859131,
+   3.366482734680176,
+   3.2228217124938965,
+   3.1929376125335693,
+   1.4572292566299438,
+   1.2947560548782349,
+   1.2324318885803223,
+   1.2324318885803223,
+   1.1758326292037964,
+   0.9933532476425171,
+   0.9562526345252991,
+   0.8897876143455505,
+   0.8599035143852234,
+   0.8599035143852234,
+   0.831961452960968
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_unicode_query",
+  "query": "zürich café",
+  "agent": "skrs-r05-a",
+  "limit": 5,
+  "filters": {
+   "as_of": "2026-03-01"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_overfetch",
+  "query": "zürich café",
+  "agent": "skrs-r05-a",
+  "limit": 2,
+  "filters": {
+   "as_of": "2026-12-01"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_layer",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-05-15",
+   "layer": "short-term"
+  },
+  "mode": "bm25",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-012",
+   "skrs-r05-000",
+   "skrs-r05-033",
+   "skrs-r05-063",
+   "skrs-r05-042"
+  ],
+  "expect_scores": [
+   13.055996894836426,
+   10.266239166259766,
+   8.002913475036621,
+   4.591693878173828,
+   2.6249828338623047,
+   2.5392425060272217
+  ],
+  "expect_path": "bm25"
+ },
+ {
+  "name": "asof_bad",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "as_of": "not-a-date"
+  },
+  "mode": "bm25",
+  "expect_error": "ValueError"
+ },
+ {
+  "name": "asof_now",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "as_of": "now"
+  },
+  "mode": "bm25",
+  "expect_error": "ValueError"
+ },
+ {
+  "name": "asof_feb30",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "as_of": "2026-02-30"
+  },
+  "mode": "bm25",
+  "expect_error": "ValueError"
+ },
+ {
+  "name": "q_river",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-014"
+  ],
+  "expect_scores": [
+   0.188936248421669
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_falcon",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-035",
+   "skrs-r05-003"
+  ],
+  "expect_scores": [
+   0.6480699181556702,
+   0.5781214833259583
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_single",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-045",
+   "skrs-r05-064",
+   "skrs-r05-022",
+   "skrs-r05-007",
+   "skrs-r05-008",
+   "skrs-r05-043",
+   "skrs-r05-034",
+   "skrs-r05-041"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.08274563401937485,
+   0.08274563401937485,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_zurich",
+  "query": "zürich café",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-060",
+   "skrs-r05-072"
+  ],
+  "expect_scores": [
+   0.18681316077709198,
+   0.18681316077709198
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_zurich_upper",
+  "query": "ZÜRICH",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-060",
+   "skrs-r05-072"
+  ],
+  "expect_scores": [
+   0.07599088549613953,
+   0.07599088549613953
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_tokyo",
+  "query": "東京",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-061"
+  ],
+  "expect_scores": [
+   0.07599088549613953
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_strasse",
+  "query": "straße",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-062"
+  ],
+  "expect_scores": [
+   0.07599088549613953
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_cyrillic",
+  "query": "Привет",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064"
+  ],
+  "expect_scores": [
+   0.07599088549613953
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_ident",
+  "query": "prb-6f069c5e",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-070"
+  ],
+  "expect_scores": [
+   0.26832976937294006
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_plan",
+  "query": "per node postgres rebuild remediation plan prb-6f069c5e",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_stop",
+  "query": "the and of",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_none",
+  "query": "qqqzzzxxx",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_empty",
+  "query": "",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_space",
+  "query": "   ",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_sql",
+  "query": "'; DROP TABLE memories; --",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_tsops",
+  "query": "river & !stone | falcon:* <-> harbor",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_like",
+  "query": "100%_\\ river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_dollar",
+  "query": "$$ river $1 $2",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "q_long",
+  "query": "river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris river stone amber falcon garden copper lantern meadow harbor quartz violet thunder maple ember glacier orchid saffron timber velvet willow zephyr compass anchor beacon cinder dune echo fjord grove haze iris",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "limit1",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 1,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-014"
+  ],
+  "expect_scores": [
+   0.188936248421669
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "limit100",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-045",
+   "skrs-r05-064",
+   "skrs-r05-022",
+   "skrs-r05-007",
+   "skrs-r05-008",
+   "skrs-r05-043",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-044",
+   "skrs-r05-072",
+   "skrs-r05-046",
+   "skrs-r05-012",
+   "skrs-r05-011",
+   "skrs-r05-014",
+   "skrs-r05-018",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.08274563401937485,
+   0.08274563401937485,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "agent_b",
+  "query": "river stone amber",
+  "agent": "skrs-r05-b",
+  "limit": 20,
+  "filters": {},
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-054",
+   "skrs-r05-049"
+  ],
+  "expect_scores": [
+   0.36654189229011536,
+   0.23692312836647034
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "layer",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "layer": "short-term"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "tags_and",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "tags": [
+    "alpha",
+    "gamma"
+   ]
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "tags_empty",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "tags": []
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-014"
+  ],
+  "expect_scores": [
+   0.188936248421669
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "tags_none",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "tags": [
+    "nosuch"
+   ]
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "source",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "source": "chat"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "source_empty",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "source": ""
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-035",
+   "skrs-r05-003"
+  ],
+  "expect_scores": [
+   0.6480699181556702,
+   0.5781214833259583
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "all_filters",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 50,
+  "filters": {
+   "layer": "mid-term",
+   "tags": [
+    "beta"
+   ],
+   "source": "chat"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_date",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-04-10"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-022",
+   "skrs-r05-012",
+   "skrs-r05-030",
+   "skrs-r05-041",
+   "skrs-r05-011"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_date_limit3",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 3,
+  "filters": {
+   "as_of": "2026-04-10"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-022"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.07599088549613953
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_boundary_closed",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-06-01T00:00:00+00:00"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-043",
+   "skrs-r05-030",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-011",
+   "skrs-r05-044",
+   "skrs-r05-014",
+   "skrs-r05-012"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_boundary_offset",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-06-01T00:00:00Z"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-064",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-043",
+   "skrs-r05-030",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-011",
+   "skrs-r05-044",
+   "skrs-r05-014",
+   "skrs-r05-012"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_naive",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-04-10T05:00:00"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_offset",
+  "query": "river stone amber",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-04-10T05:00:00+05:00"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_before_all",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2025-01-01"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_future",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2030-01-01"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-045",
+   "skrs-r05-064",
+   "skrs-r05-008",
+   "skrs-r05-022",
+   "skrs-r05-043",
+   "skrs-r05-041",
+   "skrs-r05-014",
+   "skrs-r05-044",
+   "skrs-r05-030",
+   "skrs-r05-046",
+   "skrs-r05-018",
+   "skrs-r05-034"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.08274563401937485,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_empty",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": ""
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003",
+   "skrs-r05-045",
+   "skrs-r05-064",
+   "skrs-r05-022",
+   "skrs-r05-007",
+   "skrs-r05-008",
+   "skrs-r05-043",
+   "skrs-r05-034",
+   "skrs-r05-041",
+   "skrs-r05-044",
+   "skrs-r05-072",
+   "skrs-r05-046",
+   "skrs-r05-012",
+   "skrs-r05-011",
+   "skrs-r05-014",
+   "skrs-r05-018",
+   "skrs-r05-030"
+  ],
+  "expect_scores": [
+   0.08274563401937485,
+   0.08274563401937485,
+   0.08274563401937485,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.07599088549613953,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858,
+   0.0607927106320858
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_unicode_query",
+  "query": "zürich café",
+  "agent": "skrs-r05-a",
+  "limit": 5,
+  "filters": {
+   "as_of": "2026-03-01"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_overfetch",
+  "query": "zürich café",
+  "agent": "skrs-r05-a",
+  "limit": 2,
+  "filters": {
+   "as_of": "2026-12-01"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [],
+  "expect_scores": [],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_layer",
+  "query": "falcon harbor lantern",
+  "agent": "skrs-r05-a",
+  "limit": 100,
+  "filters": {
+   "as_of": "2026-05-15",
+   "layer": "short-term"
+  },
+  "mode": "tsrank",
+  "bm25_failed": false,
+  "expect_ids": [
+   "skrs-r05-003"
+  ],
+  "expect_scores": [
+   0.5781214833259583
+  ],
+  "expect_path": "tsrank"
+ },
+ {
+  "name": "asof_bad",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "as_of": "not-a-date"
+  },
+  "mode": "tsrank",
+  "expect_error": "ValueError"
+ },
+ {
+  "name": "asof_now",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "as_of": "now"
+  },
+  "mode": "tsrank",
+  "expect_error": "ValueError"
+ },
+ {
+  "name": "asof_feb30",
+  "query": "river",
+  "agent": "skrs-r05-a",
+  "limit": 10,
+  "filters": {
+   "as_of": "2026-02-30"
+  },
+  "mode": "tsrank",
+  "expect_error": "ValueError"
+ }
+]

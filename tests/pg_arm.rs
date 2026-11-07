@@ -50,8 +50,7 @@ fn test_dsn() -> Option<String> {
     Some(dsn)
 }
 
-const DDL: &str = "CREATE EXTENSION IF NOT EXISTS vector;
-CREATE TABLE {s}.memories (
+const DDL: &str = "CREATE TABLE {s}.memories (
   id text NOT NULL PRIMARY KEY, layer text, role text, title text, content text, summary text,
   tags text[] DEFAULT '{}'::text[], source text,
   created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now(),
@@ -215,7 +214,8 @@ fn with_schema(dsn: &str, v2: bool, f: impl FnOnce(&str, &str, &mut Client)) {
     let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let schema = format!("skrs_r04_{}_{n}", std::process::id());
     let mut c = Client::connect(dsn, NoTls).unwrap();
-    c.batch_execute("CREATE EXTENSION IF NOT EXISTS vector")
+    // concurrent CREATE EXTENSION races on pg_extension_name_index: serialise it
+    c.batch_execute("SELECT pg_advisory_xact_lock(5304); CREATE EXTENSION IF NOT EXISTS vector")
         .unwrap();
     c.batch_execute(&format!(
         "DROP SCHEMA IF EXISTS {schema} CASCADE; CREATE SCHEMA {schema}"
