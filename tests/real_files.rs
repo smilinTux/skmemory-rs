@@ -107,12 +107,33 @@ fn real_files_roundtrip() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(1000);
     let files = sample(Path::new(&dir), want);
-    let out_dir = std::env::var("SKMEM_REAL_OUT").ok().map(PathBuf::from);
+    // Scratch directory for Rust's re-serialisations (never inside the store).
+    let out_dir = PathBuf::from(
+        std::env::var("SKMEM_REAL_OUT").expect("set SKMEM_REAL_OUT to a scratch directory"),
+    );
+    assert!(
+        !out_dir.starts_with(&dir),
+        "SKMEM_REAL_OUT must not be inside the store"
+    );
+    let _ = fs::remove_dir_all(&out_dir);
+    fs::create_dir_all(&out_dir).unwrap();
+    let list_path = out_dir.join("files.txt");
+    fs::write(
+        &list_path,
+        files
+            .iter()
+            .map(|p| p.to_string_lossy().into_owned())
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )
+    .unwrap();
+    let out_dir = out_dir.join("rust");
+    fs::create_dir_all(&out_dir).unwrap();
     let (mut identical, mut load_fail, mut v1_format_ok, mut v1_total) =
         (0usize, 0, 0usize, 0usize);
     let mut buckets: BTreeMap<&'static str, usize> = BTreeMap::new();
     let mut by_layer: BTreeMap<String, (usize, usize)> = BTreeMap::new();
-    for p in &files {
+    for (idx, p) in files.iter().enumerate() {
         let layer = p
             .parent()
             .and_then(|d| d.file_name())
@@ -125,16 +146,12 @@ fn real_files_roundtrip() {
             Err(_) => {
                 load_fail += 1;
                 *buckets
-                    .entry("load failed (Python would also reject)")
+                    .entry("load failed in Rust (see PARITY lines for Python agreement)")
                     .or_default() += 1;
             }
             Ok(m) => {
                 let out = m.to_json();
-                if let Some(od) = &out_dir {
-                    // Scratch only: lets a Python script diff its own dump against ours.
-                    fs::create_dir_all(od).unwrap();
-                    fs::write(od.join(p.file_name().unwrap()), &out).unwrap();
-                }
+                fs::write(out_dir.join(format!("{idx}.json")), &out).unwrap();
                 // A v1 file lacks the v2 keys Python adds on dump. Drop them from
                 // our output and the remaining bytes must equal the original.
                 if !String::from_utf8_lossy(&raw).contains("\"schema_version\"") {
@@ -172,5 +189,20 @@ fn real_files_roundtrip() {
     }
     for (k, v) in &buckets {
         println!("REAL mismatch [{k}]: {v}");
+    }
+
+    match std::env::var("SKMEM_PYTHON") {
+        Ok(py) => {
+            let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/real_parity.py");
+            let out = std::process::Command::new(py)
+                .arg(script)
+                .arg(&list_path)
+                .arg(&out_dir)
+                .output()
+                .expect("run python");
+            print!("{}", String::from_utf8_lossy(&out.stdout));
+            assert!(out.status.success(), "python parity script failed");
+        }
+        Err(_) => println!("PARITY not computed: set SKMEM_PYTHON (needs skmemory importable)"),
     }
 }
