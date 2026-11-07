@@ -290,10 +290,7 @@ fn lexical_tsrank_parity_in_a_scratch_schema() {
 /// `CREATE EXTENSION IF NOT EXISTS` under an advisory lock: concurrent
 /// creation races on `pg_extension_name_index`.
 fn ext_sql(name: &str) -> String {
-    format!(
-        "SELECT pg_advisory_lock(5305); CREATE EXTENSION IF NOT EXISTS {name}; \
-         SELECT pg_advisory_unlock(5305)"
-    )
+    format!("SELECT pg_advisory_xact_lock(5305); CREATE EXTENSION IF NOT EXISTS {name}")
 }
 
 const BM25_INDEX: &str = "CREATE INDEX memories_bm25 ON {s}.memories USING bm25 (id, title, content, summary) WITH (key_field=id, text_fields='{
