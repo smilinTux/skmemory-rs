@@ -39,6 +39,9 @@ CONFIG = {
         "ch-secret": {"name": "Secret", "context_tag": "@chef-only", "members": ["Ann"]},
         "ch-empty": {"name": "Empty", "context_tag": "@chef-only", "members": []},
         "ch-nomember-known": {"name": "Ghosts", "context_tag": "@work:x", "members": ["Nobody"]},
+        "ch-nolevel": {"name": "NoLevel", "context_tag": "@chef-only", "members": ["Eve"]},
+        "ch-badlevel": {"name": "BadLevel", "context_tag": "@chef-only", "members": ["Fay"]},
+        "ch-mixed": {"name": "Mixed", "context_tag": "@chef-only", "members": ["Bob", "Ghost"]},
         "ch-notag": {"name": "NoTag", "members": ["Cy"]},
         "Ch-Case": {"name": "Case", "context_tag": "@community", "members": ["Dee"]},
     },
@@ -47,6 +50,8 @@ CONFIG = {
         "Bob": {"trust_level": 3, "never_share": ["revenue"]},
         "Cy": {"trust_level": 3, "never_share": []},
         "Dee": {"trust_level": 1, "never_share": ["intimate"]},
+        "Eve": {"never_share": ["romantic"]},
+        "Fay": {"trust_level": "4", "never_share": []},
     },
 }
 
@@ -54,7 +59,7 @@ READERS = [
     None, "", "  ", "@chef", "@CHEF", " @Chef-Only ", "owner", "OWNER", "@public", "@PUBLIC",
     "@community", "@work-circle", "@inner-circle", "@work:acme", "@Work:Acme", "@work:", "@inner:fam",
     "@inner:", "@work", "@unknown", "root", "*", "channel:ch-work", "channel:ch-inner",
-    "channel:ch-secret", "channel:ch-empty", "channel:ch-nomember-known", "channel:ch-notag",
+    "channel:ch-secret", "channel:ch-empty", "channel:ch-nomember-known", "channel:ch-notag", "channel:ch-nolevel", "channel:ch-badlevel", "channel:ch-mixed",
     "channel:Ch-Case", "channel:ch-case", "channel:CH-WORK", "channel:nope", "channel:", "channel",
     "Channel:ch-work", "Kelvin", "@work:ß",
 ]

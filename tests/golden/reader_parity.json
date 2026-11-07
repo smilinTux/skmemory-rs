@@ -1,6 +1,6 @@
 {
  "meta": {
-  "skmemory_commit": "0bd94fe3dce17ee1b88436b3ddf85de15f0fd2d1",
+  "skmemory_commit": "ca04b9584c5b34527b368bbd838a989cc4c9dbb7",
   "generator": "tests/golden/gen_reader_golden.py"
  },
  "config": {
@@ -40,6 +40,28 @@
      "Nobody"
     ]
    },
+   "ch-nolevel": {
+    "name": "NoLevel",
+    "context_tag": "@chef-only",
+    "members": [
+     "Eve"
+    ]
+   },
+   "ch-badlevel": {
+    "name": "BadLevel",
+    "context_tag": "@chef-only",
+    "members": [
+     "Fay"
+    ]
+   },
+   "ch-mixed": {
+    "name": "Mixed",
+    "context_tag": "@chef-only",
+    "members": [
+     "Bob",
+     "Ghost"
+    ]
+   },
    "ch-notag": {
     "name": "NoTag",
     "members": [
@@ -77,6 +99,15 @@
     "never_share": [
      "intimate"
     ]
+   },
+   "Eve": {
+    "never_share": [
+     "romantic"
+    ]
+   },
+   "Fay": {
+    "trust_level": "4",
+    "never_share": []
    }
   }
  },
@@ -400,16 +431,11 @@
    "env": null,
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@chef-only",
-    "@community",
-    "@inner-circle",
-    "@public",
-    "@work-circle",
-    "@work:x"
+    "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111111111111111111111111000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": null,
@@ -423,6 +449,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": null,
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": null,
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": null,
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": null,
@@ -807,16 +867,11 @@
    "env": "",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@chef-only",
-    "@community",
-    "@inner-circle",
-    "@public",
-    "@work-circle",
-    "@work:x"
+    "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111111111111111111111111000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "",
@@ -830,6 +885,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "",
@@ -1214,16 +1303,11 @@
    "env": "   ",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@chef-only",
-    "@community",
-    "@inner-circle",
-    "@public",
-    "@work-circle",
-    "@work:x"
+    "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111111111111111111111111000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "   ",
@@ -1237,6 +1321,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "   ",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "   ",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "   ",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "   ",
@@ -1629,6 +1747,40 @@
   },
   {
    "env": "@public",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@public",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@public",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@public",
    "reader": "channel:Ch-Case",
    "allowed": [
     "@public"
@@ -2009,12 +2161,11 @@
    "env": "@community",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@community",
     "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111000000000000000000000000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@community",
@@ -2026,6 +2177,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@community",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@community",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@community",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@community",
@@ -2432,14 +2617,11 @@
    "env": "@inner-circle",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@community",
-    "@inner-circle",
-    "@public",
-    "@work-circle"
+    "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@inner-circle",
@@ -2453,6 +2635,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@inner-circle",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@inner-circle",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@inner-circle",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@inner-circle",
@@ -2835,16 +3051,11 @@
    "env": "@chef-only",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@chef-only",
-    "@community",
-    "@inner-circle",
-    "@public",
-    "@work-circle",
-    "@work:x"
+    "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111111111111111111111111000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@chef-only",
@@ -2858,6 +3069,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@chef-only",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@chef-only",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@chef-only",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@chef-only",
@@ -3242,16 +3487,11 @@
    "env": "owner",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@chef-only",
-    "@community",
-    "@inner-circle",
-    "@public",
-    "@work-circle",
-    "@work:x"
+    "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111111111111111111111111000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "owner",
@@ -3265,6 +3505,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111111111111111110000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "owner",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "owner",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "owner",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "owner",
@@ -3663,12 +3937,11 @@
    "env": "@work:acme",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@community",
     "@public"
    ],
    "exclusions": [],
    "unrestricted": false,
-   "allows": "0000000000000011111111111111000000000000000000000000000000000000000000000000000000000000000"
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@work:acme",
@@ -3680,6 +3953,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111111111111000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@work:acme",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@work:acme",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "@work:acme",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "@work:acme",
@@ -4158,16 +4465,14 @@
    "env": "channel:ch-work",
    "reader": "channel:ch-nomember-known",
    "allowed": [
-    "@community",
-    "@public",
-    "@work-circle"
+    "@public"
    ],
    "exclusions": [
     "revenue",
     "romantic"
    ],
    "unrestricted": false,
-   "allows": "0000000000000011001011100101110010100000000000000000000000000000000000000000000000000000000"
+   "allows": "0000000000000011001010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "channel:ch-work",
@@ -4183,6 +4488,45 @@
    ],
    "unrestricted": false,
    "allows": "0000000000000011001011100101110010100000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "channel:ch-work",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue",
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011001010000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "channel:ch-work",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue",
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011001010000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "channel:ch-work",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue",
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011001010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "channel:ch-work",
@@ -4597,6 +4941,40 @@
   },
   {
    "env": "channel:nope",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "channel:nope",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "channel:nope",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "channel:nope",
    "reader": "channel:Ch-Case",
    "allowed": [
     "@public"
@@ -4977,6 +5355,40 @@
    "exclusions": [],
    "unrestricted": false,
    "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "bogus",
+   "reader": "channel:ch-nolevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "romantic"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011011110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "bogus",
+   "reader": "channel:ch-badlevel",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [],
+   "unrestricted": false,
+   "allows": "0000000000000011111110000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "env": "bogus",
+   "reader": "channel:ch-mixed",
+   "allowed": [
+    "@public"
+   ],
+   "exclusions": [
+    "revenue"
+   ],
+   "unrestricted": false,
+   "allows": "0000000000000011101010000000000000000000000000000000000000000000000000000000000000000000000"
   },
   {
    "env": "bogus",

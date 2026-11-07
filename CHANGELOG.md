@@ -142,6 +142,10 @@ All notable changes to `skmem` are documented here. The format follows
 
 ### Fixed
 
+- Audience trust fails closed (SKMEM-P0-20): an unknown channel member, or a person with a missing or
+  malformed `trust_level`, now resolves to PUBLIC instead of trust 4 (the ported Python quirk that let a
+  channel of unknown members see `@chef-only`). Reader golden regenerated against the fixed Python.
+
 - `skmem::pg` vector arm: `hnsw.ef_search` is floored at the query limit and capped at 1000,
   and `hnsw.max_scan_tuples` (`SKMEMORY_HNSW_MAX_SCAN_TUPLES`, default 10000) is set with the
   iterative scan, matching skmemory PRs 147 and 148.

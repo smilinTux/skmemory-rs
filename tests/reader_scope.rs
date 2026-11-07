@@ -72,7 +72,7 @@ fn reader_resolution_matches_python() {
         })
         .collect();
     let readers = g["readers"].as_array().unwrap();
-    assert_eq!(readers.len(), 444);
+    assert_eq!(readers.len(), 480);
     for case in readers {
         let reader = case["reader"].as_str();
         let env = match case["env"].as_str() {
