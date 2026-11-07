@@ -7,7 +7,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 status=0
 expect() { # <crate dir> <regex that must appear in the compiler output>
   local out
-  if out=$(cargo check --locked "${@:3}" --manifest-path "$here/$1/Cargo.toml" 2>&1); then
+  if out=$(CARGO_TERM_COLOR=never cargo check --color never --locked "${@:3}" --manifest-path "$here/$1/Cargo.toml" 2>&1); then
     echo "FAIL $1: it compiled, so a forging constructor is reachable"; status=1; return
   fi
   if echo "$out" | grep -Eq "$2"; then
