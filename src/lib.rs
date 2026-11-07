@@ -24,6 +24,7 @@ pub mod pytime;
 pub mod query_sanitizer;
 pub mod rerank;
 pub mod search;
+pub mod snapshot;
 mod sys;
 pub mod tiers;
 mod util;

@@ -33,11 +33,14 @@ use crate::intentions::{parse_due_at, Intention, IntentionStore, Kind};
 use crate::ledger::{Ledger, Record, Score};
 use crate::model::{Layer, Memory};
 use crate::pytime::Dt;
+use crate::snapshot::SnapshotError;
 use crate::validity::normalize_as_of;
-use pyo3::exceptions::{PyOSError, PyPermissionError, PyRuntimeError, PyValueError};
+use pyo3::exceptions::{
+    PyNotImplementedError, PyOSError, PyPermissionError, PyRuntimeError, PyValueError,
+};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -853,9 +856,15 @@ impl Engine {
         Ok(m.id)
     }
 
-    /// Create, seal, store and index a memory. Owner only. `fields` override
-    /// any `Memory` field (`layer`, `tags`, `source`, `context_tag`,
-    /// `source_tier`, ...). Returns the stored memory dict.
+    /// `MemoryStore.snapshot` for what the engine implements: the content-hash
+    /// dedup guard (a duplicate returns the stored memory and writes nothing),
+    /// `source_tier` derived from `source`, `metadata.authority_tier`, valence
+    /// inferred from emotion labels, the seal, the flat file and the index row.
+    /// Owner only. `fields` override any `Memory` field (`layer`, `tags`,
+    /// `source`, `context_tag`, `source_tier`, ...). Returns the stored memory
+    /// dict. Content of 1200+ characters or `decompose=True` raises
+    /// `NotImplementedError` and stores nothing (Python decomposes it; the shim
+    /// must call the Python store for that write).
     #[pyo3(signature = (title, content, **fields))]
     fn snapshot(
         &self,
@@ -865,22 +874,30 @@ impl Engine {
         fields: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyObject> {
         let own = self.owner_rw()?;
-        let mut base = Memory::new(title, content).to_value();
-        if let Some(f) = fields {
-            let extra = from_py(py, f.as_any())?;
-            let o = base.as_object_mut().expect("memory is an object");
-            for (k, v) in extra.as_object().cloned().unwrap_or_default() {
-                o.insert(k, v);
-            }
-        }
-        let mut m = Memory::from_stored(base).map_err(value_err)?;
-        m.seal();
-        self.core.store().save(&m, &own).map_err(store_err)?;
-        let file = self.core.store().path_for(&m).map_err(store_err)?;
-        self.idx()?
-            .index_memory(&m, &file, &own)
-            .map_err(index_err)?;
-        to_py(py, &m.to_value())
+        let mut extra: Map<String, Value> = match fields {
+            Some(f) => from_py(py, f.as_any())?
+                .as_object()
+                .cloned()
+                .unwrap_or_default(),
+            None => Map::new(),
+        };
+        // `reader` is the writer's audience (dedup only matches what it may see);
+        // it is a call argument, never a stored field.
+        let reader = match extra.remove("reader") {
+            Some(Value::String(r)) => Some(r),
+            Some(Value::Null) | None => None,
+            Some(other) => Some(other.to_string()),
+        };
+        let scope = self.scope(reader.as_deref());
+        let snap = self
+            .core
+            .snapshot(title, content, extra, &own, &scope)
+            .map_err(|e| match e {
+                SnapshotError::Unsupported(m) => PyNotImplementedError::new_err(m),
+                SnapshotError::Invalid(e) => value_err(e),
+                SnapshotError::Engine(e) => engine_err(e),
+            })?;
+        to_py(py, &snap.memory.to_value())
     }
 
     /// Forget a memory: tombstone, remove the flat file and the index row.

@@ -60,7 +60,7 @@ def seed(eng):
     for name, tag in [("pub", "@public"), ("work", "@work-circle"), ("chef", "@chef-only")]:
         m = eng.snapshot(
             f"{name} note",
-            "the amberfox jumps",
+            f"the amberfox jumps over the {name} gate",
             context_tag=tag,
             tags=["fox"],
             layer="long-term" if name == "work" else "short-term",
@@ -422,3 +422,52 @@ def test_intentions_and_ledger(eng):
     assert top[0]["key"] == "skill-a@1" and top[0]["served"] == 1
     with pytest.raises(ValueError):
         eng.ledger_record("skill-a", "1", "bogus")
+
+
+def test_snapshot_dedups_by_content_hash_like_python(eng):
+    a = eng.snapshot("first title", "identical words here")
+    b = eng.snapshot("second title", "identical words here")
+    assert b["id"] == a["id"] and b["title"] == "first title"
+    assert len(eng.list()) == 1
+
+
+def test_snapshot_derives_tier_authority_and_valence(eng):
+    web = eng.snapshot("t", "web words", source="web-fetch")
+    assert web["source_tier"] == "web" and web["metadata"] == {"authority_tier": "memory"}
+    man = eng.snapshot("t2", "manual words")
+    assert man["source_tier"] == "user-stated"
+    given = eng.snapshot("t3", "tier words", source="web-fetch", source_tier="user-stated")
+    assert given["source_tier"] == "user-stated"
+    case = eng.snapshot("Smith v. Jones opinion", "case words")
+    assert case["metadata"]["authority_tier"] == "case"
+    happy = eng.snapshot("t4", "happy words", emotional={"labels": ["joy", "trust"]})
+    assert happy["emotional"]["valence"] == 0.7
+    sad = eng.snapshot("t5", "sad words", emotional={"labels": ["joy"], "valence": -0.25})
+    assert sad["emotional"]["valence"] == -0.25
+
+
+def test_snapshot_refuses_what_python_decomposes_and_stores_nothing(eng):
+    with pytest.raises(NotImplementedError):
+        eng.snapshot("long", "river delta " * 200)
+    with pytest.raises(NotImplementedError):
+        eng.snapshot("flag", "short", decompose=True)
+    assert eng.list() == []
+
+
+def test_snapshot_reader_is_not_stored_and_scopes_dedup(eng, home):
+    secret = eng.snapshot("secret", "private words only", context_tag="@chef-only")
+    fresh = eng.snapshot("mine", "private words only", context_tag="@public", reader="@public")
+    assert fresh["id"] != secret["id"] and fresh["title"] == "mine"
+    assert "reader" not in fresh
+    doc = json.loads((home / "short-term" / f"{fresh['id']}.json").read_text())
+    assert "reader" not in doc
+    # the owner still dedups to the stored row
+    assert eng.snapshot("x", "private words only")["id"] in (secret["id"], fresh["id"])
+
+
+def test_snapshot_decompose_truthiness(eng):
+    for v in (1, "yes", [0], True):
+        with pytest.raises(NotImplementedError):
+            eng.snapshot("t", f"short {v}", decompose=v)
+    for v in (0, "", [], None, False):
+        eng.snapshot("t", f"falsy {v!r}", decompose=v)

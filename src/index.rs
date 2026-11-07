@@ -1402,6 +1402,19 @@ impl Index {
         })
     }
 
+    /// `SQLiteBackend.find_by_content_hash`: `(id, file_path)` of one row with
+    /// this content hash, if any.
+    pub fn find_by_content_hash(&self, hash: &str) -> Result<Option<(String, String)>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT id, file_path FROM memories WHERE content_hash = ? LIMIT 1",
+                [hash],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()?)
+    }
+
     /// `SQLiteBackend.term_doc_freq`: documents holding `token` in the FTS index
     /// (0 when FTS is off or the token is empty).
     pub fn term_doc_freq(&self, token: &str) -> i64 {

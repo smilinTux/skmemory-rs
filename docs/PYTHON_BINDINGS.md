@@ -33,7 +33,7 @@ production: there is no Python shim in this repo.
 | `history(id, reader=None)` | reader scope |
 | `reader_can_see(id, reader=None)` | reader scope |
 | `health(reader=None)` | reader scope; the owner gets the report, a reader only `{engine, ok, status}` |
-| `snapshot(title, content, **fields)` | owner only |
+| `snapshot(title, content, **fields)` | owner only; refuses what Python decomposes (see "Snapshot side effects") |
 | `save(memory_dict, seal=True)` | owner only |
 | `delete(id, reason, agent)` | owner only |
 | `archive(id, sub)` | owner only |
@@ -62,7 +62,7 @@ and, when `skmemory` is importable, compares it to the real model).
 | `store.list_memories(...)` | `list(...)`, newest first; `created_after` inclusive, `created_before` exclusive |
 | `store.history(id, reader)` | `history(id, reader)` -> rows `{id, title, layer, created_at, valid_from, valid_to, supersedes_id, superseded_by, current, requested}` |
 | `store.reader_can_see` | `reader_can_see` |
-| `store.snapshot(...)` | `snapshot(title, content, **fields)`; `fields` override any `Memory` field (`layer`, `tags`, `context_tag`, `source_tier`, ...) and the memory is sealed |
+| `store.snapshot(...)` | `snapshot(title, content, **fields)`; `fields` override any `Memory` field (`layer`, `tags`, `context_tag`, `source_tier`, ...); dedup, tier, authority tier and valence as Python, then sealed |
 | `store.forget` | `delete`: tombstone, flat file, index row |
 | `store.reindex` | `reindex` -> `{indexed, unloadable, orphans_kept, usage_restored}` |
 | `memory_remind`, `memory_intentions`, `memory_intention_done` | `remind` -> `{id, state, due_at}`; `intentions` -> `Intention.model_dump_json()` dicts; `intention_done` -> `{id, state}` or `None` |
@@ -128,6 +128,37 @@ Results carry `layer`, `role`, `kind`, `source_tier` as plain `str` (what `model
 accepted wherever a layer is taken (`search(layer=)`, `list(layer=)`, `snapshot(layer=)`); a caller
 that wants the enum wraps it: `MemoryLayer(m["layer"])`. `tests/python` pins both directions.
 
+## Snapshot side effects (SKMEM-R-07C part 2)
+
+`snapshot` reproduces the write-time behaviour of `MemoryStore.snapshot` that is a pure function of
+the arguments and the index, each checked against the real Python store case by case
+(`tests/snapshot_parity.rs`, vectors from `tests/snapshot_parity/gen_snapshot_parity.py`, 35 cases).
+Every other side effect is listed here with who does it. "Shim" means the R-08 shim keeps calling the
+Python store (or its backend) for it.
+
+| Python side effect | Rust `snapshot` | Who does it |
+|---|---|---|
+| Content-hash dedup (`sha256(content)[:16]`; a duplicate returns the stored memory and writes nothing) | yes | Rust. `reader=` is a call argument, never a stored field: dedup only considers a hit the writer's reader may see, and a hit on an invisible memory writes a fresh memory (checked against Python) |
+| `source_tier` from `source` when none is given (`tier_for_source`) | yes | Rust |
+| `metadata.authority_tier` (`prepare_metadata`) | yes | Rust |
+| Valence inferred from emotion labels | yes | Rust |
+| Integrity seal | yes | Rust |
+| Pre-write schema validation (the default hook) | yes (`Memory` validation) | Rust. Custom registered hooks: shim |
+| Flat file (atomic, durable) and SQLite index row | yes | Rust |
+| Document decomposition (`len >= 1200` or a truthy `decompose`, Python truthiness: `1`, a non-empty string or list) and content splitting | NOT done: raises `NotImplementedError`, stores nothing | Shim: call the Python snapshot |
+| Write-time triage (`kind` fact, rule, preference; `supersedes_id`: parent link, `write_triage` metadata, closing the superseded head's `valid_to`) | NOT done: `supersedes_id` and `kind` are stored as given, nothing is closed or linked | Shim |
+| pgvector row (embedding, upsert) | NOT done | Shim, or `skmemory sync --vector` rebuilds it from the flat files |
+| Graph upsert (AGE `index_memory`) | NOT done | Shim, or `skmemory sync --graph` |
+| Reweave backward pass (opt-in) | NOT done | Shim |
+| SKSeed truth check (opt-in) | NOT done | Shim |
+| Write-ahead log `wal/write_log.jsonl` | NOT done | Shim |
+| Retrieval log (`logs/retrieval.jsonl`) | NOT done: `search_report` returns the data | Shim |
+| `sync_failures` rows when vector or graph indexing fails | NOT done (there is no vector or graph write) | Shim |
+
+A shim that wants the full Python write routes every `snapshot` to Python until the vector and graph
+writers are ported; the Rust `snapshot` is correct for short content with none of those side effects
+wanted, and refuses rather than diverge for the rest.
+
 ## Differences from Python (deliberate or not yet ported)
 
 - **Temporal window parser:** `skmem::bench::time_window` returns EXACTLY Python's
@@ -147,8 +178,7 @@ that wants the enum wraps it: `MemoryLayer(m["layer"])`. `tests/python` pins bot
   (a write). The Rust search never writes; `reindex` and `fts_backfill` are owner calls.
 - Links to memories the reader cannot see are REDACTED from `related_ids`, `parent_id`,
   `supersedes_id` and `metadata.superseded_by` (R-06C). Python does not do this yet.
-- `snapshot` is the thin R-07B one (see SKMEM-R-07C part 2): it does not run Python's hooks, reweave,
-  embedding, pg vector row or graph indexing.
+- `snapshot`: see "Snapshot side effects" above for exactly what runs and what does not.
 - `health` reports the SQLite primary only (sync drift, WAL, FTS coverage); no pg, vector or graph
   probes.
 - `delete` and `archive` also remove the SQLite row; the pg derived store is untouched.
