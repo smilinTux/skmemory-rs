@@ -184,6 +184,21 @@ impl std::error::Error for NotOwner {}
 /// [`OwnerScope::from_process`], and both REFUSE when `SKMEMORY_READER`
 /// declares anything but an owner reader. A process serving a group chat
 /// therefore cannot obtain one by accident.
+///
+/// ```compile_fail
+/// // the field is private: no struct literal outside this module
+/// use skmem::audience::{OwnerScope, ReaderScope};
+/// let r = ReaderScope::resolve(None, &skmem::env::Env::empty(), &skmem::audience::AudienceConfig::empty());
+/// let _o = OwnerScope { scope: r };
+/// ```
+///
+/// ```compile_fail
+/// // a reader scope is not an owner scope: the raw connection refuses it
+/// use skmem::audience::{AudienceConfig, ReaderScope};
+/// let idx = skmem::index::Index::open("/nonexistent", true).unwrap();
+/// let r = ReaderScope::resolve(None, &skmem::env::Env::empty(), &AudienceConfig::empty());
+/// let _ = idx.connection(&r);
+/// ```
 #[derive(Debug)]
 pub struct OwnerScope {
     scope: ReaderScope,

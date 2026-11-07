@@ -16,6 +16,20 @@ All notable changes to `skmem` are documented here. The format follows
   parser. `cargo run --example class_bench` prints the table. `tests/class_bench.rs` asserts the
   candidate meets or beats the Python numbers recorded by `tests/golden/gen_class_bench_golden.py`
   for every class, and matches Python's ranked page on all 53 queries. `reimpl_fusion` is not ported.
+- Reader hardening (SKMEM-R-06D): `audience::OwnerScope` (only `OwnerScope::resolve` or
+  `from_process` build one, and both REFUSE with `NotOwner` when `SKMEMORY_READER` declares a
+  non-owner ceiling) now gates every raw or store-wide handle: `Index::{connection,fts_status,
+  reindex,fts_backfill,backfill_importance,delete}`, `flat::Store::{archive,tombstone,
+  is_tombstoned,delete}`, and `client_mut` on the vector, lexical and graph arms plus
+  `GraphArm::cypher`. The existence oracles are scoped: `Index::count`, `bump_access` and
+  `get_usage` take a `&ReaderScope`, a hidden id counts and bumps exactly like a missing one, and
+  a restricted reader's count is its own, never the store total. A visible memory no longer names
+  a hidden one: `ReaderScope::redact_links` drops `related_ids`, `parent_id`, `supersedes_id`
+  and `metadata.superseded_by` targets the reader cannot see (an unknown target is dropped too),
+  applied by `Store::{load,list}`, `Index::{get,all_rows,search_lexical}` and the vector and
+  lexical pg arms. The bench takes the owner explicitly. The R-08 shim MUST set
+  `SKMEMORY_AUDIENCE_CONFIG` to the packaged `audience_config.json` (documented in
+  `skmem::audience`). **Breaking:** the signatures above changed.
 - Reader ceiling and query sanitizer (SKMEM-R-06C): `skmem::audience` (`ReaderScope`,
   `AudienceConfig`, `resolve`: `SKMEMORY_READER` is a ceiling a per-call reader can only
   narrow, an unparseable reader is `@public`, a hidden id reads as missing) and
