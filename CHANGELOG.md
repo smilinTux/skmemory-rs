@@ -6,6 +6,30 @@ All notable changes to `skmem` are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Review fixes for R-07C (PR 14): the temporal window is now exactly Python's or an abstain (never a
+  different window; 5604-query Python golden, 0 wrong); a reader can never open Postgres writable
+  (`pg_read_only=False` raises); arm reports carry `hits` and `ms` like Python's retrieval log; an arm
+  that timed out cools down for `SKMEMORY_ARM_COOLDOWN_S` (10 s); the SQLite arms run under the same
+  deadline (interrupt watchdog).
+
+- Engine arm set (SKMEM-R-07C): new `skmem::engine::Engine` runs every arm Python fusion runs
+  (pgvector `semantic`, pg_search BM25 or SQLite `LIKE` as `lexical`, FTS5 `lexical_local`, optional
+  `graph`, `temporal`) concurrently under one `SKMEMORY_SEARCH_DEADLINE_S` deadline (default 4 s), with
+  per-arm `timeout`, `failed`, `unavailable` and `disabled` status and an abandoned-call guard, then
+  the unchanged post-arm pipeline. The Python `Engine` delegates to it, attaches Postgres when
+  `SKMEMORY_PG_DSN` is set (the wheel now builds with the `pg` feature), and adds `search_report`.
+  Class bench through the Engine with pgvector on a throwaway skmem-pg: 53 of 53 pages identical to
+  the Python golden (cosine floor and tie-break harness), and with the production arm set (pgvector
+  plus BM25) no class metric below it (`tests/engine_pg.rs`, `tests/class_bench.rs`).
+  `docs/PYTHON_BINDINGS.md` lists every remaining difference.
+- A reader process no longer writes `index.db` (R-07B review notes): `Index::open_readonly` opens it
+  `mode=ro` with no schema setup (a missing file is an empty in-memory index), `Engine(read_only=)`
+  gives an owner the same, and reinforcement (`access_count`, `importance`) is owner only (Python's
+  `recall` reinforces for readers; Rust does not). `layer` and `role` stay plain `str`, with a
+  `str`-Enum accepted as input; documented and pinned in `tests/python`.
+
 ### Fixed
 
 - Class bench (SKMEM-P1-12): `load_corpus` now sets `kind`, `outcome` from the fixture row, matching
@@ -27,7 +51,7 @@ All notable changes to `skmem` are documented here. The format follows
   `grep_substring`, `vector_only`, `fallback_chain`, the `full_context` oracle and the `candidate`
   (the Rust arms plus `skmem::search` over a real SQLite index) per query class on the vendored
   synthetic v1 fixtures (`tests/fixtures/eval-v1/corpus-v1.jsonl`, `queries-v1.jsonl`), with a
-  hashed bag-of-concepts embedding (blake2b-8) and a fixture-checked subset of the temporal window
+  hashed bag-of-concepts embedding (blake2b-8) and a subset of the temporal window
   parser. `cargo run --example class_bench` prints the table. `tests/class_bench.rs` asserts the
   candidate meets or beats the Python numbers recorded by `tests/golden/gen_class_bench_golden.py`
   for every class, and matches Python's ranked page on all 53 queries. `reimpl_fusion` is not ported.

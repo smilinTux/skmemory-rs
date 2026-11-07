@@ -22,25 +22,24 @@
 //! trust boundary the Python implementation has. The bindings add no way to
 //! skip the environment, which is what the tests pin.
 
-use crate::audience::{AudienceConfig, OwnerScope, ReaderScope};
-use crate::decay::Usage;
+use crate::audience::{OwnerScope, ReaderScope};
+use crate::engine::{
+    Arms, Engine as Core, EngineError, EngineOptions, SearchPath, SearchReport, SearchRequest,
+};
 use crate::env::Env;
-use crate::flat::{Store, StoreError};
-use crate::fusion::{run_arm, ArmInput, DEFAULT_ARM_CAP};
-use crate::index::{wal_status, Index, SearchFilters, WAL_DEGRADED_BYTES};
+use crate::flat::StoreError;
+use crate::index::{wal_status, WAL_DEGRADED_BYTES};
 use crate::intentions::{parse_due_at, Intention, IntentionStore, Kind};
 use crate::ledger::{Ledger, Record, Score};
 use crate::model::{Layer, Memory};
 use crate::pytime::Dt;
-use crate::search::{search, Candidate, SearchInput};
-use crate::validity::{normalize_as_of, valid_at};
+use crate::validity::normalize_as_of;
 use pyo3::exceptions::{PyOSError, PyPermissionError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::{json, Value};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
-use std::sync::Mutex;
 
 /// Python's `SEARCH_HIT_DEBOUNCE_S`.
 const SEARCH_HIT_DEBOUNCE_S: f64 = 3600.0;
@@ -214,10 +213,91 @@ fn superseded_map(
 /// `SKMEMORY_READER` ceiling. Writes and maintenance are owner only.
 #[pyclass(frozen, module = "skmem_core")]
 pub struct Engine {
-    root: PathBuf,
-    store: Store,
-    index: Mutex<Index>,
-    cfg: AudienceConfig,
+    core: Core,
+}
+
+fn engine_err(e: EngineError) -> PyErr {
+    match e {
+        EngineError::Store(e) => store_err(e),
+        EngineError::Index(e) => index_err(e),
+        EngineError::Io(e) => PyOSError::new_err(e.to_string()),
+        EngineError::ReadOnly => PyPermissionError::new_err(e.to_string()),
+    }
+}
+
+/// The agent a store belongs to: `<...>/agents/<agent>/memory`.
+fn agent_of(memory_dir: &std::path::Path) -> Option<String> {
+    let leaf = memory_dir.file_name()?.to_str()?;
+    if leaf != "memory" {
+        return None;
+    }
+    let agent = memory_dir.parent()?;
+    if agent.parent()?.file_name()?.to_str()? != "agents" {
+        return None;
+    }
+    agent.file_name()?.to_str().map(str::to_string)
+}
+
+/// The pre-fusion arms for this process: Postgres when `SKMEMORY_PG_DSN` is
+/// set (and `pg` is on), nothing otherwise. A store whose agent cannot be
+/// derived does not guess one: its Postgres arms report `failed`.
+#[cfg(feature = "pg")]
+fn build_arms(agent: Option<&str>, use_pg: bool, pg_read_only: bool) -> Arms {
+    use crate::engine::pg_arms::{attach, PgConfig};
+    use crate::engine::Attach;
+    let Some(cfg) = use_pg.then(|| PgConfig::from_env(pg_read_only)).flatten() else {
+        return Arms::none();
+    };
+    match agent {
+        Some(a) => attach(&cfg, a),
+        None => {
+            let why = "agent unknown: pass agent=... or open <home>/agents/<agent>/memory";
+            Arms {
+                semantic: Attach::Failed(why.into()),
+                lexical: Attach::Failed(why.into()),
+                graph: Attach::Absent,
+            }
+        }
+    }
+}
+
+#[cfg(not(feature = "pg"))]
+fn build_arms(_agent: Option<&str>, _use_pg: bool, _pg_read_only: bool) -> Arms {
+    Arms::none()
+}
+
+fn report_value(r: &SearchReport) -> Value {
+    let arms: Vec<Value> = r
+        .arms
+        .iter()
+        .enumerate()
+        .map(|(i, a)| {
+            let ms = (r.arm_ms[i] * 10.0).round() / 10.0;
+            json!({
+                "name": a.name,
+                "status": a.status.as_str(),
+                "detail": a.detail,
+                "hits": a.ids.len(),
+                "count": a.ids.len(),
+                "ms": ms,
+                "ids": a.ids,
+            })
+        })
+        .collect();
+    json!({
+        "arms": arms,
+        "route": r.route.map(|x| x.as_str()),
+        "rerank_applied": r.rerank_applied,
+        "degraded": r.degraded,
+        "path": match r.path {
+            SearchPath::Fused => "fused",
+            SearchPath::LegacyLike => "legacy_like",
+            SearchPath::Empty => "empty",
+        },
+        "elapsed_ms": (r.elapsed.as_secs_f64() * 10_000.0).round() / 10.0,
+        "elapsed_s": r.elapsed.as_secs_f64(),
+        "deadline_s": r.deadline.as_secs_f64(),
+    })
 }
 
 impl Engine {
@@ -225,20 +305,34 @@ impl Engine {
     /// the engine's audience config; the `SKMEMORY_READER` ceiling under the
     /// process one. See [`ReaderScope::from_process_with_config`].
     fn scope(&self, reader: Option<&str>) -> ReaderScope {
-        ReaderScope::from_process_with_config(reader, &self.cfg)
+        self.core.scope(reader)
     }
 
-    fn idx(&self) -> PyResult<std::sync::MutexGuard<'_, Index>> {
-        self.index
-            .lock()
-            .map_err(|_| PyRuntimeError::new_err("index lock poisoned"))
+    fn idx(&self) -> PyResult<std::sync::MutexGuard<'_, crate::index::Index>> {
+        Ok(self.core.index())
     }
 
     fn visible(&self, id: &str, scope: &ReaderScope) -> bool {
-        self.store.load(id, scope).ok().flatten().is_some()
+        self.core.store().load(id, scope).ok().flatten().is_some()
     }
 
-    /// The fused search, returning the page of hydrated memories in rank order.
+    /// The owner, on an engine that may write; `PermissionError` otherwise.
+    fn owner_rw(&self) -> PyResult<OwnerScope> {
+        let own = owner()?;
+        if self.core.is_read_only() {
+            return Err(PyPermissionError::new_err(
+                "this engine was opened read-only",
+            ));
+        }
+        Ok(own)
+    }
+
+    /// Only the owner reinforces: a read under a reader scope (a ceiling or a
+    /// per-call narrowing) never writes the index.
+    fn may_reinforce(&self, scope: &ReaderScope) -> bool {
+        scope.unrestricted() && !self.core.is_read_only() && owner().is_ok()
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn run_search(
         &self,
@@ -250,166 +344,29 @@ impl Engine {
         context_tags: Option<&[String]>,
         as_of: Option<&str>,
         scope: &ReaderScope,
-    ) -> PyResult<Vec<Memory>> {
-        let pool = limit.max(limit * 3);
-        let arm_limit = (pool * 3).max(DEFAULT_ARM_CAP);
-        let rows = self
-            .idx()?
-            .search_lexical(
-                query,
-                arm_limit,
-                &SearchFilters {
+    ) -> PyResult<(Vec<Memory>, SearchReport)> {
+        let out = self
+            .core
+            .search(
+                &SearchRequest {
+                    query,
+                    limit,
                     layer,
                     tags,
                     source,
                     context_tags,
                     as_of,
+                    now: None,
                 },
                 scope,
+                &Env::process(),
             )
-            .map_err(index_err)?;
-        let mut found: HashMap<String, Candidate> = HashMap::new();
-        let mut mems: HashMap<String, Memory> = HashMap::new();
-        let mut ids: Vec<String> = Vec::new();
-        for r in rows {
-            // Re-check on the hydrated memory: the flat file is the truth.
-            let Some(m) = self.store.load(&r.id, scope).map_err(store_err)? else {
-                continue;
-            };
-            let ok = layer.is_none_or(|l| m.layer.as_str() == l)
-                && tags.iter().all(|t| m.tags.contains(t))
-                && source.is_none_or(|s| s.is_empty() || m.source == s)
-                && as_of.is_none_or(|a| {
-                    valid_at(
-                        m.valid_from.as_deref(),
-                        Some(&m.created_at),
-                        m.valid_to.as_deref(),
-                        a,
-                    )
-                });
-            if !ok {
-                continue;
-            }
-            found.insert(m.id.clone(), Candidate::from_memory(&m));
-            ids.push(m.id.clone());
-            mems.insert(m.id.clone(), m);
-        }
-        let usage: HashMap<String, Usage> = {
-            let refs: Vec<&str> = ids.iter().map(String::as_str).collect();
-            self.idx()?
-                .get_usage(&refs, scope)
-                .into_iter()
-                .map(|(k, (n, last))| {
-                    (
-                        k,
-                        Usage {
-                            access_count: n,
-                            last_accessed: last,
-                        },
-                    )
-                })
-                .collect()
-        };
-        let cap = DEFAULT_ARM_CAP;
-        let arms = vec![
-            run_arm("semantic", ArmInput::Unattached, cap),
-            run_arm("lexical", ArmInput::Unattached, cap),
-            run_arm("lexical_local", ArmInput::Ids(ids), cap),
-            run_arm(
-                "graph",
-                ArmInput::Disabled(
-                    "disabled by config (SKMEMORY_GRAPH_ARM is off, the default)".into(),
-                ),
-                cap,
-            ),
-            run_arm("temporal", ArmInput::Unattached, cap),
-        ];
-        let input = SearchInput {
-            query,
-            scope,
-            limit,
-            arms: &arms,
-            found: &found,
-            has_pg_bm25: false,
-            df: None,
-            usage: Some(&usage),
-            decay_as_of: Dt::now(),
-        };
-        let page = match search(&input, &Env::process()) {
-            Some(t) => t.page,
-            None => Vec::new(),
-        };
-        Ok(page.into_iter().filter_map(|i| mems.remove(&i)).collect())
+            .map_err(engine_err)?;
+        Ok((out.memories, out.report))
     }
 
-    /// The forward neighbours of `cur` in a supersession chain: the id its
-    /// metadata names plus every record that names it in `supersedes_id`.
-    fn successors(&self, cur: &Memory) -> PyResult<Vec<String>> {
-        let mut ids: Vec<String> = Vec::new();
-        if let Some(s) = cur
-            .metadata
-            .get("superseded_by")
-            .and_then(|v| v.get("id"))
-            .and_then(Value::as_str)
-        {
-            ids.push(s.to_string());
-        }
-        ids.extend(self.idx()?.ids_superseding(&cur.id).map_err(index_err)?);
-        let mut seen = HashSet::new();
-        Ok(ids
-            .into_iter()
-            .filter(|i| !i.is_empty() && seen.insert(i.clone()))
-            .collect())
-    }
-
-    /// An unscoped load, for walking a chain. The caller applies the reader
-    /// check to everything it keeps.
-    fn raw_load(&self, id: &str) -> Option<Memory> {
-        self.store
-            .find_file(id)
-            .and_then(|p| self.store.read_path(&p).ok())
-    }
-}
-
-#[pymethods]
-impl Engine {
-    /// Open the store at `memory_dir` (the agent's `memory/` directory).
-    ///
-    /// `audience_config` is the path of the packaged `audience_config.json`
-    /// (resolves per-call `channel:<id>` readers; it can only narrow, never
-    /// widen the process ceiling). `fts=False` is the vaulted mode.
-    #[new]
-    #[pyo3(signature = (memory_dir, audience_config=None, fts=true))]
-    fn new(memory_dir: PathBuf, audience_config: Option<PathBuf>, fts: bool) -> PyResult<Engine> {
-        // A reader process never creates directories: only an owner process
-        // may write to the store layout.
-        let store = if OwnerScope::from_process().is_ok() {
-            Store::open(&memory_dir).map_err(|e| PyOSError::new_err(e.to_string()))?
-        } else {
-            Store::open_readonly(&memory_dir)
-        };
-        let index = Index::open(&memory_dir, fts).map_err(index_err)?;
-        let cfg = audience_config.map_or_else(AudienceConfig::empty, AudienceConfig::load);
-        Ok(Engine {
-            root: memory_dir,
-            store,
-            index: Mutex::new(index),
-            cfg,
-        })
-    }
-
-    /// The store root.
-    #[getter]
-    fn root(&self) -> String {
-        self.root.to_string_lossy().into_owned()
-    }
-
-    /// Search (`MemoryStore.search`): the lexical local arm fused by the Rust
-    /// pipeline. Returns memory dicts (`model_dump` keys) plus `superseded` and
-    /// `superseded_by`, or index rows when `detail="index"`.
-    #[pyo3(signature = (query, limit=10, *, tags=None, layer=None, source=None, context_tag=None, record_access=false, reader=None, as_of=None, detail="full"))]
     #[allow(clippy::too_many_arguments)]
-    fn search(
+    fn do_search(
         &self,
         py: Python<'_>,
         query: &str,
@@ -422,7 +379,7 @@ impl Engine {
         reader: Option<&str>,
         as_of: Option<&str>,
         detail: &str,
-    ) -> PyResult<PyObject> {
+    ) -> PyResult<(PyObject, SearchReport)> {
         if detail != "full" && detail != "index" {
             return Err(value_err("detail must be 'full' or 'index'"));
         }
@@ -436,7 +393,7 @@ impl Engine {
         let scope = self.scope(reader);
         let ctx = str_or_list(context_tag)?;
         let tags = tags.unwrap_or_default();
-        let mems = self.run_search(
+        let (mems, report) = self.run_search(
             query,
             limit,
             layer,
@@ -447,7 +404,7 @@ impl Engine {
             &scope,
         )?;
         let mems: Vec<Memory> = mems.into_iter().take(limit).collect();
-        if record_access {
+        if record_access && self.may_reinforce(&scope) {
             let ids: Vec<&str> = mems.iter().map(|m| m.id.as_str()).collect();
             self.idx()?
                 .bump_access(&ids, None, Some(SEARCH_HIT_DEBOUNCE_S), &scope);
@@ -497,9 +454,178 @@ impl Engine {
                 o.insert("est_tokens_full".into(), tf.into());
                 out.push(row);
             }
-            return to_py(py, &Value::Array(out));
+            return Ok((to_py(py, &Value::Array(out))?, report));
         }
-        to_py(py, &Value::Array(rows))
+        Ok((to_py(py, &Value::Array(rows))?, report))
+    }
+
+    /// The forward neighbours of `cur` in a supersession chain: the id its
+    /// metadata names plus every record that names it in `supersedes_id`.
+    fn successors(&self, cur: &Memory) -> PyResult<Vec<String>> {
+        let mut ids: Vec<String> = Vec::new();
+        if let Some(s) = cur
+            .metadata
+            .get("superseded_by")
+            .and_then(|v| v.get("id"))
+            .and_then(Value::as_str)
+        {
+            ids.push(s.to_string());
+        }
+        ids.extend(self.idx()?.ids_superseding(&cur.id).map_err(index_err)?);
+        let mut seen = HashSet::new();
+        Ok(ids
+            .into_iter()
+            .filter(|i| !i.is_empty() && seen.insert(i.clone()))
+            .collect())
+    }
+
+    /// An unscoped load, for walking a chain. The caller applies the reader
+    /// check to everything it keeps.
+    fn raw_load(&self, id: &str) -> Option<Memory> {
+        self.core
+            .store()
+            .find_file(id)
+            .and_then(|p| self.core.store().read_path(&p).ok())
+    }
+}
+
+#[pymethods]
+impl Engine {
+    /// Open the store at `memory_dir` (the agent's `memory/` directory).
+    ///
+    /// `audience_config` is the path of the packaged `audience_config.json`
+    /// (resolves per-call `channel:<id>` readers; it can only narrow, never
+    /// widen the process ceiling). `fts=False` is the vaulted mode.
+    ///
+    /// `read_only=None` (default) opens the SQLite index READ-ONLY (`mode=ro`,
+    /// no schema setup, no directory created) exactly when the process is not
+    /// the owner; `True` forces it (a live diagnostic), `False` is refused
+    /// under a ceiling. `agent` scopes the Postgres arms; when omitted it is
+    /// derived from `<home>/agents/<agent>/memory`. `pg=False` leaves the
+    /// Postgres arms off even when `SKMEMORY_PG_DSN` is set. `pg_read_only`
+    /// (default: same as the engine) opens every Postgres connection READ ONLY.
+    #[new]
+    #[pyo3(signature = (memory_dir, audience_config=None, fts=true, *, agent=None, read_only=None, pg=true, pg_read_only=None))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        memory_dir: PathBuf,
+        audience_config: Option<PathBuf>,
+        fts: bool,
+        agent: Option<String>,
+        read_only: Option<bool>,
+        pg: bool,
+        pg_read_only: Option<bool>,
+    ) -> PyResult<Engine> {
+        let is_owner = OwnerScope::from_process().is_ok();
+        if read_only == Some(false) && !is_owner {
+            return Err(PyPermissionError::new_err(
+                "a reader process cannot open the store writable",
+            ));
+        }
+        let ro = read_only.unwrap_or(!is_owner);
+        let agent = agent.or_else(|| agent_of(&memory_dir));
+        // A reader process never gets a writable Postgres session, whatever it passes.
+        if pg_read_only == Some(false) && !is_owner {
+            return Err(PyPermissionError::new_err(
+                "a reader process cannot open Postgres writable",
+            ));
+        }
+        let pg_ro = !is_owner || pg_read_only.unwrap_or(ro);
+        let arms = build_arms(agent.as_deref(), pg, pg_ro);
+        let core = Core::open(
+            memory_dir,
+            EngineOptions {
+                audience_config,
+                fts,
+                read_only: Some(ro),
+                arms,
+            },
+        )
+        .map_err(engine_err)?;
+        Ok(Engine { core })
+    }
+
+    /// The store root.
+    #[getter]
+    fn root(&self) -> String {
+        self.core.root().to_string_lossy().into_owned()
+    }
+
+    /// Search (`MemoryStore.search`): every attached arm (SQLite FTS, SQLite
+    /// `LIKE`, Postgres vector and BM25 when `SKMEMORY_PG_DSN` is set, temporal,
+    /// graph when enabled) fused by the Rust pipeline. Returns memory dicts
+    /// (`model_dump` keys) plus `superseded` and `superseded_by`, or index rows
+    /// when `detail="index"`. `record_access` reinforces only for the owner.
+    #[pyo3(signature = (query, limit=10, *, tags=None, layer=None, source=None, context_tag=None, record_access=false, reader=None, as_of=None, detail="full"))]
+    #[allow(clippy::too_many_arguments)]
+    fn search(
+        &self,
+        py: Python<'_>,
+        query: &str,
+        limit: usize,
+        tags: Option<Vec<String>>,
+        layer: Option<&str>,
+        source: Option<&str>,
+        context_tag: Option<&Bound<'_, PyAny>>,
+        record_access: bool,
+        reader: Option<&str>,
+        as_of: Option<&str>,
+        detail: &str,
+    ) -> PyResult<PyObject> {
+        Ok(self
+            .do_search(
+                py,
+                query,
+                limit,
+                tags,
+                layer,
+                source,
+                context_tag,
+                record_access,
+                reader,
+                as_of,
+                detail,
+            )?
+            .0)
+    }
+
+    /// `search` plus what the arms did: `{"results": [...], "report": {...}}`.
+    /// The report has one entry per arm (`name`, `status`, `detail`, `count`,
+    /// `ids`), the `route`, `degraded`, `path`, and the timings. It never
+    /// carries the query text.
+    #[pyo3(signature = (query, limit=10, *, tags=None, layer=None, source=None, context_tag=None, record_access=false, reader=None, as_of=None, detail="full"))]
+    #[allow(clippy::too_many_arguments)]
+    fn search_report(
+        &self,
+        py: Python<'_>,
+        query: &str,
+        limit: usize,
+        tags: Option<Vec<String>>,
+        layer: Option<&str>,
+        source: Option<&str>,
+        context_tag: Option<&Bound<'_, PyAny>>,
+        record_access: bool,
+        reader: Option<&str>,
+        as_of: Option<&str>,
+        detail: &str,
+    ) -> PyResult<PyObject> {
+        let (results, report) = self.do_search(
+            py,
+            query,
+            limit,
+            tags,
+            layer,
+            source,
+            context_tag,
+            record_access,
+            reader,
+            as_of,
+            detail,
+        )?;
+        let out = PyDict::new(py);
+        out.set_item("results", results)?;
+        out.set_item("report", to_py(py, &report_value(&report))?)?;
+        Ok(out.into_any().unbind())
     }
 
     /// `MemoryStore.recall`: the memory, or `None` when it does not exist or
@@ -507,7 +633,12 @@ impl Engine {
     #[pyo3(signature = (memory_id, reader=None))]
     fn recall(&self, py: Python<'_>, memory_id: &str, reader: Option<&str>) -> PyResult<PyObject> {
         let scope = self.scope(reader);
-        let Some(mut m) = self.store.load(memory_id, &scope).map_err(store_err)? else {
+        let Some(mut m) = self
+            .core
+            .store()
+            .load(memory_id, &scope)
+            .map_err(store_err)?
+        else {
             return Ok(py.None());
         };
         if !m.integrity_hash.is_empty() && !m.verify_integrity() {
@@ -519,7 +650,9 @@ impl Engine {
                 )),
             );
         }
-        self.idx()?.bump_access(&[memory_id], None, None, &scope);
+        if self.may_reinforce(&scope) {
+            self.idx()?.bump_access(&[memory_id], None, None, &scope);
+        }
         to_py(py, &m.to_value())
     }
 
@@ -540,7 +673,7 @@ impl Engine {
         let layer = layer.map(parse_layer).transpose()?;
         let scope = self.scope(reader);
         let tags = tags.unwrap_or_default();
-        let listing = self.store.list(layer, &scope);
+        let listing = self.core.store().list(layer, &scope);
         let out: Vec<Value> = listing
             .memories
             .iter()
@@ -659,7 +792,7 @@ impl Engine {
             return to_py(py, &v);
         };
         let rs = own.reader_scope();
-        let flat_ids = self.store.flat_id_set(rs);
+        let flat_ids = self.core.store().flat_id_set(rs);
         let sqlite_ids: BTreeSet<String> = idx
             .all_rows(rs)
             .map_err(index_err)?
@@ -668,7 +801,7 @@ impl Engine {
             .collect();
         let sqlite_only = sqlite_ids.difference(&flat_ids).count();
         let flat_only = flat_ids.difference(&sqlite_ids).count();
-        let unloadable = self.store.list(None, rs).unloadable.len();
+        let unloadable = self.core.store().list(None, rs).unloadable.len();
         let wal = wal_status(idx.path(), WAL_DEGRADED_BYTES);
         let fts = idx.fts_status(&own).map_err(index_err)?;
         let in_sync = sqlite_only == 0 && flat_only == 0;
@@ -682,7 +815,7 @@ impl Engine {
             "primary": {
                 "ok": ok,
                 "backend": "SkmemRust",
-                "base_path": self.root.to_string_lossy(),
+                "base_path": self.core.root().to_string_lossy(),
                 "total_memories": sqlite_ids.len(),
                 "wal": {
                     "wal_size_bytes": wal.wal_size_bytes,
@@ -707,13 +840,13 @@ impl Engine {
     /// index it. Owner only. Returns the id. Use `snapshot` to build and seal one.
     #[pyo3(signature = (memory, seal=true))]
     fn save(&self, py: Python<'_>, memory: &Bound<'_, PyAny>, seal: bool) -> PyResult<String> {
-        let own = owner()?;
+        let own = self.owner_rw()?;
         let mut m = Memory::from_stored(from_py(py, memory)?).map_err(value_err)?;
         if seal {
             m.seal();
         }
-        self.store.save(&m, &own).map_err(store_err)?;
-        let file = self.store.path_for(&m).map_err(store_err)?;
+        self.core.store().save(&m, &own).map_err(store_err)?;
+        let file = self.core.store().path_for(&m).map_err(store_err)?;
         self.idx()?
             .index_memory(&m, &file, &own)
             .map_err(index_err)?;
@@ -731,7 +864,7 @@ impl Engine {
         content: &str,
         fields: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyObject> {
-        let own = owner()?;
+        let own = self.owner_rw()?;
         let mut base = Memory::new(title, content).to_value();
         if let Some(f) = fields {
             let extra = from_py(py, f.as_any())?;
@@ -742,8 +875,8 @@ impl Engine {
         }
         let mut m = Memory::from_stored(base).map_err(value_err)?;
         m.seal();
-        self.store.save(&m, &own).map_err(store_err)?;
-        let file = self.store.path_for(&m).map_err(store_err)?;
+        self.core.store().save(&m, &own).map_err(store_err)?;
+        let file = self.core.store().path_for(&m).map_err(store_err)?;
         self.idx()?
             .index_memory(&m, &file, &own)
             .map_err(index_err)?;
@@ -754,14 +887,19 @@ impl Engine {
     /// Owner only. Returns whether a memory existed.
     #[pyo3(signature = (memory_id, reason="forget", agent=None))]
     fn delete(&self, memory_id: &str, reason: &str, agent: Option<&str>) -> PyResult<bool> {
-        let own = owner()?;
-        if self.store.find_file(memory_id).is_none() {
+        let own = self.owner_rw()?;
+        if self.core.store().find_file(memory_id).is_none() {
             return Ok(false);
         }
-        self.store
+        self.core
+            .store()
             .tombstone(memory_id, &forgotten_at(), reason, agent, &own)
             .map_err(store_err)?;
-        let existed = self.store.delete(memory_id, &own).map_err(store_err)?;
+        let existed = self
+            .core
+            .store()
+            .delete(memory_id, &own)
+            .map_err(store_err)?;
         self.idx()?.delete(memory_id, &own).map_err(index_err)?;
         Ok(existed)
     }
@@ -770,9 +908,10 @@ impl Engine {
     /// Owner only. Returns the new path or `None`.
     #[pyo3(signature = (memory_id, sub=None))]
     fn archive(&self, memory_id: &str, sub: Option<&str>) -> PyResult<Option<String>> {
-        let own = owner()?;
+        let own = self.owner_rw()?;
         let moved = self
-            .store
+            .core
+            .store()
             .archive(memory_id, sub, &own)
             .map_err(store_err)?;
         if moved.is_some() {
@@ -784,10 +923,10 @@ impl Engine {
     /// Rebuild the index from the flat files. Owner only.
     #[pyo3(signature = (force=false))]
     fn reindex(&self, py: Python<'_>, force: bool) -> PyResult<PyObject> {
-        let own = owner()?;
+        let own = self.owner_rw()?;
         let r = self
             .idx()?
-            .reindex(&self.store, force, &own)
+            .reindex(self.core.store(), force, &own)
             .map_err(index_err)?;
         to_py(
             py,
@@ -811,7 +950,7 @@ impl Engine {
         origin_memory_id: Option<&str>,
         channel: Option<&str>,
     ) -> PyResult<PyObject> {
-        let own = owner()?;
+        let own = self.owner_rw()?;
         let title = flat(title);
         if title.is_empty() {
             return Err(value_err("title is required"));
@@ -837,7 +976,7 @@ impl Engine {
         if let Some(c) = channel.filter(|c| !c.is_empty()) {
             i.channel = c.to_string();
         }
-        let st = IntentionStore::open(&self.root, &own).map_err(value_err)?;
+        let st = IntentionStore::open(self.core.root(), &own).map_err(value_err)?;
         st.save(&i).map_err(value_err)?;
         to_py(
             py,
@@ -849,7 +988,7 @@ impl Engine {
     #[pyo3(signature = (state=None))]
     fn intentions(&self, py: Python<'_>, state: Option<&str>) -> PyResult<PyObject> {
         let own = owner()?;
-        let st = IntentionStore::open(&self.root, &own).map_err(value_err)?;
+        let st = IntentionStore::open(self.core.root(), &own).map_err(value_err)?;
         let rows: Vec<Value> = st
             .list(state)
             .map_err(value_err)?
@@ -868,8 +1007,8 @@ impl Engine {
         intention_id: &str,
         event: &str,
     ) -> PyResult<PyObject> {
-        let own = owner()?;
-        let st = IntentionStore::open(&self.root, &own).map_err(value_err)?;
+        let own = self.owner_rw()?;
+        let st = IntentionStore::open(self.core.root(), &own).map_err(value_err)?;
         match st
             .apply(intention_id, event, None, None)
             .map_err(value_err)?
@@ -890,8 +1029,8 @@ impl Engine {
         session: &str,
         host: Option<&str>,
     ) -> PyResult<String> {
-        let own = owner()?;
-        let led = Ledger::new(&self.root, host, &own);
+        let own = self.owner_rw()?;
+        let led = Ledger::new(self.core.root(), host, &own);
         led.record(
             skill,
             version,
@@ -909,7 +1048,7 @@ impl Engine {
     #[pyo3(signature = (limit=20, host=None))]
     fn ledger_top(&self, py: Python<'_>, limit: usize, host: Option<&str>) -> PyResult<PyObject> {
         let own = owner()?;
-        let led = Ledger::new(&self.root, host, &own);
+        let led = Ledger::new(self.core.root(), host, &own);
         let rows: Vec<Value> = led.top(None, limit).iter().map(score_value).collect();
         to_py(py, &Value::Array(rows))
     }

@@ -25,9 +25,10 @@ production: there is no Python shim in this repo.
 
 | Binding | Scope derivation |
 |---|---|
-| `Engine(memory_dir, audience_config=None, fts=True)` | opens read-only under a ceiling |
-| `search(query, limit=10, *, tags, layer, source, context_tag, record_access, reader, as_of, detail)` | reader scope (`from_process_with_config`) |
-| `recall(id, reader=None)` | reader scope |
+| `Engine(memory_dir, audience_config=None, fts=True, *, agent, read_only, pg, pg_read_only)` | opens read-only under a ceiling (see "Read-only opens") |
+| `search(query, limit=10, *, tags, layer, source, context_tag, record_access, reader, as_of, detail)` | reader scope (`from_process_with_config`); reinforces only for the owner |
+| `search_report(...)` (same arguments) | same; returns `{"results": [...], "report": {...}}` with per-arm status |
+| `recall(id, reader=None)` | reader scope; reinforces only for the owner |
 | `list(layer, tags, limit, created_after, created_before, source, reader)` | reader scope |
 | `history(id, reader=None)` | reader scope |
 | `reader_can_see(id, reader=None)` | reader scope |
@@ -67,16 +68,89 @@ and, when `skmemory` is importable, compares it to the real model).
 | `memory_remind`, `memory_intentions`, `memory_intention_done` | `remind` -> `{id, state, due_at}`; `intentions` -> `Intention.model_dump_json()` dicts; `intention_done` -> `{id, state}` or `None` |
 | outcome ledger | `ledger_record` -> event id; `ledger_top` -> score dicts |
 
+## The arm set (SKMEM-R-07C)
+
+`search` runs the same arms as Python `MemoryStore.search_fused`, through one Rust `Engine`
+(`skmem::engine`), then the same post-arm pipeline (route, vector pin, interleave or RRF,
+rare-term rerank, supersession demotion, decay when configured, tier cap, procedure order).
+
+| Arm | Backend | Notes |
+|---|---|---|
+| `semantic` | pgvector `PGVectorBackend.search_semantic` twin | needs `SKMEMORY_PG_DSN`; query embedded by the HTTP client (`SKMEMORY_EMBED_URL`, mxbai 1024, same request shape, token limit and failover as Python) |
+| `lexical` | pg_search BM25 when Postgres is attached, else SQLite `LIKE` (`search_text`) | as Python: the pin order prefers pg BM25 when a Postgres backend is attached |
+| `lexical_local` | SQLite FTS5 bm25 | always on, offline |
+| `graph` | AGE entity expansion | OFF unless `SKMEMORY_GRAPH_ARM` is on, reported `disabled` otherwise |
+| `temporal` | SQLite created-at window | only when the query names a time window |
+
+- **Postgres is attached only when `SKMEMORY_PG_DSN` is set** (there is no implicit DSN), scoped to
+  the agent: `agent=` or `<home>/agents/<agent>/memory`. A store whose agent cannot be derived does
+  not guess one: its Postgres arms report `failed`. `pg=False` leaves them off. Connections are made
+  lazily on the first search, inside the arm's worker thread and under the deadline, so a dead
+  server is a per-search `failed` status that is retried, never an engine that cannot open.
+- **One deadline** (`SKMEMORY_SEARCH_DEADLINE_S`, default 4 s) covers every arm, the SQLite arms
+  included (a watchdog interrupts the SQLite statement when it expires and the arm is `timeout`;
+  flat-file hydration afterwards is outside it). An arm still
+  running at the deadline is `timeout`, never an empty result, and `report["degraded"]` is
+  `"arms timed out"`. The abandoned call is left to finish and its result is dropped; while it
+  runs, the next search reports that arm `timeout` at once instead of queuing behind it (Python's
+  `ArmGuard`), and after a timeout the arm cools down for `SKMEMORY_ARM_COOLDOWN_S` (default 10 s):
+  it is not called and reports `timeout` ("cooling down ..."); the abandoned call finishing normally
+  clears it. The in-flight cap is 1 (Python's `SKMEMORY_ARM_MAX_INFLIGHT` default is 2). When nothing fused and an arm timed out the page is empty and the legacy path is not
+  taken (it would call the hung backends again).
+- Each arm is `ok`, `abstained` (ran, no hits), `unavailable` (no backend), `failed` (raised),
+  `disabled` (switched off by config) or `timeout`. `search_report` returns them per arm with the
+  ids each contributed, per-arm `hits` and `ms` (Python's `retrieval_log` shape, with `elapsed_ms`;
+  a timed-out arm's `ms` is the time waited), the `route`, `rerank_applied`, `path` (`fused`, `legacy_like`, `empty`) and
+  timings. It never carries the query text. Writing `retrieval.jsonl` from it stays in the shim.
+- Scope: every arm receives the reader scope and filters in its own query; hydrated rows are
+  re-checked; `search` drops any id the reader may not see before fusing (R-06C, R-06D, R-07B).
+
+### Read-only opens
+
+- A process under a `SKMEMORY_READER` ceiling opens `index.db` READ-ONLY: SQLite URI `mode=ro`
+  plus `PRAGMA query_only`, no schema setup, no migration, no WAL checkpoint, no FTS creation. A
+  missing `index.db` is an EMPTY IN-MEMORY index: a reader never creates a file or a directory.
+  A reader MAY create `index.db-wal` and `index.db-shm` beside the database: SQLite needs them to read
+  a WAL-mode file, and there is no read-only way around that without `immutable=1`, which is unsafe
+  on a live index. `index.db` itself is never written; the reader needs write access to the
+  directory only for those sidecars.
+  Its Postgres connections are opened `default_transaction_read_only=on`.
+- `read_only=True` gives an owner process the same (a live diagnostic); every write then raises
+  `PermissionError`. `read_only=False` under a ceiling raises `PermissionError`.
+- Reinforcement (`access_count`, `importance`, `last_accessed`) is OWNER ONLY. `recall` and
+  `search(record_access=True)` bump nothing under a reader scope, whether the ceiling or a per-call
+  `reader=` narrowing. **Python differs:** `MemoryStore.recall` reinforces for any reader.
+
+### `layer` and `role` are plain `str`
+
+Results carry `layer`, `role`, `kind`, `source_tier` as plain `str` (what `model_dump()` gives for
+`use_enum_values`). Python's `MemoryLayer(str, Enum)` compares equal to the plain value and is
+accepted wherever a layer is taken (`search(layer=)`, `list(layer=)`, `snapshot(layer=)`); a caller
+that wants the enum wraps it: `MemoryLayer(m["layer"])`. `tests/python` pins both directions.
+
 ## Differences from Python (deliberate or not yet ported)
 
-- Search runs the `lexical_local` arm (SQLite FTS5) through `skmem::search` (fusion, rerank,
-  supersession demotion, decay when configured, tier cap, procedure order). The `semantic`,
-  `lexical` (pg), `temporal` arms are reported unattached and the graph arm disabled; the pg feature
-  is not in the wheel. Callers that need vectors keep the Python path until R-08 decides.
+- **Temporal window parser:** `skmem::bench::time_window` returns EXACTLY Python's
+  `parse_time_window(strict=True)` window or abstains; it never returns a different window.
+  `tests/temporal_parity.rs` checks 5604 Python-generated queries (every phrase family: ISO dates and
+  months, month plus day or year, bare years, since/before/between, relative days/weeks/months,
+  last/past N, "the past month", weekdays, this/last week/month, may/march, punctuation, unicode,
+  pairs): 3105 exact, 1642 abstained where Python answers, 0 wrong. It answers the relative phrases
+  in Python's regex order and a lone unambiguous month name right after a time preposition. It
+  abstains on an ISO-shaped date, a non-ASCII digit, any digit or a second month word near a month
+  name, bare years, `may` and `march`, and the cue forms (`of june`, `june 2025`, ...). When the
+  temporal arm abstains where Python answers, that arm contributes nothing the Python arm would have.
+- **Legacy path:** when no arm fused and none timed out, Python tries the pgvector `search_text`
+  (embedding KNN, then BM25, then ILIKE, unscoped) before SQLite. Rust goes straight to the SQLite
+  `LIKE` path (scoped); the pgvector `search_text` fallback is not ported.
+- **Lazy FTS backfill:** Python's `search_lexical_local` backfills missing FTS rows while searching
+  (a write). The Rust search never writes; `reindex` and `fts_backfill` are owner calls.
 - Links to memories the reader cannot see are REDACTED from `related_ids`, `parent_id`,
   `supersedes_id` and `metadata.superseded_by` (R-06C). Python does not do this yet.
-- `snapshot` does not run Python's hooks, reweave, embedding or graph indexing.
+- `snapshot` is the thin R-07B one (see SKMEM-R-07C part 2): it does not run Python's hooks, reweave,
+  embedding, pg vector row or graph indexing.
 - `health` reports the SQLite primary only (sync drift, WAL, FTS coverage); no pg, vector or graph
   probes.
 - `delete` and `archive` also remove the SQLite row; the pg derived store is untouched.
-- `record_access=True` reinforces hits through `Index::bump_access` with the one-hour debounce.
+- `record_access=True` reinforces hits through `Index::bump_access` with the one-hour debounce, for
+  the owner only.

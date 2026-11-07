@@ -28,4 +28,5 @@ Issues = "https://github.com/smilinTux/skmemory-rs/issues"
 # added as skmem_core._skmem_core and re-exported by skmem_core/__init__.py.
 python-source = "python"
 module-name = "skmem_core._skmem_core"
-features = ["extension-module"]
+# pg: the Postgres arms (vector, BM25, graph); they attach only when SKMEMORY_PG_DSN is set.
+features = ["extension-module", "pg"]

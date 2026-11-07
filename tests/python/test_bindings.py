@@ -42,6 +42,7 @@ OWNER_ONLY = [
 def _no_ceiling(monkeypatch):
     monkeypatch.delenv("SKMEMORY_READER", raising=False)
     monkeypatch.delenv("SKMEMORY_AUDIENCE_CONFIG", raising=False)
+    monkeypatch.delenv("SKMEMORY_PG_DSN", raising=False)
 
 
 @pytest.fixture()
@@ -202,6 +203,126 @@ def test_reader_process_does_not_create_the_store(tmp_path, monkeypatch):
     home.mkdir(parents=True)
     Engine(str(home))
     assert not (home / "short-term").exists()
+    # nor an index: a reader opens a missing index as an empty in-memory one
+    assert not (home / "index.db").exists()
+    assert list(home.iterdir()) == []
+
+
+def test_a_reader_cannot_open_postgres_writable(eng, monkeypatch):
+    seed(eng)
+    monkeypatch.setenv("SKMEMORY_READER", "@public")
+    with pytest.raises(PermissionError):
+        Engine(eng.root, pg_read_only=False)
+    with pytest.raises(PermissionError):
+        Engine(eng.root, read_only=False)
+    Engine(eng.root, pg_read_only=True)
+
+
+def _sha(path):
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_reader_process_never_writes_index_db(eng, home, monkeypatch):
+    """(a) A declared reader opens index.db read-only (mode=ro): no schema setup, no bump."""
+    ids = seed(eng)
+    db = home / "index.db"
+    before = (_sha(db), db.stat().st_mtime_ns)
+    monkeypatch.setenv("SKMEMORY_READER", "@public")
+    ro = Engine(str(home))
+    assert {h["id"] for h in ro.search("amberfox", record_access=True)} == {ids["pub"]}
+    assert ro.recall(ids["pub"])["id"] == ids["pub"]
+    assert ro.health()["ok"] is True
+    assert (_sha(db), db.stat().st_mtime_ns) == before
+
+
+def test_owner_can_open_read_only_and_cannot_write(eng, home):
+    """read_only=True is the live-diagnostic mode: reads work, every write is refused."""
+    ids = seed(eng)
+    db = home / "index.db"
+    before = (_sha(db), db.stat().st_mtime_ns)
+    ro = Engine(str(home), read_only=True)
+    assert {h["id"] for h in ro.search("amberfox")} == set(ids.values())
+    for name, args in OWNER_ONLY:
+        if name in ("intentions", "ledger_top"):
+            continue
+        with pytest.raises(PermissionError):
+            getattr(ro, name)(*args)
+    assert (_sha(db), db.stat().st_mtime_ns) == before
+
+
+def _usage(home, mid):
+    import sqlite3
+
+    c = sqlite3.connect(f"file:{home / 'index.db'}?mode=ro", uri=True)
+    try:
+        return c.execute(
+            "SELECT access_count, importance FROM memories WHERE id = ?", (mid,)
+        ).fetchone()
+    finally:
+        c.close()
+
+
+def test_only_the_owner_reinforces(eng, home):
+    """(b) Reader recall and reader search never bump access_count or importance.
+
+    Python's MemoryStore.recall DOES reinforce for a reader; Rust deliberately
+    does not (a read under a reader scope writes nothing).
+    """
+    ids = seed(eng)
+    pub = ids["pub"]
+    base = _usage(home, pub)
+    assert base[0] == 0
+    assert eng.recall(pub, reader="@public")["id"] == pub
+    assert eng.search("amberfox", record_access=True, reader="@public")
+    assert _usage(home, pub) == base
+    eng.recall(pub)  # the owner, no reader
+    after = _usage(home, pub)
+    assert after[0] == 1 and after[1] > base[1]
+    # the search bump is debounced to once an hour: a never-bumped memory shows it
+    chef = ids["chef"]
+    assert _usage(home, chef)[0] == 0
+    eng.search("amberfox", record_access=True)
+    assert _usage(home, chef)[0] == 1
+
+
+def test_layer_and_role_are_plain_str_and_str_enums_work(eng):
+    """(c) The bindings return plain str; a str-Enum (skmemory's MemoryLayer) is
+    accepted as input and compares equal to the returned value."""
+    import enum
+
+    class MemoryLayer(str, enum.Enum):
+        SHORT = "short-term"
+        LONG = "long-term"
+
+    ids = seed(eng)
+    m = eng.recall(ids["pub"])
+    assert type(m["layer"]) is str and type(m["role"]) is str
+    assert m["layer"] == MemoryLayer.SHORT and MemoryLayer(m["layer"]) is MemoryLayer.SHORT
+    assert [h["id"] for h in eng.search("amberfox", layer=MemoryLayer.LONG)] == [ids["work"]]
+    assert [x["id"] for x in eng.list(layer=MemoryLayer.LONG)] == [ids["work"]]
+    s = eng.snapshot("e", "enum layer", layer=MemoryLayer.LONG)
+    assert s["layer"] == "long-term"
+
+
+def test_search_report_states_every_arm_without_the_query(eng):
+    seed(eng)
+    out = eng.search_report("amberfox")
+    assert [h["id"] for h in out["results"]]
+    rep = out["report"]
+    arms = {a["name"]: a for a in rep["arms"]}
+    assert list(arms) == ["semantic", "lexical", "lexical_local", "graph", "temporal"]
+    # no SKMEMORY_PG_DSN in the test process: the Postgres arms are not attached
+    assert arms["semantic"]["status"] == "unavailable"
+    assert arms["lexical"]["status"] == "ok"  # SQLite LIKE, as Python without Postgres
+    assert arms["lexical_local"]["status"] == "ok"
+    assert rep["path"] == "fused" and rep["degraded"] is None
+    assert "amberfox" not in json.dumps(rep)
+    # Python retrieval_log shape: per arm {status, hits, ms}, plus elapsed_ms
+    for a in rep["arms"]:
+        assert isinstance(a["hits"], int) and isinstance(a["ms"], float) and a["ms"] >= 0
+    assert arms["lexical_local"]["hits"] >= 1 and rep["elapsed_ms"] > 0
 
 
 def test_health_reader_gets_verdict_only(eng, monkeypatch):
