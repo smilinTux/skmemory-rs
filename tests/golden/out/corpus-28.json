@@ -1,0 +1,37 @@
+{
+  "id": "m-ab47e0650a",
+  "created_at": "2026-10-30T12:00:00+00:00",
+  "updated_at": "2026-10-30T12:00:00+00:00",
+  "layer": "mid-term",
+  "role": "general",
+  "title": "No implicit default agent",
+  "content": "There is no implicit default. Selectors must agree or the resolver returns none and refuses to guess.",
+  "summary": "",
+  "tags": [
+    "agent",
+    "config"
+  ],
+  "source": "manual",
+  "source_ref": "",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0,
+    "labels": [],
+    "resonance_note": "",
+    "cloud9_achieved": false
+  },
+  "related_ids": [],
+  "parent_id": null,
+  "context_tag": "@public",
+  "intent": "",
+  "integrity_hash": "",
+  "metadata": {},
+  "kind": "fact",
+  "outcome": null,
+  "event_at": "2026-10-30T12:00:00+00:00",
+  "valid_from": "2026-10-30T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": "m-d26e6c752c",
+  "source_tier": "user-stated",
+  "schema_version": 2
+}

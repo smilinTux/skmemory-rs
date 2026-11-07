@@ -1,0 +1,24 @@
+{
+  "id": "m-e56f225692",
+  "title": "skwk12 ssh is port 22, the 2222 alias is wrong",
+  "content": "Corrected: skwk12-wsl listens on 22. The port 2222 alias on skap01 is stale.",
+  "layer": "mid-term",
+  "tags": [
+    "host",
+    "skwk12"
+  ],
+  "created_at": "2026-10-29T12:00:00+00:00",
+  "event_at": "2026-10-29T12:00:00+00:00",
+  "kind": "fact",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-10-29T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": "m-20e7b54b06",
+  "schema_version": 2,
+  "updated_at": "2026-10-29T12:00:00+00:00"
+}

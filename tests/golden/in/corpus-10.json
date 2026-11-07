@@ -1,0 +1,24 @@
+{
+  "id": "m-1197809263",
+  "title": "Why the dense arm misses terse records",
+  "content": "Short identifier-only memories have almost no semantic signal. The embedding of a bare ticket id lands nowhere near a natural-language question about it, so only a lexical leg finds it.",
+  "layer": "mid-term",
+  "tags": [
+    "retrieval",
+    "design"
+  ],
+  "created_at": "2026-09-22T12:00:00+00:00",
+  "event_at": "2026-09-22T12:00:00+00:00",
+  "kind": "fact",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-09-22T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-09-22T12:00:00+00:00"
+}

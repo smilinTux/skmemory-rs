@@ -1,0 +1,24 @@
+{
+  "id": "m-fe57962744",
+  "title": "Review queue stalled after reboot",
+  "content": "After the host reboot the reviewer panes came back as bare shells and nothing reviewed for three days.",
+  "layer": "mid-term",
+  "tags": [
+    "ops",
+    "review"
+  ],
+  "created_at": "2026-10-28T12:00:00+00:00",
+  "event_at": "2026-10-28T12:00:00+00:00",
+  "kind": "episode",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.6,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-10-28T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-10-28T12:00:00+00:00"
+}

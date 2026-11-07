@@ -1,0 +1,37 @@
+{
+  "id": "m-20e7b54b06",
+  "created_at": "2026-08-03T12:00:00+00:00",
+  "updated_at": "2026-08-03T12:00:00+00:00",
+  "layer": "mid-term",
+  "role": "general",
+  "title": "skwk12 ssh alias uses port 2222",
+  "content": "The alias on skap01 points skwk12 at port 2222.",
+  "summary": "",
+  "tags": [
+    "host",
+    "skwk12"
+  ],
+  "source": "manual",
+  "source_ref": "",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0,
+    "labels": [],
+    "resonance_note": "",
+    "cloud9_achieved": false
+  },
+  "related_ids": [],
+  "parent_id": null,
+  "context_tag": "@public",
+  "intent": "",
+  "integrity_hash": "",
+  "metadata": {},
+  "kind": "fact",
+  "outcome": null,
+  "event_at": "2026-08-03T12:00:00+00:00",
+  "valid_from": "2026-08-03T12:00:00+00:00",
+  "valid_to": "2026-10-29T12:00:00+00:00",
+  "supersedes_id": null,
+  "source_tier": "user-stated",
+  "schema_version": 2
+}

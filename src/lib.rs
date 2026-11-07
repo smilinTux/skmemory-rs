@@ -1,7 +1,12 @@
 //! skmem: the Rust engine for skmemory (strangler plan).
 //!
-//! Bootstrap only. The engine moves here in later cards; this crate currently
-//! exposes its own version so the build, test and wheel pipeline can be proven.
+//! Storage core: the schema v2 [`model::Memory`] and the flat JSON
+//! [`flat::Store`], byte-compatible with the Python implementation.
+
+pub mod flat;
+pub mod model;
+pub mod pyjson;
+mod util;
 
 /// The crate version, as declared in `Cargo.toml`.
 pub fn version() -> &'static str {

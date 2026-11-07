@@ -1,0 +1,24 @@
+{
+  "id": "m-4491d78901",
+  "title": "PR #4121 pushes filters into the semantic arm",
+  "content": "Filter push-down for layer and tags into search_semantic so fused results respect the caller's filters. Pull request 4121 merged after review.",
+  "layer": "mid-term",
+  "tags": [
+    "pr",
+    "retrieval"
+  ],
+  "created_at": "2026-10-27T12:00:00+00:00",
+  "event_at": "2026-10-27T12:00:00+00:00",
+  "kind": "fact",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-10-27T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-10-27T12:00:00+00:00"
+}

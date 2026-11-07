@@ -1,0 +1,15 @@
+{
+  "id": "v1-a",
+  "title": "T",
+  "content": "C",
+  "created_at": "2026-10-02T12:00:00+00:00",
+  "updated_at": "2026-10-02T12:00:00+00:00",
+  "layer": "mid-term",
+  "tags": [
+    "old"
+  ],
+  "emotional": {
+    "intensity": 3,
+    "valence": -1
+  }
+}

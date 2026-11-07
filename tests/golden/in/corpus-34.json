@@ -1,0 +1,24 @@
+{
+  "id": "m-5c9fc7580d",
+  "title": "skap02 is offline this week",
+  "content": "skap02 has been unreachable since Monday; rejoin steps are in the ops report.",
+  "layer": "mid-term",
+  "tags": [
+    "host",
+    "skap02"
+  ],
+  "created_at": "2026-10-30T12:00:00+00:00",
+  "event_at": "2026-10-30T12:00:00+00:00",
+  "kind": "episode",
+  "source_tier": "user-stated",
+  "emotional": {
+    "intensity": 0.3,
+    "valence": 0.0
+  },
+  "context_tag": "@public",
+  "valid_from": "2026-10-30T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "schema_version": 2,
+  "updated_at": "2026-10-30T12:00:00+00:00"
+}

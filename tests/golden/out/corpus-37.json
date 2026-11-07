@@ -1,0 +1,37 @@
+{
+  "id": "m-6de2377944",
+  "created_at": "2026-08-23T12:00:00+00:00",
+  "updated_at": "2026-08-23T12:00:00+00:00",
+  "layer": "mid-term",
+  "role": "general",
+  "title": "First dream run produced a real synthesis",
+  "content": "The overnight synthesis produced a coherent narrative for the first time; this mattered a lot.",
+  "summary": "",
+  "tags": [
+    "dream",
+    "milestone"
+  ],
+  "source": "manual",
+  "source_ref": "",
+  "emotional": {
+    "intensity": 0.95,
+    "valence": 0.0,
+    "labels": [],
+    "resonance_note": "",
+    "cloud9_achieved": false
+  },
+  "related_ids": [],
+  "parent_id": null,
+  "context_tag": "@public",
+  "intent": "",
+  "integrity_hash": "",
+  "metadata": {},
+  "kind": "episode",
+  "outcome": null,
+  "event_at": "2026-08-23T12:00:00+00:00",
+  "valid_from": "2026-08-23T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "source_tier": "user-stated",
+  "schema_version": 2
+}

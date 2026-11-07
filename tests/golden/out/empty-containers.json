@@ -1,0 +1,38 @@
+{
+  "id": "empty-1",
+  "created_at": "2026-10-02T12:00:00+00:00",
+  "updated_at": "2026-10-02T12:00:00+00:00",
+  "layer": "short-term",
+  "role": "general",
+  "title": "T",
+  "content": "C",
+  "summary": "",
+  "tags": [],
+  "source": "manual",
+  "source_ref": "",
+  "emotional": {
+    "intensity": 0.0,
+    "valence": 0.0,
+    "labels": [],
+    "resonance_note": "",
+    "cloud9_achieved": false
+  },
+  "related_ids": [],
+  "parent_id": null,
+  "context_tag": "@chef-only",
+  "intent": "",
+  "integrity_hash": "",
+  "metadata": {
+    "e": {},
+    "l": [],
+    "s": ""
+  },
+  "kind": "episode",
+  "outcome": null,
+  "event_at": "2026-10-02T12:00:00+00:00",
+  "valid_from": "2026-10-02T12:00:00+00:00",
+  "valid_to": null,
+  "supersedes_id": null,
+  "source_tier": "self-generated",
+  "schema_version": 1
+}
