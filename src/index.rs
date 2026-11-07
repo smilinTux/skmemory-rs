@@ -720,7 +720,7 @@ impl Index {
     /// Every row ordered by id.
     pub fn all_rows(&self) -> Result<Vec<MemoryRow>> {
         let mut st = self.conn.prepare("SELECT * FROM memories ORDER BY id")?;
-        let rows = st.query_map([], |r| MemoryRow::from_row(r))?;
+        let rows = st.query_map([], MemoryRow::from_row)?;
         Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
@@ -1141,7 +1141,7 @@ impl Index {
                 .collect();
             all.push(rusqlite::types::Value::from(limit as i64));
             let rows: Vec<MemoryRow> = st
-                .query_map(params_from_iter(all), |r| MemoryRow::from_row(r))?
+                .query_map(params_from_iter(all), MemoryRow::from_row)?
                 .collect::<rusqlite::Result<_>>()?;
             if !rows.is_empty() || m == match_or {
                 return Ok(rows);
