@@ -1,0 +1,32 @@
+[package]
+name = "skmem"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "Apache-2.0"
+description = "Rust engine for skmemory: the strangler-plan core (storage, search, retrieval) with optional PyO3 bindings"
+repository = "https://github.com/smilinTux/skmemory-rs"
+keywords = ["memory", "retrieval", "agents"]
+publish = false
+
+[lib]
+name = "skmem"
+# rlib keeps the crate a normal Rust dependency and lets tests link it.
+# cdylib is what maturin compiles into the Python extension; without the
+# `python` feature it is an inert pure-Rust dynamic library.
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "skmem"
+path = "src/main.rs"
+
+[dependencies]
+# OPTIONAL PyO3 bindings (feature `python`). abi3 gives one wheel for CPython
+# 3.9+. Default `cargo build` / `cargo test` never compile pyo3.
+pyo3 = { version = "0.24", features = ["abi3-py39"], optional = true }
+
+[features]
+# Build the #[pymodule] into the cdylib. OFF by default.
+python = ["dep:pyo3"]
+# maturin enables this so the wheel does not link libpython.
+extension-module = ["python", "pyo3/extension-module"]

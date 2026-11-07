@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "skmem-core"
+description = "Rust engine for skmemory (PyO3 bindings): the Python import is skmem_core"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Chef (David)" }, { name = "Lumina" }]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "License :: OSI Approved :: Apache Software License",
+]
+dynamic = ["version"]  # from Cargo.toml via maturin
+
+[project.urls]
+Repository = "https://github.com/smilinTux/skmemory-rs"
+Changelog = "https://github.com/smilinTux/skmemory-rs/blob/main/CHANGELOG.md"
+Issues = "https://github.com/smilinTux/skmemory-rs/issues"
+
+[tool.maturin]
+# Mixed layout: pure-Python sources under python/, the compiled extension is
+# added as skmem_core._skmem_core and re-exported by skmem_core/__init__.py.
+python-source = "python"
+module-name = "skmem_core._skmem_core"
+features = ["extension-module"]
