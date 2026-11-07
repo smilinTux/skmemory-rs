@@ -34,6 +34,9 @@ Bootstrap work does not touch fusion, and nothing here claims a retrieval improv
 | --- | --- |
 | `src/lib.rs` | library crate `skmem` |
 | `src/main.rs` | binary `skmem`, prints the crate version |
+| `src/intentions.rs`, `src/intentions/tick.rs` | intention store, prefilter, tick (SKMEM-R-07) |
+| `src/ledger.rs` | outcome ledger (SKMEM-R-07) |
+| `tests/intent_parity/` | Python-generated parity vectors and the live cross-engine checks |
 | `python/skmem_core/` | pure-Python half of the maturin mixed layout |
 | `pyproject.toml` | maturin build, module `skmem_core` |
 
