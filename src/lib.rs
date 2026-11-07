@@ -4,6 +4,7 @@
 //! [`flat::Store`], byte-compatible with the Python implementation.
 
 pub mod flat;
+pub mod index;
 pub mod model;
 pub mod pyjson;
 mod util;
