@@ -287,8 +287,16 @@ fn lexical_tsrank_parity_in_a_scratch_schema() {
     });
 }
 
-const BM25_INDEX: &str = "CREATE EXTENSION IF NOT EXISTS pg_search;
-CREATE INDEX memories_bm25 ON {s}.memories USING bm25 (id, title, content, summary) WITH (key_field=id, text_fields='{
+/// `CREATE EXTENSION IF NOT EXISTS` under an advisory lock: concurrent
+/// creation races on `pg_extension_name_index`.
+fn ext_sql(name: &str) -> String {
+    format!(
+        "SELECT pg_advisory_lock(5305); CREATE EXTENSION IF NOT EXISTS {name}; \
+         SELECT pg_advisory_unlock(5305)"
+    )
+}
+
+const BM25_INDEX: &str = "CREATE INDEX memories_bm25 ON {s}.memories USING bm25 (id, title, content, summary) WITH (key_field=id, text_fields='{
   \"title\":   {\"tokenizer\": {\"type\": \"default\", \"stemmer\": \"English\", \"stopwords_language\": \"English\"}},
   \"content\": {\"tokenizer\": {\"type\": \"default\", \"stemmer\": \"English\", \"stopwords_language\": \"English\"}},
   \"summary\": {\"tokenizer\": {\"type\": \"default\", \"stemmer\": \"English\", \"stopwords_language\": \"English\"}}}');";
@@ -300,7 +308,10 @@ fn lexical_bm25_parity_in_a_scratch_schema() {
     // failure. The index is the live definition, in the scratch schema.
     let Some(dsn) = test_dsn() else { return };
     with_schema(&dsn, true, |schema, path, c| {
-        if let Err(e) = c.batch_execute(&BM25_INDEX.replace("{s}", schema)) {
+        if let Err(e) = c
+            .batch_execute(&ext_sql("pg_search"))
+            .and_then(|_| c.batch_execute(&BM25_INDEX.replace("{s}", schema)))
+        {
             assert!(
                 std::env::var("SKMEM_PG_TEST_BM25").ok().as_deref() != Some("1"),
                 "SKMEM_PG_TEST_BM25=1 but pg_search is unusable: {e}"
@@ -580,9 +591,7 @@ fn with_graph(dsn: &str, f: impl FnOnce(&mut GraphArm, &str)) {
     // unique per test: the tests run in parallel
     let graph = format!("skrs_r05g_{}_{n}", std::process::id());
     let mut admin = Client::connect(dsn, NoTls).unwrap();
-    admin
-        .batch_execute("CREATE EXTENSION IF NOT EXISTS age")
-        .unwrap();
+    admin.batch_execute(&ext_sql("age")).unwrap();
     admin
         .batch_execute("LOAD 'age'; SET search_path = ag_catalog, \"$user\", public")
         .unwrap();
