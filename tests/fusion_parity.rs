@@ -94,6 +94,8 @@ fn candidate(d: &Value) -> Candidate {
         source: opt("source").unwrap_or("manual".into()),
         source_tier: Some(opt("source_tier").unwrap_or("user-stated".into())),
         schema_version: d.get("schema_version").and_then(Value::as_i64).unwrap_or(2),
+        context_tag: "@chef-only".into(),
+        tags: vec![],
     }
 }
 
@@ -373,6 +375,7 @@ fn whole_search_path_matches_python_store_search() {
         let usage = usage_of(&c["usage"]);
         let input = SearchInput {
             query: &s(&c["query"]),
+            scope: &owner(),
             limit: c["limit"].as_u64().unwrap() as usize,
             arms: &arms,
             found: &found,
@@ -412,4 +415,13 @@ fn golden_case_count() {
     .map(|k| g[*k].as_array().unwrap().len())
     .sum();
     assert!(n >= 500, "only {n} golden cases");
+}
+
+/// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn owner() -> skmem::audience::ReaderScope {
+    skmem::audience::ReaderScope::resolve(
+        None,
+        &skmem::env::Env::empty(),
+        &skmem::audience::AudienceConfig::empty(),
+    )
 }

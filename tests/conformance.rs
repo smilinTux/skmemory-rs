@@ -143,9 +143,9 @@ fn v1_file_is_not_rewritten_on_read() {
     let raw = fs::read(golden().join("in/v1-no-v2-keys.json")).unwrap();
     fs::write(&p, &raw).unwrap();
     let before = fs::metadata(&p).unwrap().modified().unwrap();
-    let m = store.load("v1-a").unwrap().unwrap();
+    let m = store.load("v1-a", &owner()).unwrap().unwrap();
     assert_eq!(m.schema_version, 1);
-    let _ = store.list(None);
+    let _ = store.list(None, &owner());
     assert_eq!(fs::read(&p).unwrap(), raw);
     assert_eq!(fs::metadata(&p).unwrap().modified().unwrap(), before);
     let _ = fs::remove_dir_all(&dir);
@@ -203,4 +203,13 @@ fn py_loads_rust_output() {
         status.success(),
         "Python could not load or compare Rust output"
     );
+}
+
+/// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn owner() -> skmem::audience::ReaderScope {
+    skmem::audience::ReaderScope::resolve(
+        None,
+        &skmem::env::Env::empty(),
+        &skmem::audience::AudienceConfig::empty(),
+    )
 }

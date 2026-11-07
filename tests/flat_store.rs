@@ -37,12 +37,17 @@ fn save_load_list_roundtrip_and_layout() {
     s.save(&a).unwrap();
     s.save(&b).unwrap();
     assert!(d.join("short-term/a.json").is_file());
-    assert_eq!(s.load("a").unwrap().unwrap(), a);
-    assert_eq!(s.load("b").unwrap().unwrap(), b);
-    assert!(s.load("nope").unwrap().is_none());
-    let ids: Vec<String> = s.list(None).memories.into_iter().map(|m| m.id).collect();
+    assert_eq!(s.load("a", &owner()).unwrap().unwrap(), a);
+    assert_eq!(s.load("b", &owner()).unwrap().unwrap(), b);
+    assert!(s.load("nope", &owner()).unwrap().is_none());
+    let ids: Vec<String> = s
+        .list(None, &owner())
+        .memories
+        .into_iter()
+        .map(|m| m.id)
+        .collect();
     assert_eq!(ids, ["b", "a"], "newest first");
-    assert_eq!(s.list(Some(Layer::Short)).memories.len(), 1);
+    assert_eq!(s.list(Some(Layer::Short), &owner()).memories.len(), 1);
     // The saved bytes are exactly the Python dump and carry no trailing newline.
     let raw = fs::read_to_string(d.join("short-term/a.json")).unwrap();
     assert_eq!(raw, a.to_json());
@@ -76,13 +81,17 @@ fn invalid_files_are_skipped_by_list_and_reported_by_load() {
     fs::write(d.join("short-term/.hidden.json"), b"{}").unwrap();
     s.save(&mem("ok", Layer::Short, "2026-01-01T00:00:00+00:00"))
         .unwrap();
-    let l = s.list(None);
+    let l = s.list(None, &owner());
     assert_eq!(l.memories.len(), 1);
     assert_eq!(l.unloadable.len(), 1, "a bad file is reported, not dropped");
     assert!(l.unloadable[0].path.ends_with("bad.json"));
     assert!(!l.unloadable[0].reason.is_empty());
-    assert!(s.load("bad").is_err());
-    assert_eq!(s.flat_id_set().len(), 2, "dotfiles are not memories");
+    assert!(s.load("bad", &owner()).is_err());
+    assert_eq!(
+        s.flat_id_set(&owner()).len(),
+        2,
+        "dotfiles are not memories"
+    );
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -115,7 +124,7 @@ fn sync_conflict_copies_are_skipped_unless_only_copy() {
     )
     .unwrap();
 
-    let listed = s.list(None).memories;
+    let listed = s.list(None, &owner()).memories;
     let titles: Vec<&str> = listed.iter().map(|m| m.title.as_str()).collect();
     assert_eq!(listed.len(), 2, "{titles:?}");
     assert!(titles.contains(&"title"), "canonical copy listed");
@@ -124,8 +133,8 @@ fn sync_conflict_copies_are_skipped_unless_only_copy() {
         "only-copy conflict listed, newest"
     );
     assert!(!titles.contains(&"divergent") && !titles.contains(&"older"));
-    assert_eq!(s.load("c1").unwrap().unwrap().title, "title");
-    assert_eq!(s.load("c2").unwrap().unwrap().title, "newer");
+    assert_eq!(s.load("c1", &owner()).unwrap().unwrap().title, "title");
+    assert_eq!(s.load("c2", &owner()).unwrap().unwrap().title, "newer");
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -143,7 +152,7 @@ fn tombstone_and_archive() {
         before,
         "bytes untouched by archive"
     );
-    assert!(s.load("gone").unwrap().is_none());
+    assert!(s.load("gone", &owner()).unwrap().is_none());
     assert!(s.archive("gone", None).unwrap().is_none());
     s.tombstone("gone", "2026-11-07T00:00:00+0000", "forget", None)
         .unwrap();
@@ -165,7 +174,7 @@ fn overwrite_replaces_whole_file() {
     s.save(&m).unwrap();
     m.content = "short".into();
     s.save(&m).unwrap();
-    assert_eq!(s.load("o").unwrap().unwrap().content, "short");
+    assert_eq!(s.load("o", &owner()).unwrap().unwrap().content, "short");
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -198,9 +207,9 @@ fn crash_before_rename_leaves_prior_file_intact_and_temp_invisible() {
             })
             .count();
         assert_eq!(temps, 1, "crash leaves the temp behind, as a kill would");
-        assert_eq!(s.list(None).memories.len(), 1);
-        assert_eq!(s.flat_id_set().len(), 1);
-        assert_eq!(s.load("k").unwrap().unwrap().content, "content");
+        assert_eq!(s.list(None, &owner()).memories.len(), 1);
+        assert_eq!(s.flat_id_set(&owner()).len(), 1);
+        assert_eq!(s.load("k", &owner()).unwrap().unwrap().content, "content");
         let _ = fs::remove_dir_all(&d);
     }
 }
@@ -213,7 +222,7 @@ fn crash_before_first_write_leaves_no_target() {
     let path = s.path_for(&m).unwrap();
     assert!(atomic_write_crashing(&path, b"{}", CrashPoint::AfterFsync).is_err());
     assert!(!path.exists());
-    assert!(s.load("n").unwrap().is_none());
+    assert!(s.load("n", &owner()).unwrap().is_none());
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -270,7 +279,7 @@ fn sigkill_mid_save_never_leaves_a_partial_file() {
         let _ = child.kill();
         let _ = child.wait();
         let s = Store::open_readonly(&d);
-        if let Some(m) = s.load("victim").unwrap() {
+        if let Some(m) = s.load("victim", &owner()).unwrap() {
             let c = &m.content;
             assert_eq!(c.len(), 400_000, "round {round}: truncated file");
             assert!(
@@ -279,7 +288,7 @@ fn sigkill_mid_save_never_leaves_a_partial_file() {
             );
         }
         // Any temp a kill orphaned is invisible to list/load.
-        assert!(s.list(None).memories.len() <= 1);
+        assert!(s.list(None, &owner()).memories.len() <= 1);
     }
     let _ = fs::remove_dir_all(&d);
 }
@@ -300,7 +309,7 @@ fn big_integers_load_and_round_trip_exactly() {
         "big",
         r#""huge": 123456789012345678901234567890, "metadata": {"n": -9223372036854775809}"#,
     );
-    let l = s.list(None);
+    let l = s.list(None, &owner());
     assert!(l.unloadable.is_empty());
     let m = &l.memories[0];
     assert_eq!(
@@ -323,7 +332,7 @@ fn nan_and_lone_surrogates_are_reported_not_dropped() {
     put_raw(&d, "lone-high", r#""x": "a\ud800b""#);
     put_raw(&d, "lone-low", r#""x": "\udc00""#);
     put_raw(&d, "paired", r#""x": "\ud83d\ude00""#);
-    let l = s.list(None);
+    let l = s.list(None, &owner());
     assert_eq!(l.memories.len(), 1, "valid surrogate pair still loads");
     assert_eq!(l.unloadable.len(), 4);
     for u in &l.unloadable {
@@ -350,4 +359,13 @@ fn archive_and_delete_remove_the_source_entry() {
     assert!(s.delete("d1").unwrap());
     assert!(!d.join("short-term/a1.json").exists() && !d.join("mid-term/d1.json").exists());
     let _ = fs::remove_dir_all(&d);
+}
+
+/// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn owner() -> skmem::audience::ReaderScope {
+    skmem::audience::ReaderScope::resolve(
+        None,
+        &skmem::env::Env::empty(),
+        &skmem::audience::AudienceConfig::empty(),
+    )
 }

@@ -4,16 +4,22 @@
 //!
 //! The caller runs the arms (SQLite, Postgres, graph) and hydrates the
 //! candidates; [`search`] only decides the final order and says how it got there.
-//! Out of scope: the reader and audience filter (it runs before the arms), the
-//! query sanitizer, access reinforcement, and the legacy fallback chain that
-//! Python takes when no arm contributed (this returns `None` for that case).
+//! The reader ceiling and the query sanitizer are NOT optional here (SKMEM-R-06C):
+//! [`SearchInput::scope`] is required, [`search`] drops every candidate and arm
+//! id the reader may not see before fusing (a hidden id never influences a
+//! visible rank), and the query is sanitized once on the way in, as Python's
+//! `_search_unscoped` does. Out of scope: access reinforcement and the legacy
+//! fallback chain that Python takes when no arm contributed (this returns
+//! `None` for that case).
 
+use crate::audience::ReaderScope;
 use crate::decay::{self, Usage};
 use crate::env::Env;
 use crate::fusion::{self, ArmOutcome, Route, DEFAULT_ARM_CAP, RRF_K};
 use crate::model::Memory;
 use crate::procedures::order_procedures;
 use crate::pytime::Dt;
+use crate::query_sanitizer::sanitize_query;
 use crate::rerank::Reranker;
 use crate::tiers::apply_tier_cap;
 use std::collections::{HashMap, HashSet};
@@ -38,6 +44,10 @@ pub struct Candidate {
     pub source: String,
     pub source_tier: Option<String>,
     pub schema_version: i64,
+    /// The audience tag. Empty (the default) is visible to the owner only.
+    pub context_tag: String,
+    /// Free-form tags, checked against a reader's never-share list.
+    pub tags: Vec<String>,
 }
 
 impl Candidate {
@@ -64,6 +74,8 @@ impl Candidate {
             source: m.source.clone(),
             source_tier: Some(m.source_tier.clone()),
             schema_version: m.schema_version,
+            context_tag: m.context_tag.clone(),
+            tags: m.tags.clone(),
         }
     }
 }
@@ -139,8 +151,11 @@ pub fn demote_superseded(ids: &[String], found: &HashMap<String, Candidate>) -> 
 
 /// Everything [`search`] needs besides the environment.
 pub struct SearchInput<'a> {
-    /// The (already sanitized) query.
+    /// The raw query; [`search`] sanitizes it.
     pub query: &'a str,
+    /// Who is asking. Required: there is no default, so a caller cannot forget
+    /// the filter. Build it with [`ReaderScope::resolve`].
+    pub scope: &'a ReaderScope,
     /// The page size.
     pub limit: usize,
     /// Classified arm outcomes, in the order the store lists them.
@@ -177,18 +192,49 @@ pub struct SearchTrace {
 /// Run the stages in the store's order. `None` means no arm produced a hit (the
 /// Python `search_fused` returns `None` and `search` takes its legacy path).
 pub fn search(input: &SearchInput, env: &Env) -> Option<SearchTrace> {
+    let query_owned = sanitize_query(input.query);
+    let query = query_owned.as_str();
+    // The reader filter runs before anything is fused. For a restricted reader
+    // an id that is not among the hydrated candidates has an unknowable
+    // audience, so it is dropped too (fail closed).
+    let scope = input.scope;
+    let visible_found: HashMap<String, Candidate>;
+    let visible_arms: Vec<ArmOutcome>;
+    let (found, arms): (&HashMap<String, Candidate>, &[ArmOutcome]) = if scope.unrestricted() {
+        (input.found, input.arms)
+    } else {
+        visible_found = input
+            .found
+            .iter()
+            .filter(|(_, c)| scope.allows(Some(&c.context_tag), &c.tags))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        visible_arms = input
+            .arms
+            .iter()
+            .map(|a| ArmOutcome {
+                ids: a
+                    .ids
+                    .iter()
+                    .filter(|i| visible_found.contains_key(*i))
+                    .cloned()
+                    .collect(),
+                ..a.clone()
+            })
+            .collect();
+        (&visible_found, &visible_arms)
+    };
     let limit = input.limit;
     let pool = limit.max(limit * 3);
     let strategy = fusion::fusion_strategy(env);
-    let route =
-        (strategy == "pinned_rrf").then(|| fusion::route_query(input.query, input.df, None, env));
+    let route = (strategy == "pinned_rrf").then(|| fusion::route_query(query, input.df, None, env));
     let pin_arms: &[&str] = if input.has_pg_bm25 {
         &["lexical", "lexical_local"]
     } else {
         &["lexical_local", "lexical"]
     };
     let fused = fusion::fuse(
-        input.arms,
+        arms,
         pool.max(DEFAULT_ARM_CAP),
         RRF_K,
         strategy,
@@ -196,7 +242,6 @@ pub fn search(input: &SearchInput, env: &Env) -> Option<SearchTrace> {
         route.as_ref(),
         env,
     );
-    let found = input.found;
     let pool_ids: Vec<String> = fused
         .ids
         .iter()
@@ -210,7 +255,7 @@ pub fn search(input: &SearchInput, env: &Env) -> Option<SearchTrace> {
             .iter()
             .map(|i| format!("{} {}", found[i].title, found[i].content))
             .collect();
-        let outcome = Reranker::from_env(env).rerank(input.query, &texts);
+        let outcome = Reranker::from_env(env).rerank(query, &texts);
         if outcome.applied() {
             rerank_applied = true;
             reranked = outcome.order.iter().map(|&i| pool_ids[i].clone()).collect();
@@ -234,7 +279,7 @@ pub fn search(input: &SearchInput, env: &Env) -> Option<SearchTrace> {
     };
     let decayed = demote_superseded(&after_decay, found);
     let capped = apply_tier_cap(&decayed, found, limit, env);
-    let page = order_procedures(&capped, found, input.query);
+    let page = order_procedures(&capped, found, query);
     Some(SearchTrace {
         route: fused.route,
         rerank_applied,

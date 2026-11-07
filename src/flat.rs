@@ -3,6 +3,7 @@
 //! `FileBackend`, with durable atomic writes (temp file, fsync, rename,
 //! directory fsync) like `skmemory.atomic_io`.
 
+use crate::audience::ReaderScope;
 use crate::model::{Layer, Memory, ModelError};
 use std::fs;
 use std::io::{self, Write};
@@ -199,7 +200,11 @@ impl Store {
 
     /// Locate a memory file: the canonical `<id>.json` in any layer, else the
     /// newest Syncthing conflict copy (the record's only copy).
-    pub fn find_file(&self, id: &str) -> Option<PathBuf> {
+    ///
+    /// Crate-private: a path answers "does this id exist" for any reader, so
+    /// the public lookups ([`Store::load`], [`Store::flat_id_set`]) take a
+    /// [`ReaderScope`] and a hidden id reads exactly like a missing one.
+    pub(crate) fn find_file(&self, id: &str) -> Option<PathBuf> {
         let id = check_id(id).ok()?;
         for l in Layer::ALL {
             let p = self.layer_dir(l).join(format!("{id}.json"));
@@ -220,17 +225,27 @@ impl Store {
         None
     }
 
-    /// Load by id. `Ok(None)` when no file exists; `Err(Invalid)` when the
-    /// file is not a valid memory (Python returns None for both).
-    pub fn load(&self, id: &str) -> Result<Option<Memory>, StoreError> {
-        match self.find_file(id) {
-            None => Ok(None),
-            Some(p) => self.load_path(&p).map(Some),
+    /// Load by id as `scope` sees it. `Ok(None)` when no file exists OR the
+    /// reader may not see the memory (a hidden id is exactly a missing one).
+    /// For the owner, `Err(Invalid)` when the file is not a valid memory
+    /// (Python returns None for both). A restricted reader gets `Ok(None)` for
+    /// an invalid file too: its audience cannot be known, and an error would
+    /// say the id exists.
+    pub fn load(&self, id: &str, scope: &ReaderScope) -> Result<Option<Memory>, StoreError> {
+        let loaded = match self.find_file(id) {
+            None => return Ok(None),
+            Some(p) => self.read_path(&p),
+        };
+        match loaded {
+            Ok(m) => Ok(scope.allows_memory(&m).then_some(m)),
+            Err(_) if !scope.unrestricted() => Ok(None),
+            Err(e) => Err(e),
         }
     }
 
-    /// Read and parse one file. Never writes.
-    pub fn load_path(&self, path: &Path) -> Result<Memory, StoreError> {
+    /// Read and parse one file, unscoped. Crate-private: the public lookups
+    /// take a [`ReaderScope`]. Never writes.
+    pub(crate) fn read_path(&self, path: &Path) -> Result<Memory, StoreError> {
         let raw = fs::read(path)?;
         Memory::from_stored_json(&raw).map_err(StoreError::Invalid)
     }
@@ -263,7 +278,21 @@ impl Store {
     /// copies that are not the only copy are skipped on purpose; a file that
     /// cannot be loaded is never dropped silently: it is reported in
     /// [`Listing::unloadable`] with its path and the reason.
-    pub fn list(&self, layer: Option<Layer>) -> Listing {
+    ///
+    /// `scope` filters: a restricted reader gets only memories it may see and an
+    /// EMPTY `unloadable` (a broken file's audience is unknowable, and its
+    /// presence would be a count leak).
+    pub fn list(&self, layer: Option<Layer>, scope: &ReaderScope) -> Listing {
+        let mut l = self.list_unscoped(layer);
+        l.memories.retain(|m| scope.allows_memory(m));
+        if !scope.unrestricted() {
+            l.unloadable.clear();
+        }
+        l
+    }
+
+    /// [`Store::list`] without the reader filter, for the crate's own walks.
+    pub(crate) fn list_unscoped(&self, layer: Option<Layer>) -> Listing {
         let layers: Vec<Layer> = layer.map_or_else(|| Layer::ALL.to_vec(), |l| vec![l]);
         let mut memories = Vec::new();
         let mut unloadable = Vec::new();
@@ -272,7 +301,7 @@ impl Store {
                 if self.is_hidden_conflict_copy(&p) {
                     continue;
                 }
-                match self.load_path(&p) {
+                match self.read_path(&p) {
                     Ok(m) => memories.push(m),
                     Err(e) => unloadable.push(Unloadable {
                         path: p,
@@ -288,8 +317,28 @@ impl Store {
         }
     }
 
-    /// Filename stems of every flat JSON file across the active layers.
-    pub fn flat_id_set(&self) -> std::collections::BTreeSet<String> {
+    /// Filename stems of every flat JSON file across the active layers, as
+    /// `scope` sees them: a restricted reader gets only the ids of memories it
+    /// may see (each file is read to decide), never the hidden stems.
+    pub fn flat_id_set(&self, scope: &ReaderScope) -> std::collections::BTreeSet<String> {
+        if scope.unrestricted() {
+            return self.flat_id_set_unscoped();
+        }
+        let mut s = std::collections::BTreeSet::new();
+        for l in Layer::ALL {
+            for p in json_files(&self.layer_dir(l)) {
+                if let Ok(m) = self.read_path(&p) {
+                    if scope.allows_memory(&m) {
+                        s.insert(file_name(&p).trim_end_matches(".json").to_string());
+                    }
+                }
+            }
+        }
+        s
+    }
+
+    /// Every stem, for the crate's own reconciliation.
+    pub(crate) fn flat_id_set_unscoped(&self) -> std::collections::BTreeSet<String> {
         let mut s = std::collections::BTreeSet::new();
         for l in Layer::ALL {
             for p in json_files(&self.layer_dir(l)) {

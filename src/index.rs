@@ -12,6 +12,7 @@
 //! * a vaulted store (`fts_enabled == false`) indexes no plaintext and refuses
 //!   FTS, exactly as Python's vaulted backend does.
 
+use crate::audience::ReaderScope;
 use crate::flat::{json_files, Store};
 use crate::model::{Layer, Memory};
 use crate::util::{iso_from_unix, now_iso};
@@ -342,6 +343,40 @@ pub fn wal_status(db_path: &Path, degraded_bytes: u64) -> WalStatus {
         wal_degraded_threshold_bytes: degraded_bytes,
         wal_ok: size <= degraded_bytes,
     }
+}
+
+/// Push the reader's SQL: `fts_meta.context_tag` in the allowed set (the
+/// intersection with an explicit caller filter is the caller's), and one
+/// `instr` per never-share tag over the comma-joined `tags` column. Alias `f`
+/// is `fts_meta`, `m` is `memories`.
+fn push_scope(
+    scope: &ReaderScope,
+    explicit: Option<&[String]>,
+    wh: &mut Vec<String>,
+    args: &mut Vec<String>,
+) {
+    if let Some(ctx) = scope.context_filter(explicit) {
+        // An empty list matches nothing (fail closed).
+        if ctx.is_empty() {
+            wh.push("0".into());
+        } else {
+            wh.push(format!(
+                "f.context_tag IN ({})",
+                vec!["?"; ctx.len()].join(",")
+            ));
+            args.extend(ctx);
+        }
+    }
+    for ex in scope.exclusions() {
+        wh.push("instr(',' || m.tags || ',', ?) = 0".into());
+        args.push(format!(",{ex},"));
+    }
+}
+
+/// The never-share check on a hydrated row's comma-joined tags.
+fn row_tags_ok(r: &MemoryRow, scope: &ReaderScope) -> bool {
+    let tags: Vec<String> = r.tags.split(',').map(str::to_string).collect();
+    scope.exclusions().iter().all(|e| !tags.contains(e))
 }
 
 /// One `memories` row, every column (no rowid).
@@ -709,21 +744,47 @@ impl Index {
     // reads
     // ------------------------------------------------------------------
 
-    /// One row by id.
-    pub fn get(&self, id: &str) -> Result<Option<MemoryRow>> {
-        Ok(self
-            .conn
-            .query_row("SELECT * FROM memories WHERE id = ?", [id], |r| {
-                MemoryRow::from_row(r)
-            })
-            .optional()?)
+    /// One row by id as `scope` sees it. A hidden id is `Ok(None)`, exactly
+    /// like a missing one. A restricted reader needs the memory's
+    /// `context_tag`, which lives in `fts_meta`: with FTS off or a row not yet
+    /// in `fts_meta` the answer is `None` (fail closed).
+    pub fn get(&self, id: &str, scope: &ReaderScope) -> Result<Option<MemoryRow>> {
+        let mut rows = self.rows_for(Some(id), scope)?;
+        Ok(rows.pop())
     }
 
-    /// Every row ordered by id.
-    pub fn all_rows(&self) -> Result<Vec<MemoryRow>> {
-        let mut st = self.conn.prepare("SELECT * FROM memories ORDER BY id")?;
-        let rows = st.query_map([], MemoryRow::from_row)?;
-        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    /// Every row ordered by id, as `scope` sees them.
+    pub fn all_rows(&self, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
+        self.rows_for(None, scope)
+    }
+
+    fn rows_for(&self, id: Option<&str>, scope: &ReaderScope) -> Result<Vec<MemoryRow>> {
+        let mut wh: Vec<String> = Vec::new();
+        let mut args: Vec<String> = Vec::new();
+        if let Some(i) = id {
+            wh.push("m.id = ?".into());
+            args.push(i.to_string());
+        }
+        let join = if scope.unrestricted() {
+            ""
+        } else if !self.fts_ok {
+            return Ok(Vec::new());
+        } else {
+            push_scope(scope, None, &mut wh, &mut args);
+            " JOIN fts_meta f ON f.id = m.id"
+        };
+        let where_ = if wh.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", wh.join(" AND "))
+        };
+        let sql = format!("SELECT m.* FROM memories m{join}{where_} ORDER BY m.id");
+        let mut st = self.conn.prepare(&sql)?;
+        let rows = st.query_map(params_from_iter(args.iter()), MemoryRow::from_row)?;
+        let rows: Vec<MemoryRow> = rows.collect::<rusqlite::Result<_>>()?;
+        // Last gate, as Python's `_search_as_reader`: whatever SQL let through
+        // is checked again against the never-share tags.
+        Ok(rows.into_iter().filter(|r| row_tags_ok(r, scope)).collect())
     }
 
     pub fn count(&self) -> Result<i64> {
@@ -892,7 +953,7 @@ impl Index {
     /// wait up to their 5 s busy timeout, then skip their index write (the
     /// flat file is intact and the next reindex picks it up).
     pub fn reindex(&self, store: &Store, force: bool) -> Result<ReindexReport> {
-        let flat_ids = store.flat_id_set();
+        let flat_ids = store.flat_id_set_unscoped();
         let mut report = ReindexReport::default();
 
         let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Immediate)?;
@@ -937,7 +998,7 @@ impl Index {
                 if store.is_hidden_conflict_copy(&path) {
                     continue; // a stale conflict copy must not overwrite the canonical row
                 }
-                match store.load_path(&path) {
+                match store.read_path(&path) {
                     Ok(m) => {
                         self.upsert_in(&tx, &m, &path)?;
                         report.indexed += 1;
@@ -1038,7 +1099,7 @@ impl Index {
             }
             let tx = self.conn.unchecked_transaction()?;
             for (id, fp, hash) in &rows {
-                match store.load_path(Path::new(fp)) {
+                match store.read_path(Path::new(fp)) {
                     Ok(m) => {
                         self.fts_index_in(&tx, &m, hash)?;
                         done += 1;
@@ -1082,6 +1143,7 @@ impl Index {
         query: &str,
         limit: usize,
         f: &SearchFilters<'_>,
+        scope: &ReaderScope,
     ) -> Result<Vec<MemoryRow>> {
         if !self.fts_ok || limit == 0 {
             return Ok(Vec::new());
@@ -1103,16 +1165,9 @@ impl Index {
             wh.push("m.source = ?".into());
             args.push(s.to_string());
         }
-        if let Some(ctx) = f.context_tags {
-            if ctx.is_empty() {
-                return Ok(Vec::new());
-            }
-            wh.push(format!(
-                "f.context_tag IN ({})",
-                vec!["?"; ctx.len()].join(",")
-            ));
-            args.extend(ctx.iter().cloned());
-        }
+        // The reader ceiling is intersected with any caller `context_tags`
+        // and applied in SQL, so rows it hides never count against `limit`.
+        push_scope(scope, f.context_tags, &mut wh, &mut args);
         if let Some(a) = f.as_of.filter(|a| !a.is_empty()) {
             wh.push(
                 "COALESCE(julianday(m.valid_from), julianday(m.created_at), 0) <= julianday(?) \
@@ -1146,7 +1201,7 @@ impl Index {
                 .query_map(params_from_iter(all), MemoryRow::from_row)?
                 .collect::<rusqlite::Result<_>>()?;
             if !rows.is_empty() || m == match_or {
-                return Ok(rows);
+                return Ok(rows.into_iter().filter(|r| row_tags_ok(r, scope)).collect());
             }
         }
         Ok(Vec::new())
