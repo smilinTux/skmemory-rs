@@ -353,39 +353,119 @@ const DATE_CUES: [&str; 10] = [
     "in", "during", "since", "until", "till", "before", "after", "from", "on", "by",
 ];
 
+/// A `\w+` run of the casefolded query with its byte span (Python's `\b` view).
+struct Tok<'a> {
+    s: usize,
+    e: usize,
+    t: &'a str,
+}
+
+fn word_tokens(text: &str) -> Vec<Tok<'_>> {
+    let mut out = Vec::new();
+    let mut start: Option<usize> = None;
+    for (i, c) in text.char_indices() {
+        if crate::util::is_py_word_char(c) {
+            start.get_or_insert(i);
+        } else if let Some(s) = start.take() {
+            out.push(Tok {
+                s,
+                e: i,
+                t: &text[s..i],
+            });
+        }
+    }
+    if let Some(s) = start {
+        out.push(Tok {
+            s,
+            e: text.len(),
+            t: &text[s..],
+        });
+    }
+    out
+}
+
+/// `\s+` between two tokens: only whitespace, at least one character.
+fn gap(text: &str, a: &Tok<'_>, b: &Tok<'_>) -> bool {
+    let g = &text[a.e..b.s];
+    !g.is_empty() && g.chars().all(crate::env::is_py_space)
+}
+
+/// Tokens `toks[i..]` matching `preds` in order, whitespace-separated.
+fn seq(text: &str, toks: &[Tok<'_>], i: usize, preds: &[&dyn Fn(&str) -> bool]) -> bool {
+    if i + preds.len() > toks.len() {
+        return false;
+    }
+    for (k, p) in preds.iter().enumerate() {
+        if !p(toks[i + k].t) || (k > 0 && !gap(text, &toks[i + k - 1], &toks[i + k])) {
+            return false;
+        }
+    }
+    true
+}
+
+/// Python's `_NUM`: one to three ASCII digits, or `a`, `an`, `one`..`twelve`.
+fn num_tok(w: &str) -> Option<i64> {
+    num_word(w)
+}
+
+/// `(day|week|month)s?`.
+fn unit_tok(w: &str) -> Option<&'static str> {
+    unit_of(w)
+}
+
+fn has_iso_shape(text: &str) -> bool {
+    let b = text.as_bytes();
+    b.windows(7).any(|w| {
+        w[..4].iter().all(u8::is_ascii_digit)
+            && w[4] == b'-'
+            && w[5..].iter().all(u8::is_ascii_digit)
+    })
+}
+
 /// The window the temporal arm derives from `query`, as `(created_after,
 /// created_before)` UTC strings, or `None` when the arm abstains.
 ///
-/// A SUBSET of Python's `parse_time_window(strict=True)`, enough for the v1
-/// fixtures and checked against Python on every fixture query
-/// (`tests/class_bench.rs::time_windows_match_python`): `yesterday`, `today`,
-/// `N day|week|month(s) ago`, `last|past N day|week|month(s)`, `last <weekday>`,
-/// `this|last week|month`, and an unambiguous month name directly after a
-/// time preposition (`in june`). Not handled, so they abstain here where
-/// Python would answer: ISO dates and months, bare years, `may` and `march`,
-/// month plus day, and `the past month`.
+/// CONTRACT: the answer is exactly Python's `parse_time_window(strict=True)`
+/// (`now` the same instant, UTC) or `None`; it is never a different window.
+/// `tests/temporal_parity.rs` holds that to zero wrong windows over a few
+/// thousand Python-generated cases. It is a SUBSET: it answers the relative
+/// phrases (`yesterday`, `today`, `N day|week|month(s) ago`, `last|past N ...`,
+/// `the past month` with Python's lookahead, `last <weekday>`, `this|last week`,
+/// `this|last month`, in Python's regex order) and a lone, unambiguous month
+/// name directly after a time preposition. It abstains whenever the query has
+/// an ISO-shaped date, a non-ASCII digit, or (for the calendar branch) any digit
+/// or a second month word, because Python's precedence there is not mirrored.
 pub fn time_window(query: &str, now_secs: i64) -> Option<(String, String)> {
+    if query.is_empty() {
+        return None;
+    }
     let text = casefold(query);
-    let words: Vec<&str> = text
-        .split(|c: char| !c.is_ascii_alphanumeric())
-        .filter(|w| !w.is_empty())
-        .collect();
+    if text.chars().any(|c| !c.is_ascii() && c.is_numeric()) || has_iso_shape(&text) {
+        return None;
+    }
+    let toks = word_tokens(&text);
     let today = now_secs.div_euclid(86_400);
     let (ty, tm, _) = civil_from_days(today);
-    let at = |i: usize| words.get(i).copied();
-    if words.contains(&"yesterday") {
+    let any = |w: &str| toks.iter().any(|t| t.t == w);
+    if any("yesterday") {
         return Some(span(today - 1, today));
     }
-    if words.contains(&"today") {
+    if any("today") {
         return Some(span(today, today + 1));
     }
-    for (i, &word) in words.iter().enumerate() {
-        if let (Some(n), Some(u), Some("ago")) =
-            (num_word(word), at(i + 1).and_then(unit_of), at(i + 2))
-        {
-            return Some(match u {
-                "day" => span(today - n, today - n + 1),
-                "week" => week_span(today - 7 * n),
+    let is = |w: &'static str| move |t: &str| t == w;
+    let ago = is("ago");
+    for i in 0..toks.len() {
+        if seq(
+            &text,
+            &toks,
+            i,
+            &[&|t| num_tok(t).is_some(), &|t| unit_tok(t).is_some(), &ago],
+        ) {
+            let n = num_tok(toks[i].t).unwrap_or(0);
+            return Some(match unit_tok(toks[i + 1].t) {
+                Some("day") => span(today - n, today - n + 1),
+                Some("week") => week_span(today - 7 * n),
                 _ => {
                     let (y, m) = shift_month(ty, tm, -n);
                     month_bounds(y, m)
@@ -393,62 +473,122 @@ pub fn time_window(query: &str, now_secs: i64) -> Option<(String, String)> {
             });
         }
     }
-    for (i, &word) in words.iter().enumerate() {
-        if matches!(word, "last" | "past") {
-            if let (Some(n), Some(u)) = (at(i + 1).and_then(num_word), at(i + 2).and_then(unit_of))
-            {
-                let start = if u == "month" {
-                    let (y, m) = shift_month(ty, tm, -n);
-                    let (_, _, d) = civil_from_days(today);
-                    let day = if d <= days_in_month(y, m) {
-                        days_from_civil(y, m, d)
-                    } else {
-                        let (ny, nm) = shift_month(y, m, 1);
-                        days_from_civil(ny, nm, 1) - 1
-                    };
-                    day * 86_400 + now_secs.rem_euclid(86_400)
-                } else {
-                    now_secs - n * if u == "week" { 7 } else { 1 } * 86_400
-                };
-                return Some((utc_z(start, 0), utc_z(now_secs, 0)));
+    let rolling = |n: i64, u: &str| -> (String, String) {
+        let start = if u == "month" {
+            let (y, m) = shift_month(ty, tm, -n);
+            let (_, _, d) = civil_from_days(today);
+            let day = if d <= days_in_month(y, m) {
+                days_from_civil(y, m, d)
+            } else {
+                let (ny, nm) = shift_month(y, m, 1);
+                days_from_civil(ny, nm, 1) - 1
+            };
+            day * 86_400 + now_secs.rem_euclid(86_400)
+        } else {
+            now_secs - n * if u == "week" { 7 } else { 1 } * 86_400
+        };
+        (utc_z(start, 0), utc_z(now_secs, 0))
+    };
+    let last_or_past = |t: &str| t == "last" || t == "past";
+    for i in 0..toks.len() {
+        if seq(
+            &text,
+            &toks,
+            i,
+            &[&last_or_past, &|t| num_tok(t).is_some(), &|t| {
+                unit_tok(t).is_some()
+            }],
+        ) {
+            let n = num_tok(toks[i + 1].t).unwrap_or(0);
+            return Some(rolling(n, unit_tok(toks[i + 2].t).unwrap_or("day")));
+        }
+    }
+    // `\bpast\s+(day|week|month)\b` followed by punctuation, the end, or a
+    // connective word: "the past month" is "last 1 month".
+    const PAST_FOLLOW: [&str; 8] = ["or", "and", "to", "on", "in", "for", "about", "with"];
+    for i in 0..toks.len() {
+        if seq(
+            &text,
+            &toks,
+            i,
+            &[&is("past"), &|t| matches!(t, "day" | "week" | "month")],
+        ) {
+            let rest = &text[toks[i + 1].e..];
+            let trimmed = rest.trim_start_matches(crate::env::is_py_space);
+            let punct = trimmed.is_empty() || trimmed.starts_with(['.', ',', ';', ':', '!', '?']);
+            let first_word = word_tokens(trimmed).first().map(|t| (t.s, t.t.to_string()));
+            let connective = rest.len() != trimmed.len()
+                && matches!(first_word, Some((0, ref w))
+                    if PAST_FOLLOW.contains(&w.as_str()) || matches!(w.as_str(), "but" | "from" | "we" | "i"));
+            if punct || connective {
+                return Some(rolling(1, toks[i + 1].t));
             }
         }
     }
-    for (i, &word) in words.iter().enumerate() {
-        if word == "last" {
-            if let Some(wd) = at(i + 1).and_then(|w| WEEKDAYS.iter().position(|x| *x == w)) {
-                let today_wd = (today + 3).rem_euclid(7);
-                let mut back = (today_wd - wd as i64).rem_euclid(7);
-                if back == 0 {
-                    back = 7;
-                }
-                return Some(span(today - back, today - back + 1));
+    for i in 0..toks.len() {
+        if seq(&text, &toks, i, &[&is("last"), &|t| WEEKDAYS.contains(&t)]) {
+            let wd = WEEKDAYS
+                .iter()
+                .position(|x| *x == toks[i + 1].t)
+                .unwrap_or(0) as i64;
+            let today_wd = (today + 3).rem_euclid(7);
+            let mut back = (today_wd - wd).rem_euclid(7);
+            if back == 0 {
+                back = 7;
+            }
+            return Some(span(today - back, today - back + 1));
+        }
+    }
+    // `\b(this|last)\s+week\b(?!\s+of\b)`, then `this|last month`, each regex in turn.
+    let not_of = |i: usize| -> bool {
+        !(i + 2 < toks.len() && gap(&text, &toks[i + 1], &toks[i + 2]) && toks[i + 2].t == "of")
+    };
+    for (first, which) in [("this", 0), ("last", 1)] {
+        for i in 0..toks.len() {
+            if seq(&text, &toks, i, &[&is(first), &is("week")]) && not_of(i) {
+                return Some(week_span(today - 7 * which));
             }
         }
     }
-    for (i, &word) in words.iter().enumerate() {
-        let next = at(i + 1);
-        match (word, next) {
-            ("this", Some("week")) if at(i + 2) != Some("of") => return Some(week_span(today)),
-            ("last", Some("week")) if at(i + 2) != Some("of") => return Some(week_span(today - 7)),
-            ("this", Some("month")) => return Some(month_bounds(ty, tm)),
-            ("last", Some("month")) => {
-                let (y, m) = shift_month(ty, tm, -1);
-                return Some(month_bounds(y, m));
-            }
-            _ => {}
+    for i in 0..toks.len() {
+        if seq(&text, &toks, i, &[&is("this"), &is("month")]) {
+            return Some(month_bounds(ty, tm));
         }
     }
-    for (i, &word) in words.iter().enumerate() {
-        if !DATE_CUES.contains(&word) {
+    for i in 0..toks.len() {
+        if seq(&text, &toks, i, &[&is("last"), &is("month")]) {
+            let (y, m) = shift_month(ty, tm, -1);
+            return Some(month_bounds(y, m));
+        }
+    }
+    // Calendar branch: only a LONE month word, no digit anywhere, right after a cue.
+    if text.bytes().any(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let letter_runs: Vec<&str> = text
+        .split(|c: char| !c.is_ascii_lowercase())
+        .filter(|w| !w.is_empty())
+        .collect();
+    if letter_runs
+        .iter()
+        .filter(|w| MONTH_KEYS.contains(w))
+        .count()
+        != 1
+    {
+        return None;
+    }
+    for i in 0..toks.len() {
+        if !DATE_CUES.contains(&toks[i].t) {
             continue;
         }
-        let j = if at(i + 1) == Some("the") {
-            i + 2
-        } else {
-            i + 1
-        };
-        if let Some(m) = at(j).and_then(|w| MONTHS.iter().position(|x| *x == w)) {
+        let mut j = i + 1;
+        if j >= toks.len() || !gap(&text, &toks[i], &toks[j]) {
+            continue;
+        }
+        if toks[j].t == "the" && j + 1 < toks.len() && gap(&text, &toks[j], &toks[j + 1]) {
+            j += 1;
+        }
+        if let Some(m) = MONTHS.iter().position(|x| *x == toks[j].t) {
             let month = m as i64 + 1;
             if month == 3 || month == 5 {
                 continue;
@@ -459,6 +599,34 @@ pub fn time_window(query: &str, now_secs: i64) -> Option<(String, String)> {
     }
     None
 }
+
+/// Every key of Python's `_MONTHS` (full names and abbreviations).
+const MONTH_KEYS: [&str; 24] = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "sept",
+    "oct",
+    "nov",
+    "dec",
+];
 
 fn days_in_month(y: i64, m: i64) -> i64 {
     let (ny, nm) = shift_month(y, m, 1);
