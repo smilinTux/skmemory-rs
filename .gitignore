@@ -13,5 +13,4 @@ wheels/
 .DS_Store
 *.swp
 
-/tests/forge_check/target
-/tests/forge_check/Cargo.lock
+/tests/forge_check/*/target

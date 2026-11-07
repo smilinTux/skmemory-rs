@@ -55,6 +55,19 @@ use serde_json::Value;
 use std::collections::BTreeSet;
 use std::path::Path;
 
+// `testing` exposes the env-injecting scope constructors, which can ignore the real
+// process ceiling. Only skmem's own test builds may compile them: a downstream
+// crate (or a wheel) enabling the feature must fail to build.
+#[cfg(feature = "testing")]
+const _: () = assert!(
+    option_env!("CARGO_PRIMARY_PACKAGE").is_some(),
+    "the `testing` feature may only be enabled by skmem's own test builds (it exposes constructors that bypass the process reader ceiling)"
+);
+#[cfg(all(feature = "testing", feature = "extension-module"))]
+compile_error!(
+    "the `testing` feature must never be combined with `extension-module` (a shipped wheel)"
+);
+
 /// The process-wide reader ceiling variable.
 pub const READER_ENV: &str = "SKMEMORY_READER";
 /// Where [`AudienceConfig::from_env`] looks for `audience_config.json`.
@@ -283,9 +296,22 @@ impl ReaderScope {
     }
 
     pub(crate) fn resolve_in(reader: Option<&str>, env: &Env, cfg: &AudienceConfig) -> ReaderScope {
-        let call = reader.map_or_else(ReaderScope::owner_scope, |r| scope_for(r, cfg));
+        ReaderScope::resolve_split(reader, env, cfg, cfg)
+    }
+
+    /// The per-call reader is resolved under `call_cfg`, the `SKMEMORY_READER`
+    /// ceiling under `ceiling_cfg`, and the two are intersected. A caller that
+    /// supplies `call_cfg` must never be able to widen the ceiling, so
+    /// process-facing code passes a `ceiling_cfg` the caller cannot choose.
+    pub(crate) fn resolve_split(
+        reader: Option<&str>,
+        env: &Env,
+        call_cfg: &AudienceConfig,
+        ceiling_cfg: &AudienceConfig,
+    ) -> ReaderScope {
+        let call = reader.map_or_else(ReaderScope::owner_scope, |r| scope_for(r, call_cfg));
         match env.get(READER_ENV).map(py_strip).filter(|e| !e.is_empty()) {
-            Some(e) => scope_for(e, cfg).narrow(&call),
+            Some(e) => scope_for(e, ceiling_cfg).narrow(&call),
             None => call,
         }
     }
@@ -300,9 +326,16 @@ impl ReaderScope {
 
     /// As [`ReaderScope::from_process`] with an explicit audience config (the
     /// R-08 shim loads the packaged `audience_config.json` and passes it here).
-    /// The ceiling still comes from the live process environment.
+    ///
+    /// `cfg` resolves only the per-call `reader`. The `SKMEMORY_READER`
+    /// ceiling is resolved under the config the CALLER CANNOT CHOOSE
+    /// (`SKMEMORY_AUDIENCE_CONFIG` from the process environment; unset means the
+    /// empty config, so a `channel:` ceiling is `@public`, fail closed), and the
+    /// result is the intersection: `cfg` can only narrow, never widen.
     pub fn from_process_with_config(reader: Option<&str>, cfg: &AudienceConfig) -> ReaderScope {
-        ReaderScope::resolve_in(reader, &Env::process(), cfg)
+        let env = Env::process();
+        let ceiling_cfg = AudienceConfig::from_env(&env);
+        ReaderScope::resolve_split(reader, &env, cfg, &ceiling_cfg)
     }
 
     /// Drop the links of `m` that name a memory this reader cannot see:

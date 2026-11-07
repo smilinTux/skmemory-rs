@@ -7,7 +7,7 @@
 //! feature; `tests/forge_check` (run by CI) proves a build without it cannot
 //! call them.
 
-use skmem::audience::{AudienceConfig, OwnerScope, ReaderScope, READER_ENV};
+use skmem::audience::{AudienceConfig, OwnerScope, ReaderScope, AUDIENCE_CONFIG_ENV, READER_ENV};
 use skmem::flat::Store;
 use skmem::model::Memory;
 
@@ -73,6 +73,44 @@ fn a_process_ceiling_cannot_be_bypassed_from_the_public_api() {
             }
         }
     }
+
+    // The ceiling names a channel that exists ONLY in the caller's config: the
+    // caller cannot widen it by defining that channel with full trust.
+    std::env::set_var(READER_ENV, "channel:c");
+    std::env::remove_var(AUDIENCE_CONFIG_ENV);
+    let check_caller_cannot_widen = |label: &str| {
+        for reader in [None, Some("owner"), Some("channel:c"), Some("@chef-only")] {
+            let sc = ReaderScope::from_process_with_config(reader, &rich);
+            assert!(!sc.unrestricted(), "{label}/{reader:?}");
+            assert!(!sc.allows(Some("@chef-only"), &[]), "{label}/{reader:?}");
+            assert!(
+                store.load("secret", &sc).unwrap().is_none(),
+                "{label}/{reader:?} read a hidden memory"
+            );
+        }
+    };
+    check_caller_cannot_widen("channel ceiling, no env config");
+    // ... and when the process config defines the channel narrowly, the caller's
+    // wider definition of the same channel still changes nothing
+    let cfg_file = dir.join("audience_config.json");
+    std::fs::write(
+        &cfg_file,
+        r#"{"channels":{"c":{"context_tag":"@public","members":["A"]}},
+            "people":{"A":{"trust_level":1}}}"#,
+    )
+    .unwrap();
+    std::env::set_var(AUDIENCE_CONFIG_ENV, &cfg_file);
+    check_caller_cannot_widen("channel ceiling, narrow env config");
+    // the legitimate case still works: a ceiling the PROCESS config makes wide
+    std::fs::write(
+        &cfg_file,
+        r#"{"channels":{"c":{"context_tag":"@chef-only","members":["A"]}},
+            "people":{"A":{"trust_level":4}}}"#,
+    )
+    .unwrap();
+    let wide = ReaderScope::from_process_with_config(Some("channel:c"), &rich);
+    assert!(store.load("secret", &wide).unwrap().is_some());
+    std::env::remove_var(AUDIENCE_CONFIG_ENV);
     // a blank ceiling is not a declaration, and the owner spellings are owners
     for ok in ["", "   ", "owner", "@chef-only"] {
         std::env::set_var(READER_ENV, ok);

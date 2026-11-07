@@ -58,13 +58,9 @@ jobs:
       # skmem::audience pin the owner-only gates: run them explicitly.
       - name: cargo test --doc (compile_fail doctests)
         run: cargo test --locked --doc
-      - name: the process reader ceiling cannot be bypassed (must NOT compile)
+      - name: forging constructors are unreachable (each crate must fail for the EXPECTED reason)
         if: matrix.rust == 'stable'
-        run: |
-          cp Cargo.lock tests/forge_check/Cargo.lock
-          if cargo check --locked --manifest-path tests/forge_check/Cargo.toml; then
-            echo "forge_check compiled: an env-injecting scope constructor is public"; exit 1
-          fi
+        run: tests/forge_check/check.sh
 
   pg:
     name: pg arms (skmem-pg container, rust ${{ matrix.rust }})

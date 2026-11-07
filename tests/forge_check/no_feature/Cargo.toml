@@ -1,5 +1,5 @@
 [package]
-name = "forge_check"
+name = "forge_check_no_feature"
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -9,4 +9,4 @@ publish = false
 [workspace]
 
 [dependencies]
-skmem = { path = "../.." }
+skmem = { path = "../../.." }

@@ -20,7 +20,10 @@ All notable changes to `skmem` are documented here. The format follows
   publicly, and it REFUSES with `NotOwner` when the real process `SKMEMORY_READER` declares a
   non-owner ceiling; the env-injecting `OwnerScope::resolve` and `ReaderScope::resolve` exist only
   under `cfg(test)` or the `testing` feature, enabled solely by the self dev-dependency, and the
-  public `ReaderScope::from_process{,_with_config}` always apply the process ceiling) now gates every raw or store-wide handle: `flat::Store::save`, `Index::index_memory`, `IntentionStore::{open,open_with}` and
+  public `ReaderScope::from_process{,_with_config}` always apply the process ceiling, which
+  `from_process_with_config` resolves under `SKMEMORY_AUDIENCE_CONFIG`, never the caller's config;
+  the `testing` feature refuses to compile outside skmem's own test builds and with
+  `extension-module`) now gates every raw or store-wide handle: `flat::Store::save`, `Index::index_memory`, `IntentionStore::{open,open_with}` and
   `Ledger::new` also take an `&OwnerScope` (a reader process cannot write, and `prefilter_safe`
   returns nothing under a ceiling); `Store::is_hidden_conflict_copy` is crate-private; CI now runs
   `cargo test --doc` and a must-not-compile `tests/forge_check`. Gated: `Index::{connection,fts_status,
