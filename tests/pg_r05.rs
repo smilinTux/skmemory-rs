@@ -287,6 +287,36 @@ fn lexical_tsrank_parity_in_a_scratch_schema() {
     });
 }
 
+const BM25_INDEX: &str = "CREATE EXTENSION IF NOT EXISTS pg_search;
+CREATE INDEX memories_bm25 ON {s}.memories USING bm25 (id, title, content, summary) WITH (key_field=id, text_fields='{
+  \"title\":   {\"tokenizer\": {\"type\": \"default\", \"stemmer\": \"English\", \"stopwords_language\": \"English\"}},
+  \"content\": {\"tokenizer\": {\"type\": \"default\", \"stemmer\": \"English\", \"stopwords_language\": \"English\"}},
+  \"summary\": {\"tokenizer\": {\"type\": \"default\", \"stemmer\": \"English\", \"stopwords_language\": \"English\"}}}');";
+
+#[test]
+fn lexical_bm25_parity_in_a_scratch_schema() {
+    // BM25 needs pg_search in shared_preload_libraries (the skmem-pg image,
+    // started with it in CI). SKMEM_PG_TEST_BM25=1 turns a missing one into a
+    // failure. The index is the live definition, in the scratch schema.
+    let Some(dsn) = test_dsn() else { return };
+    with_schema(&dsn, true, |schema, path, c| {
+        if let Err(e) = c.batch_execute(&BM25_INDEX.replace("{s}", schema)) {
+            assert!(
+                std::env::var("SKMEM_PG_TEST_BM25").ok().as_deref() != Some("1"),
+                "SKMEM_PG_TEST_BM25=1 but pg_search is unusable: {e}"
+            );
+            eprintln!("SKIP: pg_search is not usable on this server");
+            return;
+        }
+        seed_lex(c, &format!("{schema}.memories"), true);
+        // statistics count dead documents until a rebuild; the generator rebuilt too
+        c.batch_execute(&format!("REINDEX INDEX {schema}.memories_bm25"))
+            .unwrap();
+        let n = run_lex_cases(&dsn, path, "bm25", false);
+        assert_eq!(n, 44);
+    });
+}
+
 #[test]
 fn lexical_tsrank_json_fallback_for_as_of() {
     // No typed columns: validity comes out of memory_json with the same answers.
@@ -545,8 +575,14 @@ fn with_graph(dsn: &str, f: impl FnOnce(&mut GraphArm, &str)) {
         eprintln!("SKIP: the age extension is not available on this server");
         return;
     }
-    let graph = format!("skrs_r05_{}", std::process::id());
+    static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    // unique per test: the tests run in parallel
+    let graph = format!("skrs_r05g_{}_{n}", std::process::id());
     let mut admin = Client::connect(dsn, NoTls).unwrap();
+    admin
+        .batch_execute("CREATE EXTENSION IF NOT EXISTS age")
+        .unwrap();
     admin
         .batch_execute("LOAD 'age'; SET search_path = ag_catalog, \"$user\", public")
         .unwrap();

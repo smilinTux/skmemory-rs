@@ -56,31 +56,32 @@ jobs:
         run: cargo test --locked --all-targets
 
   pg:
-    name: pgvector arm (postgres service, rust ${{ matrix.rust }})
+    name: pg arms (skmem-pg container, rust ${{ matrix.rust }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         rust: ["1.85.0", "stable"]
-    services:
-      postgres:
-        # Plain pgvector image: the tests create and drop their own schema, so
-        # they need the `vector` extension (>= 0.8 for iterative scans) and no
-        # skmem-pg extras (pg_search, AGE).
-        image: pgvector/pgvector:pg17
-        env:
-          POSTGRES_PASSWORD: ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
     env:
       SKMEM_PG_TEST_DSN: postgresql://postgres:ci@127.0.0.1:5432/postgres
       SKMEM_PG_TEST_REQUIRE: "1"
+      # skmem-pg has pg_search and AGE: BM25 and graph tests must run, not skip
+      SKMEM_PG_TEST_AGE: "1"
+      SKMEM_PG_TEST_BM25: "1"
     steps:
+      - name: start skmem-pg (public image, pinned by digest)
+        # A service container cannot pass server arguments, and pg_search must be
+        # in shared_preload_libraries, so the container is started by hand.
+        run: |
+          docker run -d --name skmem-pg -e POSTGRES_PASSWORD=ci -p 127.0.0.1:5432:5432 \
+            smilintux/skmem-pg@sha256:60ae44048a71cc678144bbce0184882e391307ebd3a248bfbf859b0ad65550e9 \
+            postgres -c shared_preload_libraries=pg_search,age
+          for i in $(seq 1 60); do
+            docker exec skmem-pg pg_isready -h 127.0.0.1 -U postgres && exit 0
+            sleep 2
+          done
+          docker logs skmem-pg
+          exit 1
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable, toolchain input selects the version
         with:

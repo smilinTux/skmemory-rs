@@ -42,7 +42,7 @@ All notable changes to `skmem` are documented here. The format follows
   a dead connection is re-established; `as_of` is parsed in Rust (`skmem::validity`, Python
   `normalize_as_of`) so `now`/`yesterday` are typed errors.
   Parity with Python `PGVectorBackend.search_semantic` on 46 cases, ids and distances (`tests/pg_parity`).
-  Database tests are env-gated on `SKMEM_PG_TEST_DSN`; CI runs them against a pgvector service.
+  Database tests are env-gated on `SKMEM_PG_TEST_DSN`; CI runs them against the public `smilintux/skmem-pg` image (pinned by digest, started with `pg_search,age` preloaded) so BM25 and AGE run too.
 - `skmem::pg::lexical_arm` (SKMEM-R-05): `LexicalArm::search_lexical`, the twin of Python
   `search_lexical`. ParadeDB BM25 (`paradedb.boolean` over `content` and `title`, scored with
   `paradedb.score`) when `pg_search` and `memories_bm25` exist in a schema on the effective
