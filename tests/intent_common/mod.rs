@@ -118,7 +118,11 @@ pub fn delta(s: &Snap, p: &Snap) -> Value {
             files.insert(k.clone(), json!(v));
         }
     }
-    let deleted: Vec<&String> = p.files.keys().filter(|k| !s.files.contains_key(*k)).collect();
+    let deleted: Vec<&String> = p
+        .files
+        .keys()
+        .filter(|k| !s.files.contains_key(*k))
+        .collect();
     let rows: Vec<&Value> = s.rows.iter().filter(|r| !p.rows.contains(r)).collect();
     let ids: Vec<&Value> = s.rows.iter().map(|r| &r[0]).collect();
     json!({"files": files, "deleted": deleted, "rows": rows, "row_ids": ids})

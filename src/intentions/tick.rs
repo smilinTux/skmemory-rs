@@ -27,6 +27,7 @@ use crate::pytime::Dt;
 use crate::sys;
 use std::io::Read;
 use std::process::{Command, Stdio};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 pub const ALERT_GROUP: &str = "intentions";
@@ -173,15 +174,22 @@ pub fn sk_alert_deliver(text: &str, timeout: Duration) -> bool {
             return false;
         }
     };
-    let mut err_pipe = child.stderr.take();
-    let reader = std::thread::spawn(move || {
-        let mut s = String::new();
-        if let Some(p) = err_pipe.as_mut() {
-            let _ = p.take(4096).read_to_string(&mut s);
-            // Keep draining so the child never blocks on a full pipe.
-            let _ = std::io::copy(p, &mut std::io::sink());
-        }
-        s
+    // Drain stderr on a thread (bounded copy kept) so a chatty child never blocks on a full pipe.
+    let captured = Arc::new(Mutex::new(Vec::<u8>::new()));
+    let reader = child.stderr.take().map(|mut p| {
+        let cap = Arc::clone(&captured);
+        std::thread::spawn(move || {
+            let mut buf = [0u8; 1024];
+            while let Ok(n) = p.read(&mut buf) {
+                if n == 0 {
+                    break;
+                }
+                if let Ok(mut c) = cap.lock() {
+                    let room = 4096usize.saturating_sub(c.len());
+                    c.extend_from_slice(&buf[..n.min(room)]);
+                }
+            }
+        })
     });
     let deadline = Instant::now() + timeout;
     let status = loop {
@@ -198,7 +206,17 @@ pub fn sk_alert_deliver(text: &str, timeout: Duration) -> bool {
             Err(_) => break None,
         }
     };
-    let stderr = reader.join().unwrap_or_default();
+    // An orphaned grandchild can hold the pipe open: wait briefly, never forever.
+    if let Some(h) = reader {
+        let end = Instant::now() + Duration::from_millis(200);
+        while !h.is_finished() && Instant::now() < end {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    }
+    let stderr = captured
+        .lock()
+        .map(|c| String::from_utf8_lossy(&c).into_owned())
+        .unwrap_or_default();
     match status {
         None => {
             warn("sk-alert delivery failed to run: timed out");

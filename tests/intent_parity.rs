@@ -57,7 +57,9 @@ fn dumps_match_pydantic() {
         assert_eq!(i.dump_compact(), s(&d["compact"]), "{}", d["input"]);
         // and the dump reloads to the same model
         assert_eq!(
-            Intention::from_json(&i.dump_indent2()).unwrap().dump_indent2(),
+            Intention::from_json(&i.dump_indent2())
+                .unwrap()
+                .dump_indent2(),
             i.dump_indent2()
         );
     }
@@ -174,7 +176,9 @@ fn sweep_matches_python() {
     let p = pristine_snap();
     let ex = expected();
     let (base, st) = pristine_copy("sweep");
-    let changed = st.sweep_supersession(Some(dt(s(&ex["fixture_now"])))).unwrap();
+    let changed = st
+        .sweep_supersession(Some(dt(s(&ex["fixture_now"]))))
+        .unwrap();
     drop(st);
     assert_eq!(json!(changed), ex["sweep"]["changed"]);
     let got = delta(&snapshot(&base), &p);
@@ -182,7 +186,9 @@ fn sweep_matches_python() {
         assert_eq!(got[k], ex["sweep"][k], "{k}");
     }
     let (_b, st) = pristine_copy("sweep2");
-    let early = st.sweep_supersession(Some(dt("2026-09-01T00:00:00Z"))).unwrap();
+    let early = st
+        .sweep_supersession(Some(dt("2026-09-01T00:00:00Z")))
+        .unwrap();
     assert_eq!(json!(early), ex["sweep_early"]["changed"]);
 }
 
@@ -226,7 +232,11 @@ fn tick_matches_python() {
     let ex = expected();
     for c in ex["tick"].as_array().unwrap() {
         let (base, st) = pristine_copy("tick");
-        let mut results = c["results"].as_array().unwrap().iter().map(|v| v.as_bool().unwrap());
+        let mut results = c["results"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_bool().unwrap());
         let mut sent: Vec<String> = Vec::new();
         let mut deliver = |t: &str| {
             sent.push(t.to_string());
@@ -284,10 +294,17 @@ fn alert_text_matches_python() {
     let want = expected()["alert_text"].as_array().unwrap().clone();
     assert!(want.len() > 12);
     let extra = |id: &str| -> Value {
-        let ctrl = format!("Ctrl\x07 chars\nand\u{a0}nbsp \u{200b} zwsp {}", "x".repeat(260));
+        let ctrl = format!(
+            "Ctrl\x07 chars\nand\u{a0}nbsp \u{200b} zwsp {}",
+            "x".repeat(260)
+        );
         match id {
-            "t-ctrl" => json!({"id": id, "kind": "time", "title": ctrl, "origin_memory_id": "m\u{e9}\ttab"}),
-            "t-short" => json!({"id": id, "kind": "time", "title": format!("{}yyy", "x".repeat(197))}),
+            "t-ctrl" => {
+                json!({"id": id, "kind": "time", "title": ctrl, "origin_memory_id": "m\u{e9}\ttab"})
+            }
+            "t-short" => {
+                json!({"id": id, "kind": "time", "title": format!("{}yyy", "x".repeat(197))})
+            }
             "t-200" => json!({"id": id, "kind": "time", "title": "y".repeat(200)}),
             _ => json!({"id": id, "kind": "time", "title": "y".repeat(201)}),
         }
@@ -310,11 +327,18 @@ fn printable_and_shlex_match_python() {
         let c = s(&r[0]).chars().next().unwrap();
         let t = tick::clean(&format!("a{c}b"), 100);
         // a non-printable char becomes a separator, a printable one stays
-        assert_eq!(t == format!("a{c}b"), r[1].as_bool().unwrap(), "U+{:04X}", c as u32);
+        assert_eq!(
+            t == format!("a{c}b"),
+            r[1].as_bool().unwrap(),
+            "U+{:04X}",
+            c as u32
+        );
     }
     for r in expected()["shlex"].as_array().unwrap() {
         let got = tick::shlex_split(s(&r["in"]));
-        let want = r["out"].as_array().map(|a| a.iter().map(|x| s(x).to_string()).collect::<Vec<_>>());
+        let want = r["out"]
+            .as_array()
+            .map(|a| a.iter().map(|x| s(x).to_string()).collect::<Vec<_>>());
         assert_eq!(got, want, "{}", r["in"]);
     }
 }
@@ -391,9 +415,17 @@ fn ledger_scores_match_python() {
             assert_eq!(g.imported_followed, w["imported_followed"], "{key}");
             assert_eq!(g.rank, w["rank"].as_u64().unwrap() as usize, "{key}");
             assert_eq!(g.net_effect_sign, s(&w["net_effect_sign"]), "{key}");
-            assert_eq!(g.anti_pattern, w["anti_pattern"].as_bool().unwrap(), "{key}");
+            assert_eq!(
+                g.anti_pattern,
+                w["anti_pattern"].as_bool().unwrap(),
+                "{key}"
+            );
             assert_eq!(g.flag, w["flag"].as_str(), "{key}");
-            assert_eq!(skmem::pyjson::float_repr(g.net), s(&w["net_repr"]), "net {key}");
+            assert_eq!(
+                skmem::pyjson::float_repr(g.net),
+                s(&w["net_repr"]),
+                "net {key}"
+            );
             assert_eq!(
                 skmem::pyjson::float_repr(g.follow_rate),
                 s(&w["follow_rate_repr"]),
@@ -418,7 +450,8 @@ fn ledger_record_bytes_match_python() {
             source: c["source"].as_str(),
             missing: c["missing"].as_str(),
         };
-        l.record(s(&c["skill"]), s(&c["version"]), s(&c["event"]), &r).unwrap();
+        l.record(s(&c["skill"]), s(&c["version"]), s(&c["event"]), &r)
+            .unwrap();
     }
     // a second record with a known id appends nothing
     l.record(
@@ -447,7 +480,11 @@ fn ledger_never_fuses_onto_a_torn_tail() {
     let d = scratch("ledger-torn");
     let base = d.join("base");
     fs::create_dir_all(base.join("ledger")).unwrap();
-    fs::write(base.join("ledger/outcomes-skwk02-2026-10.jsonl"), s(&ex["ledger_torn_before"])).unwrap();
+    fs::write(
+        base.join("ledger/outcomes-skwk02-2026-10.jsonl"),
+        s(&ex["ledger_torn_before"]),
+    )
+    .unwrap();
     let l = Ledger::new(&base, Some("skwk02"));
     l.record(
         "after-torn",
@@ -470,7 +507,14 @@ fn ledger_never_fuses_onto_a_torn_tail() {
 fn ledger_ids_match_python() {
     for c in expected()["event_ids"].as_array().unwrap() {
         let a = c["args"].as_array().unwrap();
-        let got = ledger::event_id(s(&a[0]), s(&a[1]), s(&a[2]), s(&a[3]), a[4].as_str(), s(&a[5]));
+        let got = ledger::event_id(
+            s(&a[0]),
+            s(&a[1]),
+            s(&a[2]),
+            s(&a[3]),
+            a[4].as_str(),
+            s(&a[5]),
+        );
         assert_eq!(got, s(&c["id"]));
     }
     for c in expected()["sha"].as_array().unwrap() {
@@ -488,11 +532,13 @@ fn hermes_import_matches_python() {
     let first = sidecar::import_hermes_usage(&usage, &l).unwrap();
     let second = sidecar::import_hermes_usage(&usage, &l).unwrap();
     let want = &ex["hermes"];
-    let as_json = |x: sidecar::ImportStats| {
-        json!({"skills": x.skills, "served": x.served, "followed": x.followed, "skipped": x.skipped})
-    };
+    let as_json = |x: sidecar::ImportStats| json!({"skills": x.skills, "served": x.served, "followed": x.followed, "skipped": x.skipped});
     assert_eq!(as_json(first), want["first"]);
-    assert_eq!(as_json(second), want["second"], "re-import must add nothing new");
+    assert_eq!(
+        as_json(second),
+        want["second"],
+        "re-import must add nothing new"
+    );
     let got: Vec<Value> = l.events().iter().map(ev_json).collect();
     assert_eq!(Value::Array(got), want["events"]);
     for (name, text) in want["files"].as_object().unwrap() {
@@ -505,4 +551,3 @@ fn hermes_import_matches_python() {
         assert!(!sc.anti_pattern && sc.flag.is_none());
     }
 }
-
