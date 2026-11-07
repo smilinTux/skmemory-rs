@@ -26,7 +26,11 @@ const GENERATED_SOURCES: [&str; 8] = [
 
 /// The tier retrieval should honour, or `None` when the row is uncapped (legacy).
 pub fn effective_tier(c: &Candidate) -> Option<&str> {
-    let sv = if c.schema_version == 0 { 1 } else { c.schema_version };
+    let sv = if c.schema_version == 0 {
+        1
+    } else {
+        c.schema_version
+    };
     if sv >= 2 {
         return c.source_tier.as_deref();
     }

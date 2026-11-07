@@ -110,8 +110,9 @@ fn matches_at(els: &[El], t: &[char], p: usize) -> bool {
             let n = t[p..].iter().take_while(|c| is_word(**c)).count();
             (0..=n).rev().any(|k| matches_at(rest, t, p + k))
         }
-        El::OptApos => (p < t.len() && t[p] == '\'' && matches_at(rest, t, p + 1))
-            || matches_at(rest, t, p),
+        El::OptApos => {
+            (p < t.len() && t[p] == '\'' && matches_at(rest, t, p + 1)) || matches_at(rest, t, p)
+        }
         El::Boundary => at_boundary(t, p) && matches_at(rest, t, p),
     }
 }

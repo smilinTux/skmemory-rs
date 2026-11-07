@@ -107,7 +107,11 @@ pub fn demote_superseded(ids: &[String], found: &HashMap<String, Candidate>) -> 
         }
         (seen.len() > 1).then_some(cur)
     };
-    let pos: HashMap<&str, usize> = ids.iter().enumerate().map(|(n, i)| (i.as_str(), n)).collect();
+    let pos: HashMap<&str, usize> = ids
+        .iter()
+        .enumerate()
+        .map(|(n, i)| (i.as_str(), n))
+        .collect();
     let moving: Vec<&String> = ids
         .iter()
         .filter(|i| {
@@ -176,9 +180,8 @@ pub fn search(input: &SearchInput, env: &Env) -> Option<SearchTrace> {
     let limit = input.limit;
     let pool = limit.max(limit * 3);
     let strategy = fusion::fusion_strategy(env);
-    let route = (strategy == "pinned_rrf").then(|| {
-        fusion::route_query(input.query, input.df, None, env)
-    });
+    let route =
+        (strategy == "pinned_rrf").then(|| fusion::route_query(input.query, input.df, None, env));
     let pin_arms: &[&str] = if input.has_pg_bm25 {
         &["lexical", "lexical_local"]
     } else {

@@ -22,11 +22,14 @@ pipeline is proven before any engine code moves in.
    is switched on only when it matches the Python results on the shared fixtures.
    The Python path stays until the Rust path has earned its removal.
 
-### What is held
+### Retrieval fusion (R-06)
 
-The retrieval fusion work (card R-06) is **held**. It is governed by the stop rule of
-the SKRSI target `skmemory-retrieval`: it does not proceed until live results hold.
-Bootstrap work does not touch fusion, and nothing here claims a retrieval improvement.
+The hold on the fusion card was lifted on 2026-11-07 (P1-09 closed). `skmem::fusion`,
+`rerank`, `tiers`, `procedures`, `decay` and `search` port the post-arm half of Python
+`MemoryStore.search` and are checked for exact parity (same ids, same order) against
+Python-generated golden cases. This is a port, not a claim of a retrieval improvement:
+the live-result gates stay with the Python bench until `run_bench` can be vendored (see
+the SOP, section 1).
 
 ## Layout
 

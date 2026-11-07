@@ -131,10 +131,7 @@ pub fn run_arm(name: &str, input: ArmInput, cap: usize) -> ArmOutcome {
                 return mk(ArmStatus::Abstained, "", vec![]);
             }
             let mut seen = HashSet::new();
-            let ordered: Vec<String> = ids
-                .into_iter()
-                .filter(|i| seen.insert(i.clone()))
-                .collect();
+            let ordered: Vec<String> = ids.into_iter().filter(|i| seen.insert(i.clone())).collect();
             mk(ArmStatus::Ok, "", cap_per_source(&ordered, cap))
         }
     }
@@ -236,7 +233,8 @@ fn route_tokens(query: &str) -> Vec<String> {
     while i < b.len() {
         if b[i].is_ascii_alphanumeric() {
             let mut j = i + 1;
-            while j < b.len() && (b[j].is_ascii_alphanumeric() || matches!(b[j], b'.' | b'_' | b'-'))
+            while j < b.len()
+                && (b[j].is_ascii_alphanumeric() || matches!(b[j], b'.' | b'_' | b'-'))
             {
                 j += 1;
             }
@@ -509,10 +507,7 @@ pub fn fuse(
     FusionResult {
         ids: top.iter().map(|s| s.id.clone()).collect(),
         arms: arms.to_vec(),
-        provenance: top
-            .iter()
-            .map(|s| (s.id.clone(), s.prov.clone()))
-            .collect(),
+        provenance: top.iter().map(|s| (s.id.clone(), s.prov.clone())).collect(),
         route: route.map(|r| r.cls),
     }
 }
@@ -556,14 +551,26 @@ mod tests {
     #[test]
     fn natural_route_pins_vector_head_and_one_lexical_slot() {
         let arms = vec![
-            run_arm("semantic", ArmInput::Ids(ids(&["a", "b", "c", "d", "e"])), 25),
+            run_arm(
+                "semantic",
+                ArmInput::Ids(ids(&["a", "b", "c", "d", "e"])),
+                25,
+            ),
             run_arm("lexical_local", ArmInput::Ids(ids(&["a", "x", "y"])), 25),
         ];
         let r = RouteDecision {
             cls: Route::Natural,
             reason: "t",
         };
-        let f = fuse(&arms, 10, RRF_K, "pinned_rrf", &LEXICAL_ARMS, Some(&r), &Env::empty());
+        let f = fuse(
+            &arms,
+            10,
+            RRF_K,
+            "pinned_rrf",
+            &LEXICAL_ARMS,
+            Some(&r),
+            &Env::empty(),
+        );
         assert_eq!(&f.ids[..5], &ids(&["a", "b", "c", "d", "x"])[..]);
     }
 }

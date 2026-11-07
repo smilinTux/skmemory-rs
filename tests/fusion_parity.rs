@@ -24,7 +24,10 @@ fn golden() -> Value {
 }
 
 fn section(g: &Value, name: &str) -> Vec<Value> {
-    g[name].as_array().unwrap_or_else(|| panic!("{name}")).clone()
+    g[name]
+        .as_array()
+        .unwrap_or_else(|| panic!("{name}"))
+        .clone()
 }
 
 fn s(v: &Value) -> String {
@@ -140,12 +143,21 @@ fn fuse_matches_python() {
             .as_array()
             .unwrap()
             .iter()
-            .map(|a| fusion::run_arm(&s(&a["name"]), arm_input(&a["spec"]), fusion::DEFAULT_ARM_CAP))
+            .map(|a| {
+                fusion::run_arm(
+                    &s(&a["name"]),
+                    arm_input(&a["spec"]),
+                    fusion::DEFAULT_ARM_CAP,
+                )
+            })
             .collect();
         check_outcomes(&name, &arms, &c["arm_outcomes"]);
         let pins = strs(&c["pin_arms"]);
         let pin_refs: Vec<&str> = pins.iter().map(String::as_str).collect();
-        let route = route_of(&c["route"]).map(|cls| RouteDecision { cls, reason: "golden" });
+        let route = route_of(&c["route"]).map(|cls| RouteDecision {
+            cls,
+            reason: "golden",
+        });
         let k = c["k"].as_i64().unwrap_or(RRF_K);
         let got = fusion::fuse(
             &arms,
@@ -273,7 +285,12 @@ fn procedure_order_matches_python() {
     for c in &cases {
         let docs = &c["items"];
         let found = found_of(docs);
-        let ids: Vec<String> = docs.as_array().unwrap().iter().map(|d| s(&d["id"])).collect();
+        let ids: Vec<String> = docs
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| s(&d["id"]))
+            .collect();
         let got = skmem::procedures::order_procedures(&ids, &found, &s(&c["query"]));
         assert_eq!(got, strs(&c["out"]), "{}", c["query"]);
     }
@@ -302,7 +319,12 @@ fn decay_channels_match_python() {
     assert!(cases.len() >= 25);
     for (n, c) in cases.iter().enumerate() {
         let found = found_of(&c["docs"]);
-        let ids: Vec<String> = c["docs"].as_array().unwrap().iter().map(|d| s(&d["id"])).collect();
+        let ids: Vec<String> = c["docs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| s(&d["id"]))
+            .collect();
         let usage = usage_of(&c["usage"]);
         let ch = Channel::parse(&s(&c["channel"])).unwrap();
         let as_of = Dt::parse(&s(&c["as_of"])).unwrap();
@@ -362,7 +384,11 @@ fn whole_search_path_matches_python_store_search() {
         let trace = search(&input, &env_of(&c["env"])).unwrap_or_else(|| panic!("{name}: None"));
         let e = &c["expected"];
         assert_eq!(trace.route, route_of(&e["route"]), "{name}: route");
-        assert_eq!(trace.demoted, strs(&e["fused_stage"]), "{name}: fused stage");
+        assert_eq!(
+            trace.demoted,
+            strs(&e["fused_stage"]),
+            "{name}: fused stage"
+        );
         assert_eq!(trace.page, strs(&e["page"]), "{name}: page");
     }
 }
@@ -371,8 +397,16 @@ fn whole_search_path_matches_python_store_search() {
 fn golden_case_count() {
     let g = golden();
     let n: usize = [
-        "route", "fuse", "scores", "rerank", "demote", "tiercap", "procedures", "decay",
-        "decay_config", "pipeline",
+        "route",
+        "fuse",
+        "scores",
+        "rerank",
+        "demote",
+        "tiercap",
+        "procedures",
+        "decay",
+        "decay_config",
+        "pipeline",
     ]
     .iter()
     .map(|k| g[*k].as_array().unwrap().len())

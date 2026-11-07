@@ -87,7 +87,10 @@ pub fn decay_score(
         return 0.5f64.powf(days(as_of, created) / half);
     }
     let accessed = last_accessed.and_then(Dt::parse);
-    let touch = [created, accessed].into_iter().flatten().max_by_key(|d| d.micros);
+    let touch = [created, accessed]
+        .into_iter()
+        .flatten()
+        .max_by_key(|d| d.micros);
     let f = 0.5f64.powf(days(as_of, touch) / half);
     let boost = 1.0 + (access_count.max(0) as f64).ln_1p();
     if channel == Channel::Reinforcement {
