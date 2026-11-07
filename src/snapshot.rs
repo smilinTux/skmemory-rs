@@ -13,7 +13,7 @@
 //! pgvector row, the graph upsert, the write-ahead log, custom pre-write hooks,
 //! reweave and the SKSeed truth check.
 
-use crate::audience::OwnerScope;
+use crate::audience::{OwnerScope, ReaderScope};
 use crate::engine::{Engine, EngineError};
 use crate::index::content_hash;
 use crate::model::{py_strip, Memory, ModelError};
@@ -103,6 +103,18 @@ fn normalize_authority_tier(v: &str) -> &'static str {
         .unwrap_or("memory")
 }
 
+/// Python truthiness of a JSON value (`bool(x)`).
+pub fn py_truthy(v: &Value) -> bool {
+    match v {
+        Value::Null => false,
+        Value::Bool(b) => *b,
+        Value::String(s) => !s.is_empty(),
+        Value::Number(n) => n.as_f64().is_some_and(|f| f != 0.0),
+        Value::Array(a) => !a.is_empty(),
+        Value::Object(o) => !o.is_empty(),
+    }
+}
+
 fn py_str(v: Option<&Value>) -> String {
     match v {
         None => String::new(),
@@ -124,15 +136,7 @@ pub fn infer_authority_tier(
     metadata: &Map<String, Value>,
 ) -> &'static str {
     if let Some(e) = metadata.get("authority_tier") {
-        let truthy = match e {
-            Value::Null => false,
-            Value::Bool(b) => *b,
-            Value::String(s) => !s.is_empty(),
-            Value::Number(n) => n.as_f64().is_some_and(|f| f != 0.0),
-            Value::Array(a) => !a.is_empty(),
-            Value::Object(o) => !o.is_empty(),
-        };
-        if truthy {
+        if py_truthy(e) {
             return normalize_authority_tier(&py_str(Some(e)));
         }
     }
@@ -242,12 +246,13 @@ impl Engine {
         content: &str,
         mut fields: Map<String, Value>,
         owner: &OwnerScope,
+        reader: &ReaderScope,
     ) -> Result<Snapshot, SnapshotError> {
-        let decompose = fields
-            .remove("decompose")
-            .is_some_and(|v| v.as_bool().unwrap_or(false));
+        // `decompose` and `reader` are Python call arguments, never stored fields.
+        let decompose = fields.remove("decompose").is_some_and(|v| py_truthy(&v));
+        fields.remove("reader");
         // Dedup first, as Python does (before decomposition and before the write).
-        if let Some(existing) = self.find_by_content(content, owner) {
+        if let Some(existing) = self.find_by_content(content, owner, reader) {
             return Ok(Snapshot {
                 memory: existing,
                 created: false,
@@ -283,16 +288,26 @@ impl Engine {
         })
     }
 
-    /// `SQLiteBackend.find_by_content_hash`: the stored memory whose content
-    /// hashes the same, loaded from its flat file. The caller is the owner, so
-    /// every memory is visible (Python applies the writer's reader here).
-    fn find_by_content(&self, content: &str, owner: &OwnerScope) -> Option<Memory> {
+    /// `SQLiteBackend.find_by_content_hash` plus the writer's reader check: the
+    /// stored memory whose content hashes the same, loaded from its flat file,
+    /// ONLY when `reader` may see it. A hit on a memory the reader cannot see is
+    /// treated as no hit (Python: `existing = None`), so the write cannot
+    /// confirm hidden content or return its id, and a fresh memory is written.
+    /// Only the first row of that hash is considered, as in Python (`LIMIT 1`).
+    fn find_by_content(
+        &self,
+        content: &str,
+        owner: &OwnerScope,
+        reader: &ReaderScope,
+    ) -> Option<Memory> {
         let hash = content_hash(content);
         let (id, file) = self.index().find_by_content_hash(&hash).ok().flatten()?;
-        self.store()
+        let existing = self
+            .store()
             .load(&id, owner.reader_scope())
             .ok()
             .flatten()
-            .or_else(|| self.store().read_path(std::path::Path::new(&file)).ok())
+            .or_else(|| self.store().read_path(std::path::Path::new(&file)).ok())?;
+        reader.allows_memory(&existing).then_some(existing)
     }
 }

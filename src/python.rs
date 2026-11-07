@@ -874,16 +874,24 @@ impl Engine {
         fields: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyObject> {
         let own = self.owner_rw()?;
-        let extra: Map<String, Value> = match fields {
+        let mut extra: Map<String, Value> = match fields {
             Some(f) => from_py(py, f.as_any())?
                 .as_object()
                 .cloned()
                 .unwrap_or_default(),
             None => Map::new(),
         };
+        // `reader` is the writer's audience (dedup only matches what it may see);
+        // it is a call argument, never a stored field.
+        let reader = match extra.remove("reader") {
+            Some(Value::String(r)) => Some(r),
+            Some(Value::Null) | None => None,
+            Some(other) => Some(other.to_string()),
+        };
+        let scope = self.scope(reader.as_deref());
         let snap = self
             .core
-            .snapshot(title, content, extra, &own)
+            .snapshot(title, content, extra, &own, &scope)
             .map_err(|e| match e {
                 SnapshotError::Unsupported(m) => PyNotImplementedError::new_err(m),
                 SnapshotError::Invalid(e) => value_err(e),

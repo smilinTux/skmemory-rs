@@ -13,7 +13,7 @@ All notable changes to `skmem` are documented here. The format follows
   (`pg_read_only=False` raises); arm reports carry `hits` and `ms` like Python's retrieval log; an arm
   that timed out cools down for `SKMEMORY_ARM_COOLDOWN_S` (10 s); the SQLite arms run under the same
   deadline (interrupt watchdog).
-- Snapshot parity (SKMEM-R-07C part 2): `Engine::snapshot` (and `skmem_core.Engine.snapshot`) now does
+- Snapshot parity (SKMEM-R-07C part 2; review fix: `reader=` scopes dedup and is never stored, `decompose` uses Python truthiness): `Engine::snapshot` (and `skmem_core.Engine.snapshot`) now does
   the write-time work of `MemoryStore.snapshot` that is a function of the arguments: content-hash
   dedup (a duplicate returns the stored memory and writes nothing), `source_tier` derived from
   `source`, `metadata.authority_tier`, and valence inferred from emotion labels; content of 1200+

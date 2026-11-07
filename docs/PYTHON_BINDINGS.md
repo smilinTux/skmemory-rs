@@ -138,14 +138,14 @@ Python store (or its backend) for it.
 
 | Python side effect | Rust `snapshot` | Who does it |
 |---|---|---|
-| Content-hash dedup (`sha256(content)[:16]`; a duplicate returns the stored memory and writes nothing) | yes | Rust. The caller is the owner, so every memory is visible; Python applies the writer's `reader` here |
+| Content-hash dedup (`sha256(content)[:16]`; a duplicate returns the stored memory and writes nothing) | yes | Rust. `reader=` is a call argument, never a stored field: dedup only considers a hit the writer's reader may see, and a hit on an invisible memory writes a fresh memory (checked against Python) |
 | `source_tier` from `source` when none is given (`tier_for_source`) | yes | Rust |
 | `metadata.authority_tier` (`prepare_metadata`) | yes | Rust |
 | Valence inferred from emotion labels | yes | Rust |
 | Integrity seal | yes | Rust |
 | Pre-write schema validation (the default hook) | yes (`Memory` validation) | Rust. Custom registered hooks: shim |
 | Flat file (atomic, durable) and SQLite index row | yes | Rust |
-| Document decomposition (`len >= 1200` or `decompose=True`) and content splitting | NOT done: raises `NotImplementedError`, stores nothing | Shim: call the Python snapshot |
+| Document decomposition (`len >= 1200` or a truthy `decompose`, Python truthiness: `1`, a non-empty string or list) and content splitting | NOT done: raises `NotImplementedError`, stores nothing | Shim: call the Python snapshot |
 | Write-time triage (`kind` fact, rule, preference; `supersedes_id`: parent link, `write_triage` metadata, closing the superseded head's `valid_to`) | NOT done: `supersedes_id` and `kind` are stored as given, nothing is closed or linked | Shim |
 | pgvector row (embedding, upsert) | NOT done | Shim, or `skmemory sync --vector` rebuilds it from the flat files |
 | Graph upsert (AGE `index_memory`) | NOT done | Shim, or `skmemory sync --graph` |

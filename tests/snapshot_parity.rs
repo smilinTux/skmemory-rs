@@ -7,7 +7,7 @@
 //! never stored whole.
 
 use serde_json::{json, Map, Value};
-use skmem::audience::OwnerScope;
+use skmem::audience::{AudienceConfig, OwnerScope, ReaderScope};
 use skmem::engine::{Arms, Engine, EngineOptions};
 use skmem::env::Env;
 use skmem::snapshot::SnapshotError;
@@ -78,6 +78,7 @@ fn snapshot_matches_python_case_by_case() {
             case["content"].as_str().unwrap(),
             fields(case),
             &own,
+            own.reader_scope(),
         );
         if row["decomposed"].as_bool().unwrap() {
             assert!(
@@ -142,7 +143,7 @@ fn a_refused_snapshot_stores_nothing() {
     let e = engine("refused");
     let own = owner();
     let long = "river delta ".repeat(200);
-    let r = e.snapshot("t", &long, Map::new(), &own);
+    let r = e.snapshot("t", &long, Map::new(), &own, own.reader_scope());
     assert!(matches!(r, Err(SnapshotError::Unsupported(_))));
     assert_eq!(e.store().flat_id_set(own.reader_scope()).len(), 0);
     assert_eq!(e.index().count(own.reader_scope()).unwrap(), 0);
@@ -152,8 +153,12 @@ fn a_refused_snapshot_stores_nothing() {
 fn a_duplicate_writes_nothing_and_returns_the_stored_memory() {
     let e = engine("dup");
     let own = owner();
-    let a = e.snapshot("one", "same words", Map::new(), &own).unwrap();
-    let b = e.snapshot("two", "same words", Map::new(), &own).unwrap();
+    let a = e
+        .snapshot("one", "same words", Map::new(), &own, own.reader_scope())
+        .unwrap();
+    let b = e
+        .snapshot("two", "same words", Map::new(), &own, own.reader_scope())
+        .unwrap();
     assert!(a.created && !b.created);
     assert_eq!(a.memory.id, b.memory.id);
     assert_eq!(
@@ -161,4 +166,98 @@ fn a_duplicate_writes_nothing_and_returns_the_stored_memory() {
         "the existing memory, not the new title"
     );
     assert_eq!(e.store().flat_id_set(own.reader_scope()).len(), 1);
+}
+
+fn public() -> ReaderScope {
+    ReaderScope::resolve(Some("@public"), &Env::empty(), &AudienceConfig::empty())
+}
+
+#[test]
+fn dedup_only_matches_what_the_writers_reader_may_see() {
+    let e = engine("dedup-reader");
+    let own = owner();
+    let mut priv_fields = Map::new();
+    priv_fields.insert("context_tag".into(), json!("@chef-only"));
+    let secret = e
+        .snapshot(
+            "secret",
+            "private words only",
+            priv_fields,
+            &own,
+            own.reader_scope(),
+        )
+        .unwrap();
+    assert!(secret.created);
+    // A public writer with the same content: the hit is invisible to it, so a fresh
+    // memory is written and the private one is neither returned nor confirmed.
+    let mut f = Map::new();
+    f.insert("context_tag".into(), json!("@public"));
+    f.insert("reader".into(), json!("@public"));
+    let fresh = e
+        .snapshot("mine", "private words only", f, &own, &public())
+        .unwrap();
+    assert!(
+        fresh.created,
+        "a hit on an invisible memory writes a fresh one"
+    );
+    assert_ne!(fresh.memory.id, secret.memory.id);
+    assert_eq!(fresh.memory.title, "mine");
+    assert!(
+        !fresh.memory.extra.contains_key("reader"),
+        "reader is never a stored field"
+    );
+    // The stored file has no reader key either.
+    let file = e.store().path_for(&fresh.memory).unwrap();
+    assert!(!std::fs::read_to_string(file)
+        .unwrap()
+        .contains("\"reader\""));
+    // The owner (no reader) still dedups to the first row of that hash.
+    let again = e
+        .snapshot(
+            "x",
+            "private words only",
+            Map::new(),
+            &own,
+            own.reader_scope(),
+        )
+        .unwrap();
+    assert!(!again.created);
+    // And a reader that CAN see the hit dedups to it.
+    let mut pubf = Map::new();
+    pubf.insert("context_tag".into(), json!("@public"));
+    let shared = e
+        .snapshot("shared", "open words", pubf, &own, own.reader_scope())
+        .unwrap();
+    let mut g = Map::new();
+    g.insert("reader".into(), json!("@public"));
+    let seen = e.snapshot("y", "open words", g, &own, &public()).unwrap();
+    assert!(!seen.created);
+    assert_eq!(seen.memory.id, shared.memory.id);
+}
+
+#[test]
+fn decompose_truthiness_matches_python() {
+    let e = engine("decompose-truthy");
+    let own = owner();
+    for (i, v) in [json!(1), json!("yes"), json!([0]), json!(true)]
+        .into_iter()
+        .enumerate()
+    {
+        let mut f = Map::new();
+        f.insert("decompose".into(), v);
+        let r = e.snapshot("t", &format!("short {i}"), f, &own, own.reader_scope());
+        assert!(
+            matches!(r, Err(SnapshotError::Unsupported(_))),
+            "truthy decompose #{i}"
+        );
+    }
+    for (i, v) in [json!(0), json!(""), json!([]), json!(null), json!(false)]
+        .into_iter()
+        .enumerate()
+    {
+        let mut f = Map::new();
+        f.insert("decompose".into(), v);
+        let r = e.snapshot("t", &format!("falsy {i}"), f, &own, own.reader_scope());
+        assert!(r.is_ok(), "falsy decompose #{i}");
+    }
 }

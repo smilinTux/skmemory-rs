@@ -452,3 +452,22 @@ def test_snapshot_refuses_what_python_decomposes_and_stores_nothing(eng):
     with pytest.raises(NotImplementedError):
         eng.snapshot("flag", "short", decompose=True)
     assert eng.list() == []
+
+
+def test_snapshot_reader_is_not_stored_and_scopes_dedup(eng, home):
+    secret = eng.snapshot("secret", "private words only", context_tag="@chef-only")
+    fresh = eng.snapshot("mine", "private words only", context_tag="@public", reader="@public")
+    assert fresh["id"] != secret["id"] and fresh["title"] == "mine"
+    assert "reader" not in fresh
+    doc = json.loads((home / "short-term" / f"{fresh['id']}.json").read_text())
+    assert "reader" not in doc
+    # the owner still dedups to the stored row
+    assert eng.snapshot("x", "private words only")["id"] in (secret["id"], fresh["id"])
+
+
+def test_snapshot_decompose_truthiness(eng):
+    for v in (1, "yes", [0], True):
+        with pytest.raises(NotImplementedError):
+            eng.snapshot("t", f"short {v}", decompose=v)
+    for v in (0, "", [], None, False):
+        eng.snapshot("t", f"falsy {v!r}", decompose=v)
