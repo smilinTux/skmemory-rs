@@ -1054,7 +1054,7 @@
   "corpus_tokens": 1381,
   "embed_mode": "hashed",
   "fixture_now": "2026-11-01T12:00:00+00:00",
-  "skmemory_commit": "b561eb8",
+  "skmemory_commit": "a6c0845",
   "threshold": 0.3
  },
  "time_windows": {
