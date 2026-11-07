@@ -323,6 +323,11 @@ impl GraphArm {
         }
     }
 
+    /// The connected client, if any (tests inspect session state through it).
+    pub fn client_mut(&mut self) -> Option<&mut Client> {
+        self.client.as_mut()
+    }
+
     /// Override the search statement cap (0 or negative disables it).
     pub fn set_search_timeout_ms(&mut self, ms: i64) {
         self.search_timeout_ms = ms;

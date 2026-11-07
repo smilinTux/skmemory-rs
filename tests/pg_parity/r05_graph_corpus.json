@@ -1,0 +1,987 @@
+{
+ "nodes": [
+  {
+   "id": "skrs-r05-g01",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha",
+    "beta"
+   ],
+   "layer": "long-term",
+   "title": "Alpha original",
+   "source": "chat",
+   "content": "alpha",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-10T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-10T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-01-10T00:00:00+00:00",
+   "valid_from": "2026-01-10T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Ali Al-Zaidi\", \"Z\\u00fcrich\", \"skgateway\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g02",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Alpha revised",
+   "source": "chat",
+   "content": "alpha v2",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-02-10T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-02-10T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-02-10T00:00:00+00:00",
+   "valid_from": "2026-02-10T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"supersedes\", \"decomposition\": {\"entities\": [\"Ali Al-Zaidi\", \"C++ (v2.0)\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g03",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha",
+    "gamma"
+   ],
+   "layer": "short-term",
+   "title": "Alpha final",
+   "source": "import",
+   "content": "alpha v3",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-03-10T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-03-10T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-03-10T00:00:00+00:00",
+   "valid_from": "2026-03-10T00:00:00+00:00",
+   "context_tag": "team",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"supersedes\", \"decomposition\": {\"entities\": [\"Ali Al-Zaidi\", \"O'Brien\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g04",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "mid-term",
+   "title": "Beta promoted",
+   "source": "seed",
+   "content": "beta",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-02-01T00:00:00+02:00",
+   "intensity": 0.0,
+   "created_at": "2026-02-01T00:00:00+02:00",
+   "source_ref": "",
+   "updated_at": "2026-02-01T00:00:00+02:00",
+   "valid_from": "2026-02-01T00:00:00+02:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"promoted_from\", \"decomposition\": {\"entities\": [\"skgateway\", \"\\u6771\\u4eac Tower\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g05",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Beta chunk",
+   "source": "chat",
+   "content": "beta chunk",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-02-02T00:00:00Z",
+   "intensity": 0.0,
+   "created_at": "2026-02-02T00:00:00Z",
+   "source_ref": "",
+   "updated_at": "2026-02-02T00:00:00Z",
+   "valid_from": "2026-02-02T00:00:00Z",
+   "context_tag": "private",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"chunk_of\", \"decomposition\": {\"entities\": [\"skgateway routing\", \"Casey\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g06",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "gamma"
+   ],
+   "layer": "short-term",
+   "title": "Gamma extends",
+   "source": "chat",
+   "content": "gamma",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-04-01T12:00:00-05:00",
+   "intensity": 0.0,
+   "created_at": "2026-04-01T12:00:00-05:00",
+   "source_ref": "",
+   "updated_at": "2026-04-01T12:00:00-05:00",
+   "valid_from": "2026-04-01T12:00:00-05:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"extends\", \"decomposition\": {\"entities\": [\"Casey\", \"invoice\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g07",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "delta",
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Delta related",
+   "source": "import",
+   "content": "delta",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-04-02T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-04-02T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-04-02T00:00:00+00:00",
+   "valid_from": "2026-04-02T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Z\\u00fcrich\", \"na\\u00efve caf\\u00e9\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-gMISSING"
+  },
+  {
+   "id": "skrs-r05-g08",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Epsilon valid window",
+   "source": "chat",
+   "content": "epsilon",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-01T00:00:00+00:00",
+   "valid_to": "2026-06-01T02:00:00+02:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-01T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-01-01T00:00:00+00:00",
+   "valid_from": "2026-03-01T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Ali Al-Zaidi\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g09",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Zeta closed early",
+   "source": "chat",
+   "content": "zeta",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-01T00:00:00+00:00",
+   "valid_to": "2026-02-01T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-01T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-01-01T00:00:00+00:00",
+   "valid_from": "2026-01-01T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Ali Al-Zaidi\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g10",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Eta starts late",
+   "source": "chat",
+   "content": "eta",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-01T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-01T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-01-01T00:00:00+00:00",
+   "valid_from": "2026-09-01T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Ali Al-Zaidi\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g11",
+   "kind": "episode",
+   "role": "general",
+   "tags": [],
+   "layer": "short-term",
+   "title": "Theta no entities",
+   "source": "",
+   "content": "short",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-01T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-01T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-01-01T00:00:00+00:00",
+   "valid_from": "2026-01-01T00:00:00+00:00",
+   "context_tag": "",
+   "source_tier": "self-generated",
+   "metadata_json": "{}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g12",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Iota boundary",
+   "source": "chat",
+   "content": "iota",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-06-01T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-06-01T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-06-01T00:00:00+00:00",
+   "valid_from": "2026-06-01T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Boundary Entity\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g13",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Kappa offset boundary",
+   "source": "chat",
+   "content": "kappa",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-31T22:00:00-02:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-31T22:00:00-02:00",
+   "source_ref": "",
+   "updated_at": "2026-05-31T22:00:00-02:00",
+   "valid_from": "2026-05-31T22:00:00-02:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Boundary Entity\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g14",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Lambda closed at boundary",
+   "source": "chat",
+   "content": "lambda",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-01T00:00:00Z",
+   "valid_to": "2026-06-01T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-01T00:00:00Z",
+   "source_ref": "",
+   "updated_at": "2026-01-01T00:00:00Z",
+   "valid_from": "2026-01-01T00:00:00Z",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"Boundary Entity\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g15",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Mu mixed offset sup child",
+   "source": "chat",
+   "content": "mu",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-06-01T01:00:00+02:00",
+   "intensity": 0.0,
+   "created_at": "2026-06-01T01:00:00+02:00",
+   "source_ref": "",
+   "updated_at": "2026-06-01T01:00:00+02:00",
+   "valid_from": "2026-06-01T01:00:00+02:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"supersedes\", \"decomposition\": {\"entities\": [\"Z\\u00fcrich\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g16",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Nu promoted deep",
+   "source": "chat",
+   "content": "nu",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-01T00:00:00Z",
+   "intensity": 0.0,
+   "created_at": "2026-05-01T00:00:00Z",
+   "source_ref": "",
+   "updated_at": "2026-05-01T00:00:00Z",
+   "valid_from": "2026-05-01T00:00:00Z",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"parent_relation\": \"promoted_from\", \"decomposition\": {\"entities\": [\"skgateway\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g17",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "x'] OR 1=1"
+   ],
+   "layer": "short-term",
+   "title": "Xi hostile ' $$ \" name",
+   "source": "chat",
+   "content": "xi",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-01-01T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-01-01T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-01-01T00:00:00+00:00",
+   "valid_from": "2026-01-01T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"x') MATCH (n) DETACH DELETE n //\", \"$$ ) AS (a agtype); --\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g18",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Filler 18",
+   "source": "chat",
+   "content": "filler 18",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-18T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-18T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-18T00:00:00+00:00",
+   "valid_from": "2026-05-18T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 18\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g19",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Filler 19",
+   "source": "chat",
+   "content": "filler 19",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-19T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-19T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-19T00:00:00+00:00",
+   "valid_from": "2026-05-19T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 19\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g20",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Filler 20",
+   "source": "chat",
+   "content": "filler 20",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-20T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-20T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-20T00:00:00+00:00",
+   "valid_from": "2026-05-20T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 20\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g21",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Filler 21",
+   "source": "chat",
+   "content": "filler 21",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-21T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-21T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-21T00:00:00+00:00",
+   "valid_from": "2026-05-21T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 21\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g22",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Filler 22",
+   "source": "chat",
+   "content": "filler 22",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-22T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-22T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-22T00:00:00+00:00",
+   "valid_from": "2026-05-22T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 22\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g23",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Filler 23",
+   "source": "chat",
+   "content": "filler 23",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-23T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-23T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-23T00:00:00+00:00",
+   "valid_from": "2026-05-23T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 23\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g24",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Filler 24",
+   "source": "chat",
+   "content": "filler 24",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-24T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-24T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-24T00:00:00+00:00",
+   "valid_from": "2026-05-24T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 24\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g25",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Filler 25",
+   "source": "chat",
+   "content": "filler 25",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-25T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-25T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-25T00:00:00+00:00",
+   "valid_from": "2026-05-25T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 25\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g26",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Filler 26",
+   "source": "chat",
+   "content": "filler 26",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-26T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-26T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-26T00:00:00+00:00",
+   "valid_from": "2026-05-26T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 26\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g27",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Filler 27",
+   "source": "chat",
+   "content": "filler 27",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-27T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-27T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-27T00:00:00+00:00",
+   "valid_from": "2026-05-27T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 27\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g28",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "beta"
+   ],
+   "layer": "short-term",
+   "title": "Filler 28",
+   "source": "chat",
+   "content": "filler 28",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-28T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-28T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-28T00:00:00+00:00",
+   "valid_from": "2026-05-28T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 28\"]}}",
+   "schema_version": 2
+  },
+  {
+   "id": "skrs-r05-g29",
+   "kind": "episode",
+   "role": "general",
+   "tags": [
+    "alpha"
+   ],
+   "layer": "short-term",
+   "title": "Filler 29",
+   "source": "chat",
+   "content": "filler 29",
+   "summary": "",
+   "valence": 0.0,
+   "event_at": "2026-05-29T00:00:00+00:00",
+   "intensity": 0.0,
+   "created_at": "2026-05-29T00:00:00+00:00",
+   "source_ref": "",
+   "updated_at": "2026-05-29T00:00:00+00:00",
+   "valid_from": "2026-05-29T00:00:00+00:00",
+   "context_tag": "public",
+   "source_tier": "self-generated",
+   "metadata_json": "{\"decomposition\": {\"entities\": [\"skgateway\", \"Filler Entity 29\"]}}",
+   "schema_version": 2
+  }
+ ],
+ "mentions": [
+  [
+   "skrs-r05-g01",
+   "Ali Al-Zaidi"
+  ],
+  [
+   "skrs-r05-g01",
+   "Zürich"
+  ],
+  [
+   "skrs-r05-g01",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g02",
+   "Ali Al-Zaidi"
+  ],
+  [
+   "skrs-r05-g02",
+   "C++ (v2.0)"
+  ],
+  [
+   "skrs-r05-g03",
+   "Ali Al-Zaidi"
+  ],
+  [
+   "skrs-r05-g03",
+   "O'Brien"
+  ],
+  [
+   "skrs-r05-g04",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g04",
+   "東京 Tower"
+  ],
+  [
+   "skrs-r05-g05",
+   "skgateway routing"
+  ],
+  [
+   "skrs-r05-g05",
+   "Casey"
+  ],
+  [
+   "skrs-r05-g06",
+   "Casey"
+  ],
+  [
+   "skrs-r05-g06",
+   "invoice"
+  ],
+  [
+   "skrs-r05-g07",
+   "Zürich"
+  ],
+  [
+   "skrs-r05-g07",
+   "naïve café"
+  ],
+  [
+   "skrs-r05-g08",
+   "Ali Al-Zaidi"
+  ],
+  [
+   "skrs-r05-g09",
+   "Ali Al-Zaidi"
+  ],
+  [
+   "skrs-r05-g10",
+   "Ali Al-Zaidi"
+  ],
+  [
+   "skrs-r05-g12",
+   "Boundary Entity"
+  ],
+  [
+   "skrs-r05-g13",
+   "Boundary Entity"
+  ],
+  [
+   "skrs-r05-g14",
+   "Boundary Entity"
+  ],
+  [
+   "skrs-r05-g15",
+   "Zürich"
+  ],
+  [
+   "skrs-r05-g16",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g17",
+   "x') MATCH (n) DETACH DELETE n //"
+  ],
+  [
+   "skrs-r05-g17",
+   "$$ ) AS (a agtype); --"
+  ],
+  [
+   "skrs-r05-g18",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g18",
+   "Filler Entity 18"
+  ],
+  [
+   "skrs-r05-g19",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g19",
+   "Filler Entity 19"
+  ],
+  [
+   "skrs-r05-g20",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g20",
+   "Filler Entity 20"
+  ],
+  [
+   "skrs-r05-g21",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g21",
+   "Filler Entity 21"
+  ],
+  [
+   "skrs-r05-g22",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g22",
+   "Filler Entity 22"
+  ],
+  [
+   "skrs-r05-g23",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g23",
+   "Filler Entity 23"
+  ],
+  [
+   "skrs-r05-g24",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g24",
+   "Filler Entity 24"
+  ],
+  [
+   "skrs-r05-g25",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g25",
+   "Filler Entity 25"
+  ],
+  [
+   "skrs-r05-g26",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g26",
+   "Filler Entity 26"
+  ],
+  [
+   "skrs-r05-g27",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g27",
+   "Filler Entity 27"
+  ],
+  [
+   "skrs-r05-g28",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g28",
+   "Filler Entity 28"
+  ],
+  [
+   "skrs-r05-g29",
+   "skgateway"
+  ],
+  [
+   "skrs-r05-g29",
+   "Filler Entity 29"
+  ]
+ ],
+ "links": [
+  {
+   "rel": "RELATED_TO",
+   "a": "skrs-r05-g07",
+   "b": "skrs-r05-g01",
+   "valid_from": "2026-11-07T07:58:20.180948+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.180948+00:00"
+  },
+  {
+   "rel": "RELATED_TO",
+   "a": "skrs-r05-g07",
+   "b": "skrs-r05-g06",
+   "valid_from": "2026-11-07T07:58:20.187805+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.187805+00:00"
+  },
+  {
+   "rel": "RELATED_TO",
+   "a": "skrs-r05-g07",
+   "b": "skrs-r05-gMISSING",
+   "valid_from": "2026-11-07T07:58:20.191959+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.191959+00:00"
+  },
+  {
+   "rel": "SUPERSEDES",
+   "a": "skrs-r05-g02",
+   "b": "skrs-r05-g01",
+   "valid_from": "2026-01-10T00:00:00+00:00",
+   "valid_to": "2026-02-10T00:00:00+00:00",
+   "recorded_at": "2026-11-07T07:58:20.018015+00:00"
+  },
+  {
+   "rel": "SUPERSEDES",
+   "a": "skrs-r05-g03",
+   "b": "skrs-r05-g02",
+   "valid_from": "2026-02-10T00:00:00+00:00",
+   "valid_to": "2026-03-10T00:00:00+00:00",
+   "recorded_at": "2026-11-07T07:58:20.073932+00:00"
+  },
+  {
+   "rel": "SUPERSEDES",
+   "a": "skrs-r05-g15",
+   "b": "skrs-r05-g14",
+   "valid_from": "2026-01-01T00:00:00Z",
+   "valid_to": "2026-06-01T01:00:00+02:00",
+   "recorded_at": "2026-11-07T07:58:20.358449+00:00"
+  },
+  {
+   "rel": "PROMOTED_FROM",
+   "a": "skrs-r05-g04",
+   "b": "skrs-r05-g01",
+   "valid_from": "2026-11-07T07:58:20.104334+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.104334+00:00"
+  },
+  {
+   "rel": "PROMOTED_FROM",
+   "a": "skrs-r05-g16",
+   "b": "skrs-r05-g05",
+   "valid_from": "2026-11-07T07:58:20.381575+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.381575+00:00"
+  },
+  {
+   "rel": "CHUNK_OF",
+   "a": "skrs-r05-g05",
+   "b": "skrs-r05-g04",
+   "valid_from": "2026-11-07T07:58:20.131379+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.131379+00:00"
+  },
+  {
+   "rel": "EXTENDS",
+   "a": "skrs-r05-g06",
+   "b": "skrs-r05-g05",
+   "valid_from": "2026-11-07T07:58:20.157234+00:00",
+   "valid_to": null,
+   "recorded_at": "2026-11-07T07:58:20.157234+00:00"
+  }
+ ]
+}

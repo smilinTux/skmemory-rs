@@ -1,0 +1,6372 @@
+[
+ {
+  "name": "ent_whole",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali Al-Zaidi",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_substring_ci",
+  "method": "search_by_entity",
+  "args": {
+   "query": "al-zaidi",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_upper",
+  "method": "search_by_entity",
+  "args": {
+   "query": "ZÜRICH",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_unicode",
+  "method": "search_by_entity",
+  "args": {
+   "query": "東京",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "entity": "東京 Tower"
+   }
+  ]
+ },
+ {
+  "name": "ent_regex_chars",
+  "method": "search_by_entity",
+  "args": {
+   "query": "C++ (v2.0)",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "C++ (v2.0)"
+   }
+  ]
+ },
+ {
+  "name": "ent_quote",
+  "method": "search_by_entity",
+  "args": {
+   "query": "O'Brien",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "O'Brien"
+   }
+  ]
+ },
+ {
+  "name": "ent_hostile_a",
+  "method": "search_by_entity",
+  "args": {
+   "query": "x') MATCH (n) DETACH DELETE n //",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "entity": "x') MATCH (n) DETACH DELETE n //"
+   }
+  ]
+ },
+ {
+  "name": "ent_hostile_b",
+  "method": "search_by_entity",
+  "args": {
+   "query": "$$ ) AS (a agtype); --",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "entity": "$$ ) AS (a agtype); --"
+   }
+  ]
+ },
+ {
+  "name": "ent_dot_not_wildcard",
+  "method": "search_by_entity",
+  "args": {
+   "query": "v2.0",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "C++ (v2.0)"
+   }
+  ]
+ },
+ {
+  "name": "ent_wildcard_literal",
+  "method": "search_by_entity",
+  "args": {
+   "query": ".*",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_empty",
+  "method": "search_by_entity",
+  "args": {
+   "query": "",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_blank",
+  "method": "search_by_entity",
+  "args": {
+   "query": "   ",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_none",
+  "method": "search_by_entity",
+  "args": {
+   "query": "zzznotanentity",
+   "limit": 50
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_layer",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "layer": "long-term"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_tags_and",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "tags": [
+    "alpha",
+    "gamma"
+   ]
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_tag_hostile",
+  "method": "search_by_entity",
+  "args": {
+   "query": "skgateway",
+   "limit": 50
+  },
+  "filters": {
+   "tags": [
+    "x'] OR 1=1"
+   ]
+  },
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_ctx_one",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "context_tag": "team"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_ctx_any",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "context_tag": [
+    "team",
+    "private"
+   ]
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_ctx_empty_list",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "context_tag": []
+  },
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_source",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "source": "import"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_source_empty",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "source": ""
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_combo",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "layer": "mid-term",
+   "tags": [
+    "alpha"
+   ],
+   "source": "chat",
+   "context_tag": "public"
+  },
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_asof_date",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "as_of": "2026-04-10"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_asof_boundary",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Boundary",
+   "limit": 50
+  },
+  "filters": {
+   "as_of": "2026-06-01T00:00:00Z"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "entity": "Boundary Entity"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "entity": "Boundary Entity"
+   }
+  ]
+ },
+ {
+  "name": "ent_asof_offset",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Boundary",
+   "limit": 50
+  },
+  "filters": {
+   "as_of": "2026-06-01T01:00:00+01:00"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "entity": "Boundary Entity"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "entity": "Boundary Entity"
+   }
+  ]
+ },
+ {
+  "name": "ent_asof_before",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "as_of": "2025-01-01"
+  },
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "ent_asof_future",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 50
+  },
+  "filters": {
+   "as_of": "2030-01-01"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_asof_limit2",
+  "method": "search_by_entity",
+  "args": {
+   "query": "Ali",
+   "limit": 2
+  },
+  "filters": {
+   "as_of": "2026-04-10"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "ent_limit1",
+  "method": "search_by_entity",
+  "args": {
+   "query": "skgateway",
+   "limit": 1
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "skgateway routing"
+   }
+  ]
+ },
+ {
+  "name": "tok_multiword",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "what did Casey say about the invoice",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "entity": "invoice"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "Casey"
+   }
+  ]
+ },
+ {
+  "name": "tok_whole_then_tokens",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "Ali Al-Zaidi",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "tok_stopwords_only",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "what about this",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "tok_short_words",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "a ab abc",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "tok_unicode_mixed",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "Zürich café naïve",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "entity": "Zürich"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Zürich"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "entity": "Zürich"
+   }
+  ]
+ },
+ {
+  "name": "tok_identifier",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "skgateway routing decision",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "skgateway routing"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "entity": "skgateway"
+   }
+  ]
+ },
+ {
+  "name": "tok_limit1",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "skgateway routing decision",
+   "limit": 1
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "skgateway routing"
+   }
+  ]
+ },
+ {
+  "name": "tok_limit3",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "Casey invoice skgateway",
+   "limit": 3
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "entity": "invoice"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "Casey"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "entity": "skgateway"
+   }
+  ]
+ },
+ {
+  "name": "tok_dupe_tokens",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "skgateway skgateway skgateway",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "skgateway routing"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "entity": "skgateway"
+   }
+  ]
+ },
+ {
+  "name": "tok_hostile",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "'); MATCH (n) DETACH DELETE n; $$ skgateway",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "entity": "x') MATCH (n) DETACH DELETE n //"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "entity": "skgateway routing"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "entity": "skgateway"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "entity": "skgateway"
+   }
+  ]
+ },
+ {
+  "name": "tok_layer",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "skgateway Casey",
+   "limit": 20
+  },
+  "filters": {
+   "layer": "mid-term"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "entity": "skgateway"
+   }
+  ]
+ },
+ {
+  "name": "tok_asof",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "Ali Zaidi Boundary",
+   "limit": 20
+  },
+  "filters": {
+   "as_of": "2026-06-01T00:00:00Z"
+  },
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "entity": "Boundary Entity"
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "entity": "Boundary Entity"
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "entity": "Ali Al-Zaidi"
+   },
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "entity": "Ali Al-Zaidi"
+   }
+  ]
+ },
+ {
+  "name": "tok_empty",
+  "method": "search_by_entity_tokens",
+  "args": {
+   "query": "",
+   "limit": 20
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": []
+ },
+ {
+  "name": "cv_now",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": null,
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_2026_01",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-01-15",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "created_at": "2026-01-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "created_at": "2026-01-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_2026_02",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-02-15",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "created_at": "2026-02-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "created_at": "2026-02-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_2026_03",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-03-15",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_2026_04",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-04-15",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_boundary_z",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-06-01T00:00:00Z",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": true
+ },
+ {
+  "name": "cv_boundary_offset",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-06-01T01:00:00+01:00",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": true
+ },
+ {
+  "name": "cv_before_all",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2025-01-01",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_future",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2030-01-01",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g12",
+    "title": "Iota boundary",
+    "layer": "short-term",
+    "created_at": "2026-06-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_naive",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-04-10T05:00:00",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "cv_mixed_offset_edge",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-05-31T23:30:00Z",
+   "limit": 200
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g13",
+    "title": "Kappa offset boundary",
+    "layer": "short-term",
+    "created_at": "2026-05-31T22:00:00-02:00"
+   },
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "created_at": null
+   },
+   {
+    "id": "skrs-r05-g08",
+    "title": "Epsilon valid window",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g09",
+    "title": "Zeta closed early",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g10",
+    "title": "Eta starts late",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g11",
+    "title": "Theta no entities",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "created_at": "2026-06-01T01:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "created_at": "2026-05-01T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g17",
+    "title": "Xi hostile ' $$ \" name",
+    "layer": "short-term",
+    "created_at": "2026-01-01T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g18",
+    "title": "Filler 18",
+    "layer": "short-term",
+    "created_at": "2026-05-18T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g19",
+    "title": "Filler 19",
+    "layer": "short-term",
+    "created_at": "2026-05-19T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g20",
+    "title": "Filler 20",
+    "layer": "short-term",
+    "created_at": "2026-05-20T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g21",
+    "title": "Filler 21",
+    "layer": "short-term",
+    "created_at": "2026-05-21T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g22",
+    "title": "Filler 22",
+    "layer": "short-term",
+    "created_at": "2026-05-22T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g23",
+    "title": "Filler 23",
+    "layer": "short-term",
+    "created_at": "2026-05-23T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g24",
+    "title": "Filler 24",
+    "layer": "short-term",
+    "created_at": "2026-05-24T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g25",
+    "title": "Filler 25",
+    "layer": "short-term",
+    "created_at": "2026-05-25T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g26",
+    "title": "Filler 26",
+    "layer": "short-term",
+    "created_at": "2026-05-26T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g27",
+    "title": "Filler 27",
+    "layer": "short-term",
+    "created_at": "2026-05-27T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g28",
+    "title": "Filler 28",
+    "layer": "short-term",
+    "created_at": "2026-05-28T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g29",
+    "title": "Filler 29",
+    "layer": "short-term",
+    "created_at": "2026-05-29T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": true
+ },
+ {
+  "name": "cv_limit5",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "2026-12-01",
+   "limit": 5
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "created_at": "2026-04-01T12:00:00-05:00"
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "created_at": "2026-04-02T00:00:00+00:00"
+   }
+  ],
+  "lexical_divergence": true
+ },
+ {
+  "name": "cv_bad",
+  "method": "currently_valid_memories",
+  "args": {
+   "as_of": "now-ish",
+   "limit": 5
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": [
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "created_at": "2026-03-10T00:00:00+00:00"
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "created_at": "2026-02-01T00:00:00+02:00"
+   },
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "created_at": "2026-02-02T00:00:00Z"
+   }
+  ],
+  "rust_expect_error": "BadAsOf"
+ },
+ {
+  "name": "valid_01_now",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_01_jan",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_01_mid",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_01_late",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-12-01"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_02_now",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_02_jan",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_02_mid",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_02_late",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2026-12-01"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_03_now",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_03_jan",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_03_mid",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": false,
+  "expect_parsed": false,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_03_late",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-12-01"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_09_now",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g09",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_09_jan",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g09",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_09_mid",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g09",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_09_late",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g09",
+   "as_of": "2026-12-01"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_10_now",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g10",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_10_jan",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g10",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_10_mid",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g10",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_10_late",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-g10",
+   "as_of": "2026-12-01"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_MISSING_now",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_MISSING_jan",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_MISSING_mid",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "valid_MISSING_late",
+  "method": "is_currently_valid",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": "2026-12-01"
+  },
+  "filters": {},
+  "ordered": false,
+  "expect": true,
+  "expect_parsed": true,
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_01_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_01_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_01_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_01_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_03_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_03_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_03_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_03_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_05_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_05_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_05_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_05_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_06_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g06",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_06_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g06",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_06_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g06",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_06_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g06",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_07_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g07",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_07_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g07",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_07_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g07",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_07_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g07",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_14_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g14",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_14_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g14",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_14_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g14",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g15",
+    "title": "Mu mixed offset sup child",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_14_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g14",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_15_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_15_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_15_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_15_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_11_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g11",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_11_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g11",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_11_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g11",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_11_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-g11",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_MISSING_now",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_MISSING_past",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_MISSING_mid",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": "2026-04-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "nb_MISSING_future",
+  "method": "neighbors",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_03_now",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_03_past",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_03_feb",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_03_mar",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2026-03-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_03_future",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g03",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_02_now",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_02_past",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_02_feb",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_02_mar",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2026-03-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_02_future",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g02",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_15_now",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_15_past",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_15_feb",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_15_mar",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-03-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_15_future",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_05_now",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_05_past",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_05_feb",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_05_mar",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2026-03-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_05_future",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g05",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_01_now",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": null
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_01_past",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-01-15"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_01_feb",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-02-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_01_mar",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2026-03-20"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_01_future",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g01",
+   "as_of": "2030-01-01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [],
+  "expect_parsed": [],
+  "lexical_divergence": false
+ },
+ {
+  "name": "chain_boundary",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-05-31T23:00:00Z"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [],
+  "lexical_divergence": true
+ },
+ {
+  "name": "chain_boundary_after",
+  "method": "supersedes_chain",
+  "args": {
+   "id": "skrs-r05-g15",
+   "as_of": "2026-05-31T23:00:01Z"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g14",
+    "title": "Lambda closed at boundary",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ],
+  "expect_parsed": [],
+  "lexical_divergence": true
+ },
+ {
+  "name": "rel_01_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g01",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_01_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g01",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_01_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g01",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_01_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g01",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g03",
+    "title": "Alpha final",
+    "layer": "short-term",
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_01_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g01",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_01",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-g01"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": []
+ },
+ {
+  "name": "rel_03_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g03",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_03_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g03",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_03_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g03",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_03_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g03",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_03_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g03",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_03",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-g03"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g02",
+    "title": "Alpha revised",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_05_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g05",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_05_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g05",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_05_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g05",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_05_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g05",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_05_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g05",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g16",
+    "title": "Nu promoted deep",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_05",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-g05"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g04",
+    "title": "Beta promoted",
+    "layer": "mid-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_06_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g06",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_06_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g06",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_06_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g06",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_06_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g06",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_06_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g06",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_06",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-g06"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": []
+ },
+ {
+  "name": "rel_07_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g07",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_07_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g07",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_07_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g07",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_07_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g07",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_07_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g07",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-gMISSING",
+    "title": null,
+    "layer": null,
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_07",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-g07"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": []
+ },
+ {
+  "name": "rel_16_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g16",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_16_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g16",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_16_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g16",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_16_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g16",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_16_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-g16",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_16",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-g16"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g05",
+    "title": "Beta chunk",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_MISSING_d1",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "depth": 1
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "rel_MISSING_d2",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "depth": 2
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_MISSING_d5",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "depth": 5
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_MISSING_d9",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "depth": 9
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   },
+   {
+    "id": "skrs-r05-g01",
+    "title": "Alpha original",
+    "layer": "long-term",
+    "distance": 2
+   },
+   {
+    "id": "skrs-r05-g06",
+    "title": "Gamma extends",
+    "layer": "short-term",
+    "distance": 2
+   }
+  ]
+ },
+ {
+  "name": "rel_MISSING_d0",
+  "method": "get_related",
+  "args": {
+   "id": "skrs-r05-gMISSING",
+   "depth": 0
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": [
+   {
+    "id": "skrs-r05-g07",
+    "title": "Delta related",
+    "layer": "short-term",
+    "distance": 1
+   }
+  ]
+ },
+ {
+  "name": "lin_MISSING",
+  "method": "get_lineage",
+  "args": {
+   "id": "skrs-r05-gMISSING"
+  },
+  "filters": {},
+  "ordered": true,
+  "expect": []
+ }
+]
