@@ -195,23 +195,53 @@ pub fn check_dsn_is_local(config: &postgres::Config) -> Result<(), PgError> {
     Ok(())
 }
 
-/// `_tune_search_session` settings from the environment: `SKMEMORY_HNSW_EF_SEARCH`
-/// (1..=1000, 0 or out of range skips) and `SKMEMORY_HNSW_ITERATIVE_SCAN`.
-pub fn search_session_settings(get: impl Fn(&str) -> Option<String>) -> Vec<(String, String)> {
+/// pgvector `hnsw.max_scan_tuples` bound on an iterative scan (pgvector's own is 20000).
+pub const DEFAULT_HNSW_MAX_SCAN_TUPLES: i64 = 10_000;
+
+/// `hnsw_query_settings` plus `hnsw_max_scan_tuples` from skmemory (PRs 147 and
+/// 148): the per-query `SET LOCAL` settings for a kNN of `limit` rows.
+///
+/// * `hnsw.ef_search`: `SKMEMORY_HNSW_EF_SEARCH` (default 200, garbage falls
+///   back to the default, below 1 skips), never below `limit` (HNSW hands back
+///   at most `ef_search` candidates before the WHERE clause runs) and capped at
+///   pgvector's 1000.
+/// * `hnsw.iterative_scan`: `SKMEMORY_HNSW_ITERATIVE_SCAN` (`off`,
+///   `strict_order`, `relaxed_order`; default `relaxed_order`; anything else skips).
+/// * `hnsw.max_scan_tuples`: `SKMEMORY_HNSW_MAX_SCAN_TUPLES` (default 10000,
+///   garbage falls back, below 1 skips), set only when the iterative scan is
+///   on (mode set and not `off`).
+pub fn search_session_settings(
+    get: impl Fn(&str) -> Option<String>,
+    limit: i64,
+) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let ef = match get("SKMEMORY_HNSW_EF_SEARCH") {
         None => DEFAULT_HNSW_EF_SEARCH,
         Some(raw) => raw.trim().parse::<i64>().unwrap_or(DEFAULT_HNSW_EF_SEARCH),
     };
-    if (1..=1000).contains(&ef) {
-        out.push(("hnsw.ef_search".to_string(), ef.to_string()));
+    if ef >= 1 {
+        out.push((
+            "hnsw.ef_search".to_string(),
+            ef.max(limit).min(1000).to_string(),
+        ));
     }
     let mode = get("SKMEMORY_HNSW_ITERATIVE_SCAN")
         .unwrap_or_else(|| DEFAULT_HNSW_ITERATIVE_SCAN.to_string())
         .trim()
         .to_lowercase();
-    if matches!(mode.as_str(), "off" | "strict_order" | "relaxed_order") {
-        out.push(("hnsw.iterative_scan".to_string(), mode));
+    let mode_ok = matches!(mode.as_str(), "off" | "strict_order" | "relaxed_order");
+    if mode_ok {
+        out.push(("hnsw.iterative_scan".to_string(), mode.clone()));
+    }
+    let max_scan = match get("SKMEMORY_HNSW_MAX_SCAN_TUPLES") {
+        None => DEFAULT_HNSW_MAX_SCAN_TUPLES,
+        Some(raw) => raw
+            .trim()
+            .parse::<i64>()
+            .unwrap_or(DEFAULT_HNSW_MAX_SCAN_TUPLES),
+    };
+    if max_scan >= 1 && mode_ok && mode != "off" {
+        out.push(("hnsw.max_scan_tuples".to_string(), max_scan.to_string()));
     }
     out
 }
@@ -441,8 +471,9 @@ impl VectorArm {
         &mut self,
         sql: &str,
         refs: &[&(dyn ToSql + Sync)],
+        limit: i64,
     ) -> Result<Vec<postgres::Row>, postgres::Error> {
-        let settings = search_session_settings(|k| std::env::var(k).ok());
+        let settings = search_session_settings(|k| std::env::var(k).ok(), limit);
         let mut tx = self.client.transaction()?;
         for (name, value) in settings {
             let mut sp = tx.transaction()?;
@@ -542,12 +573,12 @@ impl VectorArm {
         }
         let (sql, binds) = self.plan(qvec, filters, limit, as_of)?;
         let refs: Vec<&(dyn ToSql + Sync)> = binds.iter().map(|b| b.as_ref()).collect();
-        let first = self.run(&sql, &refs);
+        let first = self.run(&sql, &refs, limit);
         let rows = match first {
             Err(e) if (e.is_closed() || self.client.is_closed()) && self.reconnect.is_some() => {
                 self.reconnect()?;
                 // the v2 probe is per connection: rebuild the plan's as_of clause
-                self.run(&sql, &refs)
+                self.run(&sql, &refs, limit)
             }
             other => other,
         }
@@ -575,30 +606,42 @@ mod tests {
     #[test]
     fn session_settings_defaults_and_overrides() {
         let none = |_: &str| None;
+        let kv = |a: &str, b: &str| (a.to_string(), b.to_string());
         assert_eq!(
-            search_session_settings(none),
+            search_session_settings(none, 5),
             vec![
-                ("hnsw.ef_search".to_string(), "200".to_string()),
-                (
-                    "hnsw.iterative_scan".to_string(),
-                    "relaxed_order".to_string()
-                )
+                kv("hnsw.ef_search", "200"),
+                kv("hnsw.iterative_scan", "relaxed_order"),
+                kv("hnsw.max_scan_tuples", "10000"),
             ]
         );
         let env = |k: &str| match k {
             "SKMEMORY_HNSW_EF_SEARCH" => Some("0".to_string()),
             "SKMEMORY_HNSW_ITERATIVE_SCAN" => Some(" Strict_Order ".to_string()),
+            "SKMEMORY_HNSW_MAX_SCAN_TUPLES" => Some("500".to_string()),
             _ => None,
         };
         assert_eq!(
-            search_session_settings(env),
-            vec![(
-                "hnsw.iterative_scan".to_string(),
-                "strict_order".to_string()
-            )]
+            search_session_settings(env, 5),
+            vec![
+                kv("hnsw.iterative_scan", "strict_order"),
+                kv("hnsw.max_scan_tuples", "500")
+            ]
         );
         let junk = |k: &str| (k == "SKMEMORY_HNSW_EF_SEARCH").then(|| "abc".to_string());
-        assert_eq!(search_session_settings(junk)[0].1, "200");
+        assert_eq!(search_session_settings(junk, 5)[0].1, "200");
+        // ef_search is never below the limit and is capped at 1000
+        assert_eq!(search_session_settings(none, 300)[0].1, "300");
+        assert_eq!(search_session_settings(none, 5000)[0].1, "1000");
+        let big = |k: &str| (k == "SKMEMORY_HNSW_EF_SEARCH").then(|| "5000".to_string());
+        assert_eq!(search_session_settings(big, 5)[0].1, "1000");
+        // max_scan_tuples is skipped when the iterative scan is off or unknown
+        let off = |k: &str| (k == "SKMEMORY_HNSW_ITERATIVE_SCAN").then(|| "off".to_string());
+        assert_eq!(search_session_settings(off, 5).len(), 2);
+        let bad = |k: &str| (k == "SKMEMORY_HNSW_ITERATIVE_SCAN").then(|| "nope".to_string());
+        assert_eq!(search_session_settings(bad, 5).len(), 1);
+        let zero = |k: &str| (k == "SKMEMORY_HNSW_MAX_SCAN_TUPLES").then(|| "0".to_string());
+        assert_eq!(search_session_settings(zero, 5).len(), 2);
     }
 
     #[test]
