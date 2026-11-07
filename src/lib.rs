@@ -3,8 +3,11 @@
 //! Storage core: the schema v2 [`model::Memory`] and the flat JSON
 //! [`flat::Store`], byte-compatible with the Python implementation.
 
+pub mod decay;
 pub mod embed;
+pub mod env;
 pub mod flat;
+pub mod fusion;
 pub mod index;
 pub mod intentions;
 pub mod ledger;
@@ -12,9 +15,13 @@ pub mod model;
 #[cfg(feature = "pg")]
 pub mod pg;
 mod printable_table;
+pub mod procedures;
 pub mod pyjson;
 pub mod pytime;
+pub mod rerank;
+pub mod search;
 mod sys;
+pub mod tiers;
 mod util;
 pub mod validity;
 mod wordchars_table;
