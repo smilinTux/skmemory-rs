@@ -28,10 +28,9 @@
 //!   parsed values ([`crate::validity`]).
 
 use super::{
-    allow_remote_from_env, check_dsn_is_local, filter_clauses, open_client, parse_memory_cell,
-    push_bind, scrub, Binds, ContextTag, Filters, PgError,
+    allow_remote_from_env, check_dsn_is_local, open_client, scrub, ContextTag, Filters, PgError,
 };
-use crate::audience::ReaderScope;
+use crate::audience::{OwnerScope, ReaderScope};
 use crate::model::py_strip;
 use crate::util::{iso_from_unix, now_iso};
 use crate::validity::{normalize_as_of, parse_ts, valid_at};
@@ -326,8 +325,9 @@ impl GraphArm {
     }
 
     /// The connected client, if any (tests inspect session state through it).
-    /// RAW ACCESS: bypasses the reader ceiling, as [`GraphArm::cypher`] does.
-    pub fn client_mut(&mut self) -> Option<&mut Client> {
+    /// RAW ACCESS: bypasses the reader ceiling, as [`GraphArm::cypher`] does,
+    /// so it takes an [`OwnerScope`].
+    pub fn client_mut(&mut self, _owner: &OwnerScope) -> Option<&mut Client> {
         self.client.as_mut()
     }
 
@@ -393,6 +393,18 @@ impl GraphArm {
     /// reader ceiling and returns whatever the Cypher selects. It is a
     /// seeding and diagnostics handle for the owner, never a search path.
     pub fn cypher(
+        &mut self,
+        query: &str,
+        params: &Value,
+        ncols: usize,
+        timeout_ms: Option<i64>,
+        _owner: &OwnerScope,
+    ) -> Result<Vec<Vec<Value>>, PgError> {
+        self.cypher_raw(query, params, ncols, timeout_ms)
+    }
+
+    /// The crate's own constant-query path (see [`GraphArm::cypher`]).
+    pub(crate) fn cypher_raw(
         &mut self,
         query: &str,
         params: &Value,
@@ -528,29 +540,8 @@ impl GraphArm {
         if scope.unrestricted() || ids.is_empty() {
             return Ok(ids.iter().cloned().collect());
         }
-        let mut binds: Binds = Vec::new();
-        let mut clauses = filter_clauses(&self.agent, &Filters::default(), scope, &mut binds);
-        let p = push_bind(&mut binds, Box::new(ids.to_vec()));
-        clauses.push(format!("id = ANY(${p})"));
-        let sql = format!(
-            "SELECT id, memory_json FROM memories WHERE {}",
-            clauses.join(" AND ")
-        );
-        let refs: Vec<&(dyn ToSql + Sync)> = binds.iter().map(|b| b.as_ref()).collect();
-        let rows = self
-            .client()?
-            .query(sql.as_str(), &refs)
-            .map_err(|e| PgError::Query(e.to_string()))?;
-        let mut out = HashSet::new();
-        for row in rows {
-            let id: String = row.get(0);
-            let json: Value = row.get(1);
-            // Last gate on the authoritative document.
-            if parse_memory_cell(json).is_some_and(|m| scope.allows_memory(&m)) {
-                out.insert(id);
-            }
-        }
-        Ok(out)
+        let agent = self.agent.clone();
+        super::visible_ids(self.client()?, &agent, ids, scope)
     }
 
     fn can_see(&mut self, id: &str, scope: &ReaderScope) -> Result<bool, PgError> {
@@ -801,7 +792,7 @@ impl GraphArm {
         params.insert("limit".into(), json!(fetch));
         let ncols = if as_of.is_some() { 7 } else { 4 };
         let timeout = Some(self.search_timeout_ms);
-        let rows = self.cypher(&cyq, &Value::Object(params), ncols, timeout)?;
+        let rows = self.cypher_raw(&cyq, &Value::Object(params), ncols, timeout)?;
         let mut out = Vec::new();
         for r in rows {
             if let Some(t) = as_of.as_deref() {
@@ -923,7 +914,7 @@ impl GraphArm {
     /// cannot qualify (`valid_to` NULL or on a later date).
     fn superseded_ids_as_of(&mut self, ts: &str) -> Result<HashSet<String>, PgError> {
         let t = parse_ts(ts).ok_or_else(|| PgError::BadAsOf(ts.to_string()))?;
-        let rows = self.cypher(
+        let rows = self.cypher_raw(
             "MATCH (:Memory)-[e:SUPERSEDES]->(p:Memory) \
              WHERE e.valid_to IS NOT NULL AND e.valid_to < $hi \
              RETURN p.id, e.valid_to",
@@ -954,7 +945,7 @@ impl GraphArm {
         let ts = Self::resolve_ts(as_of)?;
         let t = parse_ts(&ts).ok_or_else(|| PgError::BadAsOf(ts.clone()))?;
         let superseded = self.superseded_ids_as_of(&ts)?;
-        let rows = self.cypher(
+        let rows = self.cypher_raw(
             "MATCH (m:Memory) \
              WHERE m.created_at IS NULL OR m.created_at < $hi \
              RETURN m.id, m.title, m.layer, m.created_at \
@@ -997,7 +988,7 @@ impl GraphArm {
         if self.superseded_ids_as_of(&ts)?.contains(memory_id) {
             return Ok(false);
         }
-        let rows = self.cypher(
+        let rows = self.cypher_raw(
             "MATCH (m:Memory {id: $id}) RETURN m.created_at",
             &json!({ "id": memory_id }),
             1,
@@ -1044,7 +1035,7 @@ impl GraphArm {
                  WHERE n.id <> $id \
                  RETURN n.id, n.title, n.layer, e.valid_from, e.valid_to"
             );
-            for r in self.cypher(&query, &json!({ "id": memory_id }), 5, None)? {
+            for r in self.cypher_raw(&query, &json!({ "id": memory_id }), 5, None)? {
                 if !Self::edge_open_at(&r[3], &r[4], t) {
                     continue;
                 }
@@ -1092,7 +1083,7 @@ impl GraphArm {
             if dist >= 10 {
                 continue;
             }
-            let rows = self.cypher(
+            let rows = self.cypher_raw(
                 "MATCH (c:Memory {id: $id})-[e:SUPERSEDES]->(p:Memory) \
                  RETURN p.id, p.title, p.layer, e.valid_from, e.valid_to",
                 &json!({ "id": current }),
@@ -1147,7 +1138,7 @@ impl GraphArm {
                  WITH related, min(length(path)) AS distance \
                  RETURN related.id, related.title, related.layer, distance"
             );
-            for r in self.cypher(&query, &json!({ "id": memory_id }), 4, None)? {
+            for r in self.cypher_raw(&query, &json!({ "id": memory_id }), 4, None)? {
                 let Some(id) = str_of(&r[0]) else { continue };
                 let d = r[3].as_i64().unwrap_or(0);
                 match merged.get(&id) {
@@ -1195,7 +1186,7 @@ impl GraphArm {
                  RETURN anc.id, anc.title, anc.layer, length(path) \
                  ORDER BY length(path) ASC"
             );
-            for r in self.cypher(&query, &json!({ "id": memory_id }), 4, None)? {
+            for r in self.cypher_raw(&query, &json!({ "id": memory_id }), 4, None)? {
                 let Some(id) = str_of(&r[0]) else { continue };
                 let d = r[3].as_i64().unwrap_or(0);
                 match merged.get(&id) {
@@ -1232,12 +1223,12 @@ impl GraphArm {
 mod tests {
     use super::*;
 
+    fn own() -> OwnerScope {
+        OwnerScope::resolve(&crate::env::Env::empty()).unwrap()
+    }
+
     fn owner() -> ReaderScope {
-        ReaderScope::resolve(
-            None,
-            &crate::env::Env::empty(),
-            &crate::audience::AudienceConfig::empty(),
-        )
+        own().reader_scope().clone()
     }
 
     #[test]
@@ -1339,7 +1330,7 @@ mod tests {
         assert_eq!(arm.state().state, "unavailable");
         assert!(arm.graph().is_none());
         assert!(matches!(
-            arm.cypher("RETURN 1", &json!({}), 1, None),
+            arm.cypher("RETURN 1", &json!({}), 1, None, &own()),
             Err(PgError::BadGraphName(_))
         ));
         assert!(matches!(

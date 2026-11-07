@@ -15,6 +15,28 @@
 //!   which always applies it, and the fields are private.
 //! - A hidden id must read exactly like a missing one: callers return the same
 //!   `None` / empty result for both, never a "forbidden" error.
+//! - A visible memory never NAMES a hidden one: [`ReaderScope::redact_links`]
+//!   drops `related_ids`, `parent_id`, `supersedes_id` and `metadata.superseded_by`
+//!   entries whose target the reader cannot see (an unknown target is dropped
+//!   too, so a dangling link and a hidden one read the same).
+//! - Raw handles (a Cypher or SQL client, the SQLite connection, anything that
+//!   returns counts or existence for the whole store) take an [`OwnerScope`],
+//!   which only [`OwnerScope::from_process`] can build (public) and which refuses
+//!   when a `SKMEMORY_READER` ceiling is declared in the REAL process environment.
+//!   An injected `Env` is test-only (see the `testing` feature).
+//!
+//! # The R-08 shim must pass the audience config
+//!
+//! Python ships `audience_config.json` inside its package and loads it by
+//! default. This crate ships no config: [`AudienceConfig::from_env`] reads
+//! `SKMEMORY_AUDIENCE_CONFIG` only, and an unset variable is the EMPTY config,
+//! under which every `channel:<id>` reader resolves to `@public`. That is safe
+//! (it only narrows) but it silently stops `channel:` readers and `never_share`
+//! tags from working. The R-08 shim that wires this crate behind the Python API
+//! MUST therefore set `SKMEMORY_AUDIENCE_CONFIG` to the packaged
+//! `skmemory/data/audience_config.json` (or load it with
+//! [`AudienceConfig::load`]) before building any scope, and a parity test should
+//! assert that a configured `channel:` reader sees more than `@public`.
 //!
 //! Reader grammar (the string a caller declares):
 //!
@@ -32,6 +54,19 @@ use crate::model::py_strip;
 use serde_json::Value;
 use std::collections::BTreeSet;
 use std::path::Path;
+
+// `testing` exposes the env-injecting scope constructors, which can ignore the real
+// process ceiling. Only skmem's own test builds may compile them: a downstream
+// crate (or a wheel) enabling the feature must fail to build.
+#[cfg(feature = "testing")]
+const _: () = assert!(
+    option_env!("CARGO_PRIMARY_PACKAGE").is_some(),
+    "the `testing` feature may only be enabled by skmem's own test builds (it exposes constructors that bypass the process reader ceiling)"
+);
+#[cfg(all(feature = "testing", feature = "extension-module"))]
+compile_error!(
+    "the `testing` feature must never be combined with `extension-module` (a shipped wheel)"
+);
 
 /// The process-wide reader ceiling variable.
 pub const READER_ENV: &str = "SKMEMORY_READER";
@@ -135,6 +170,92 @@ impl AudienceConfig {
     }
 }
 
+/// The caller is not the owner: a `SKMEMORY_READER` ceiling is declared.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotOwner {
+    /// The declared ceiling, as written.
+    pub declared: String,
+}
+
+impl std::fmt::Display for NotOwner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "owner access refused: {READER_ENV} declares a reader ceiling ({:?})",
+            self.declared
+        )
+    }
+}
+
+impl std::error::Error for NotOwner {}
+
+/// Proof that the caller is the owner. Every raw handle (a SQL or Cypher
+/// client, the SQLite connection) and every store-wide count or existence
+/// answer takes one, so a reader-facing code path cannot reach them.
+///
+/// The field is private and there is no `Default`, `Clone` or deserializer:
+/// the only public constructor is [`OwnerScope::from_process`], which REFUSES when `SKMEMORY_READER`
+/// declares anything but an owner reader. A process serving a group chat
+/// therefore cannot obtain one by accident.
+///
+/// ```compile_fail
+/// // the field is private: no struct literal outside this module
+/// use skmem::audience::{OwnerScope, ReaderScope};
+/// let r = ReaderScope::from_process(None);
+/// let _o = OwnerScope { scope: r };
+/// ```
+///
+/// ```compile_fail
+/// // a reader scope is not an owner scope: the raw connection refuses it
+/// use skmem::audience::ReaderScope;
+/// let idx = skmem::index::Index::open("/nonexistent", true).unwrap();
+/// let r = ReaderScope::from_process(None);
+/// let _ = idx.connection(&r);
+/// ```
+#[derive(Debug)]
+pub struct OwnerScope {
+    scope: ReaderScope,
+}
+
+impl OwnerScope {
+    /// The owner, unless `env` declares a reader ceiling that is not an owner
+    /// reader (`@chef`, `@chef-only`, `owner`).
+    ///
+    /// Test-only (`cfg(test)` or the `testing` feature): an injected `Env` lets
+    /// a caller ignore the REAL process ceiling, so production code cannot
+    /// call it. The only public constructor is [`OwnerScope::from_process`].
+    #[cfg(any(test, feature = "testing"))]
+    pub fn resolve(env: &Env) -> Result<OwnerScope, NotOwner> {
+        OwnerScope::resolve_in(env)
+    }
+
+    pub(crate) fn resolve_in(env: &Env) -> Result<OwnerScope, NotOwner> {
+        let declared = env.get(READER_ENV).map(py_strip).filter(|e| !e.is_empty());
+        if let Some(d) = declared {
+            let scope = scope_for(d, &AudienceConfig::empty());
+            if !scope.unrestricted() {
+                return Err(NotOwner {
+                    declared: d.to_string(),
+                });
+            }
+        }
+        Ok(OwnerScope {
+            scope: ReaderScope::owner_scope(),
+        })
+    }
+
+    /// [`OwnerScope::resolve`] against the live process environment.
+    pub fn from_process() -> Result<OwnerScope, NotOwner> {
+        OwnerScope::resolve_in(&Env::process())
+    }
+
+    /// The unrestricted read scope, for the read APIs that take a
+    /// [`ReaderScope`].
+    pub fn reader_scope(&self) -> &ReaderScope {
+        &self.scope
+    }
+}
+
 /// What a declared reader may receive.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReaderScope {
@@ -164,10 +285,33 @@ impl ReaderScope {
 
     /// `resolve_reader`: the per-call `reader` combined with the
     /// `SKMEMORY_READER` ceiling in `env`. Both absent is the owner.
+    ///
+    /// Test-only (`cfg(test)` or the `testing` feature), for the same reason as
+    /// [`OwnerScope::resolve`]: an injected `Env` can leave out the real
+    /// process ceiling. Production code uses [`ReaderScope::from_process`] or
+    /// [`ReaderScope::from_process_with_config`].
+    #[cfg(any(test, feature = "testing"))]
     pub fn resolve(reader: Option<&str>, env: &Env, cfg: &AudienceConfig) -> ReaderScope {
-        let call = reader.map_or_else(ReaderScope::owner_scope, |r| scope_for(r, cfg));
+        ReaderScope::resolve_in(reader, env, cfg)
+    }
+
+    pub(crate) fn resolve_in(reader: Option<&str>, env: &Env, cfg: &AudienceConfig) -> ReaderScope {
+        ReaderScope::resolve_split(reader, env, cfg, cfg)
+    }
+
+    /// The per-call reader is resolved under `call_cfg`, the `SKMEMORY_READER`
+    /// ceiling under `ceiling_cfg`, and the two are intersected. A caller that
+    /// supplies `call_cfg` must never be able to widen the ceiling, so
+    /// process-facing code passes a `ceiling_cfg` the caller cannot choose.
+    pub(crate) fn resolve_split(
+        reader: Option<&str>,
+        env: &Env,
+        call_cfg: &AudienceConfig,
+        ceiling_cfg: &AudienceConfig,
+    ) -> ReaderScope {
+        let call = reader.map_or_else(ReaderScope::owner_scope, |r| scope_for(r, call_cfg));
         match env.get(READER_ENV).map(py_strip).filter(|e| !e.is_empty()) {
-            Some(e) => scope_for(e, cfg).narrow(&call),
+            Some(e) => scope_for(e, ceiling_cfg).narrow(&call),
             None => call,
         }
     }
@@ -177,7 +321,56 @@ impl ReaderScope {
     pub fn from_process(reader: Option<&str>) -> ReaderScope {
         let env = Env::process();
         let cfg = AudienceConfig::from_env(&env);
-        ReaderScope::resolve(reader, &env, &cfg)
+        ReaderScope::resolve_in(reader, &env, &cfg)
+    }
+
+    /// As [`ReaderScope::from_process`] with an explicit audience config (the
+    /// R-08 shim loads the packaged `audience_config.json` and passes it here).
+    ///
+    /// `cfg` resolves only the per-call `reader`. The `SKMEMORY_READER`
+    /// ceiling is resolved under the config the CALLER CANNOT CHOOSE
+    /// (`SKMEMORY_AUDIENCE_CONFIG` from the process environment; unset means the
+    /// empty config, so a `channel:` ceiling is `@public`, fail closed), and the
+    /// result is the intersection: `cfg` can only narrow, never widen.
+    pub fn from_process_with_config(reader: Option<&str>, cfg: &AudienceConfig) -> ReaderScope {
+        let env = Env::process();
+        let ceiling_cfg = AudienceConfig::from_env(&env);
+        ReaderScope::resolve_split(reader, &env, cfg, &ceiling_cfg)
+    }
+
+    /// Drop the links of `m` that name a memory this reader cannot see:
+    /// `related_ids` entries, `parent_id`, `supersedes_id` and
+    /// `metadata.superseded_by` (removed whole when its `id` is hidden, since
+    /// its other fields would still say a hidden successor exists).
+    /// `visible(id)` answers for the TARGET and must be false for an id it
+    /// cannot find, so a dangling link reads like a hidden one. The owner is a
+    /// no-op. Python does not do this yet (see the card notes).
+    pub fn redact_links(
+        &self,
+        m: &mut crate::model::Memory,
+        visible: &mut dyn FnMut(&str) -> bool,
+    ) {
+        if self.unrestricted() {
+            return;
+        }
+        m.related_ids.retain(|i| visible(i));
+        if m.parent_id.as_deref().is_some_and(|i| !visible(i)) {
+            m.parent_id = None;
+        }
+        if m.supersedes_id.as_deref().is_some_and(|i| !visible(i)) {
+            m.supersedes_id = None;
+        }
+        let hidden_successor = match m.metadata.get("superseded_by") {
+            None => false,
+            Some(v) => match v.get("id").and_then(Value::as_str) {
+                Some(id) => !visible(id),
+                // a link with no readable id cannot be vetted
+                None => true,
+            },
+        };
+        if hidden_successor {
+            m.metadata.remove("superseded_by");
+        }
     }
 
     /// The intersection of two scopes (most restrictive of each dimension).
@@ -323,7 +516,7 @@ mod tests {
     use super::*;
 
     fn s(reader: Option<&str>, env: &Env) -> ReaderScope {
-        ReaderScope::resolve(reader, env, &AudienceConfig::empty())
+        ReaderScope::resolve_in(reader, env, &AudienceConfig::empty())
     }
 
     #[test]
@@ -409,15 +602,15 @@ mod tests {
                "people":{"A":{"trust_level":2,"never_share":["romantic"]},
                          "B":{"trust_level":3,"never_share":["revenue"]}}}"#,
         );
-        let sc = ReaderScope::resolve(Some("channel:c1"), &Env::empty(), &cfg);
+        let sc = ReaderScope::resolve_in(Some("channel:c1"), &Env::empty(), &cfg);
         assert!(sc.allows(Some("@work:x"), &[]));
         assert!(sc.allows(Some("@work-circle"), &[]));
         assert!(!sc.allows(Some("@inner-circle"), &[]));
         assert!(!sc.allows(Some("@work-circle"), &["revenue".into()]));
         assert!(!sc.allows(Some("@work-circle"), &["romantic".into()]));
-        let e = ReaderScope::resolve(Some("channel:empty"), &Env::empty(), &cfg);
+        let e = ReaderScope::resolve_in(Some("channel:empty"), &Env::empty(), &cfg);
         assert_eq!(e.allowed_tags().unwrap(), ["@public"]);
-        let u = ReaderScope::resolve(Some("channel:nope"), &Env::empty(), &cfg);
+        let u = ReaderScope::resolve_in(Some("channel:nope"), &Env::empty(), &cfg);
         assert_eq!(u.allowed_tags().unwrap(), ["@public"]);
     }
 
@@ -427,14 +620,14 @@ mod tests {
             r#"{"channels":{"c":{"context_tag":"@chef-only","members":["A"]}},
                 "people":{"A":{"trust_level":"4"}}}"#,
         );
-        let sc = ReaderScope::resolve(Some("channel:c"), &Env::empty(), &cfg);
+        let sc = ReaderScope::resolve_in(Some("channel:c"), &Env::empty(), &cfg);
         assert_eq!(sc.allowed_tags().unwrap(), ["@public"]);
     }
 
     #[test]
     fn bad_config_text_is_empty() {
         let cfg = AudienceConfig::from_json("not json");
-        let sc = ReaderScope::resolve(Some("channel:c1"), &Env::empty(), &cfg);
+        let sc = ReaderScope::resolve_in(Some("channel:c1"), &Env::empty(), &cfg);
         assert_eq!(sc.allowed_tags().unwrap(), ["@public"]);
     }
 

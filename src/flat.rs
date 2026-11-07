@@ -3,8 +3,9 @@
 //! `FileBackend`, with durable atomic writes (temp file, fsync, rename,
 //! directory fsync) like `skmemory.atomic_io`.
 
-use crate::audience::ReaderScope;
+use crate::audience::{OwnerScope, ReaderScope};
 use crate::model::{Layer, Memory, ModelError};
+use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -192,7 +193,7 @@ impl Store {
     }
 
     /// Save with a durable atomic write. Returns the id.
-    pub fn save(&self, memory: &Memory) -> Result<String, StoreError> {
+    pub fn save(&self, memory: &Memory, _owner: &OwnerScope) -> Result<String, StoreError> {
         let path = self.path_for(memory)?;
         atomic_write_bytes(&path, memory.to_json().as_bytes())?;
         Ok(memory.id.clone())
@@ -237,10 +238,33 @@ impl Store {
             Some(p) => self.read_path(&p),
         };
         match loaded {
-            Ok(m) => Ok(scope.allows_memory(&m).then_some(m)),
+            Ok(mut m) => {
+                if !scope.allows_memory(&m) {
+                    return Ok(None);
+                }
+                self.redact_links(&mut m, scope, &mut HashMap::new());
+                Ok(Some(m))
+            }
             Err(_) if !scope.unrestricted() => Ok(None),
             Err(e) => Err(e),
         }
+    }
+
+    /// Whether `scope` may see the memory `id`; an unknown, unreadable or
+    /// malformed id is NOT visible (a dangling link must read like a hidden one).
+    fn visible_to(&self, id: &str, scope: &ReaderScope) -> bool {
+        self.find_file(id)
+            .and_then(|p| self.read_path(&p).ok())
+            .is_some_and(|m| scope.allows_memory(&m))
+    }
+
+    /// Redact the links of `m` that name memories `scope` cannot see.
+    fn redact_links(&self, m: &mut Memory, scope: &ReaderScope, cache: &mut HashMap<String, bool>) {
+        scope.redact_links(m, &mut |id| {
+            *cache
+                .entry(id.to_string())
+                .or_insert_with(|| self.visible_to(id, scope))
+        });
     }
 
     /// Read and parse one file, unscoped. Crate-private: the public lookups
@@ -253,7 +277,7 @@ impl Store {
     /// True for a conflict copy that is not the record's only live copy:
     /// a canonical `<id>.json` exists in any layer, or a later-sorted sibling
     /// conflict copy exists.
-    pub fn is_hidden_conflict_copy(&self, path: &Path) -> bool {
+    pub(crate) fn is_hidden_conflict_copy(&self, path: &Path) -> bool {
         let name = file_name(path);
         let Some(cid) = conflict_copy_id(&name) else {
             return false;
@@ -287,6 +311,10 @@ impl Store {
         l.memories.retain(|m| scope.allows_memory(m));
         if !scope.unrestricted() {
             l.unloadable.clear();
+            let mut cache = HashMap::new();
+            for m in &mut l.memories {
+                self.redact_links(m, scope, &mut cache);
+            }
         }
         l
     }
@@ -349,8 +377,9 @@ impl Store {
         s
     }
 
-    /// Delete the memory file (and nothing else). Returns whether one existed.
-    pub fn delete(&self, id: &str) -> Result<bool, StoreError> {
+    /// Delete the memory file (and nothing else). Returns whether one existed,
+    /// which is an existence oracle for a hidden id: owner only.
+    pub fn delete(&self, id: &str, _owner: &OwnerScope) -> Result<bool, StoreError> {
         match self.find_file(id) {
             None => Ok(false),
             Some(p) => {
@@ -371,13 +400,14 @@ impl Store {
     /// Write the durable marker `<root>/tombstones/<id>.json`, same payload and
     /// bytes as Python `write_tombstone` (`json.dumps`, compact separators).
     /// `forgotten_at` is supplied by the caller (Python uses local time with
-    /// `%Y-%m-%dT%H:%M:%S%z`).
+    /// `%Y-%m-%dT%H:%M:%S%z`). Owner only.
     pub fn tombstone(
         &self,
         id: &str,
         forgotten_at: &str,
         reason: &str,
         agent: Option<&str>,
+        _owner: &OwnerScope,
     ) -> Result<PathBuf, StoreError> {
         let id = check_id(id)?;
         let mut m = serde_json::Map::new();
@@ -393,8 +423,9 @@ impl Store {
         Ok(path)
     }
 
-    /// True when a tombstone exists for `id`.
-    pub fn is_tombstoned(&self, id: &str) -> bool {
+    /// True when a tombstone exists for `id`: a forgotten id reads differently
+    /// from a never-seen one, so owner only.
+    pub fn is_tombstoned(&self, id: &str, _owner: &OwnerScope) -> bool {
         check_id(id)
             .map(|id| self.tombstone_dir().join(format!("{id}.json")).exists())
             .unwrap_or(false)
@@ -404,7 +435,14 @@ impl Store {
     /// `<root>/archive/<id>.json`, or `<root>/archive/<sub>/<id>.json`
     /// (Python uses `deduped` as the sub directory). The bytes are not
     /// rewritten. Returns the new path, or None if the memory was not found.
-    pub fn archive(&self, id: &str, sub: Option<&str>) -> Result<Option<PathBuf>, StoreError> {
+    /// Returns a path (None when not found), so it is an existence oracle and a
+    /// write: owner only.
+    pub fn archive(
+        &self,
+        id: &str,
+        sub: Option<&str>,
+        _owner: &OwnerScope,
+    ) -> Result<Option<PathBuf>, StoreError> {
         let Some(src) = self.find_file(id) else {
             return Ok(None);
         };

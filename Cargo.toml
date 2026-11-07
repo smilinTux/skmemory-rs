@@ -35,9 +35,16 @@ serde_json = { version = "1.0.154", features = ["preserve_order", "float_roundtr
 sha2 = "0.10"
 
 [features]
+# Exposes the env-injecting scope constructors (`ReaderScope::resolve`, `OwnerScope::resolve`)
+# to integration tests. NEVER enabled by a release build: only the self dev-dependency below.
+testing = []
 # Build the #[pymodule] into the cdylib. OFF by default.
 python = ["dep:pyo3"]
 # maturin enables this so the wheel does not link libpython.
 extension-module = ["python", "pyo3/extension-module"]
 # skmem::pg, the pgvector search arm. OFF by default; the embedding client is std-only.
 pg = ["dep:postgres", "dep:pgvector"]
+
+[dev-dependencies]
+# Enables the `testing` feature for tests, examples and doctests only.
+skmem = { path = ".", features = ["testing"] }

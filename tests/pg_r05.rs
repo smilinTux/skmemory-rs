@@ -557,7 +557,7 @@ fn seed_graph(arm: &mut GraphArm) -> usize {
         for k in NODE_KEYS {
             params.insert(k.to_string(), n.get(k).cloned().unwrap_or(Value::Null));
         }
-        arm.cypher(&node_query, &Value::Object(params), 1, None)
+        arm.cypher(&node_query, &Value::Object(params), 1, None, &own())
             .unwrap_or_else(|e| panic!("seed node {}: {e}", n["id"]));
     }
     for m in corpus["mentions"].as_array().unwrap() {
@@ -567,6 +567,7 @@ fn seed_graph(arm: &mut GraphArm) -> usize {
             &json!({"m": m[0], "n": m[1]}),
             1,
             None,
+            &own(),
         )
         .unwrap();
     }
@@ -582,6 +583,7 @@ fn seed_graph(arm: &mut GraphArm) -> usize {
             &json!({"a": l["a"], "b": l["b"], "vf": l["valid_from"], "vt": l["valid_to"], "ra": l["recorded_at"]}),
             1,
             None,
+            &own(),
         )
         .unwrap();
     }
@@ -765,7 +767,13 @@ fn graph_parity_with_python() {
         assert_eq!(diverged, 6);
         // hostile entity names and tags in the cases above changed nothing
         let rows = arm
-            .cypher("MATCH (m:Memory) RETURN count(m)", &json!({}), 1, None)
+            .cypher(
+                "MATCH (m:Memory) RETURN count(m)",
+                &json!({}),
+                1,
+                None,
+                &own(),
+            )
             .unwrap();
         assert_eq!(rows[0][0].as_i64(), Some(n as i64));
     });
@@ -777,7 +785,7 @@ fn graph_survives_an_empty_search_path_and_does_not_leak_its_own() {
     with_graph(&dsn, |arm, _| {
         seed_graph(arm);
         {
-            let c = arm.client_mut().unwrap();
+            let c = arm.client_mut(&own()).unwrap();
             c.batch_execute("SET search_path = ''").unwrap();
         }
         let hits = arm
@@ -785,7 +793,7 @@ fn graph_survives_an_empty_search_path_and_does_not_leak_its_own() {
             .unwrap();
         assert!(!hits.is_empty());
         let sp: String = arm
-            .client_mut()
+            .client_mut(&own())
             .unwrap()
             .query_one("SHOW search_path", &[])
             .unwrap()
@@ -830,10 +838,10 @@ fn graph_search_arm_is_off_by_default_and_a_capped_arm_abstains() {
 }
 
 /// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
+}
+
 fn owner() -> skmem::audience::ReaderScope {
-    skmem::audience::ReaderScope::resolve(
-        None,
-        &skmem::env::Env::empty(),
-        &skmem::audience::AudienceConfig::empty(),
-    )
+    own().reader_scope().clone()
 }

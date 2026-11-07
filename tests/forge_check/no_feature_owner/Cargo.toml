@@ -1,0 +1,12 @@
+[package]
+name = "forge_check_no_feature_owner"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Deliberately NOT a workspace member and NOT enabling `testing`: this crate
+# must FAIL to compile. CI asserts that (see .github/workflows/ci.yml).
+[workspace]
+
+[dependencies]
+skmem = { path = "../../.." }

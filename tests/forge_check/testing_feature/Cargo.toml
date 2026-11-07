@@ -1,0 +1,12 @@
+[package]
+name = "forge_check_testing_feature"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Deliberately NOT a workspace member. A downstream crate that enables
+# `testing` must FAIL to build (see check.sh).
+[workspace]
+
+[dependencies]
+skmem = { path = "../../..", features = ["testing"] }

@@ -22,7 +22,7 @@ fn dt(s: &str) -> Dt {
 }
 
 fn open(base: &Path) -> IntentionStore {
-    IntentionStore::open_with(base, 30_000, Some(&base.join("..").join("locks"))).unwrap()
+    IntentionStore::open_with(base, 30_000, Some(&base.join("..").join("locks")), &own()).unwrap()
 }
 
 fn none() -> HashMap<String, String> {
@@ -555,7 +555,7 @@ fn outcome_fixture_scores() {
         base.join("ledger/outcomes-skap01-2026-08.jsonl"),
     )
     .unwrap();
-    let l = Ledger::new(&base, Some("skap01"));
+    let l = Ledger::new(&base, Some("skap01"), &own());
     assert_eq!(
         l.events().len(),
         34,
@@ -591,7 +591,7 @@ fn outcome_fixture_scores() {
 #[test]
 fn ledger_rules() {
     let base = scratch("ledger-rules").join("base");
-    let l = Ledger::new(&base, Some("skap01"));
+    let l = Ledger::new(&base, Some("skap01"), &own());
     fn r(effect: Option<&'static str>, s: &str) -> Record<'static> {
         Record {
             effect,
@@ -644,7 +644,7 @@ fn ledger_rules() {
         ]
     );
     // a host name is sanitised into the file name
-    let odd = Ledger::new(&base, Some("sk/ap 01"));
+    let odd = Ledger::new(&base, Some("sk/ap 01"), &own());
     assert_eq!(odd.host(), "sk-ap-01");
     // floors: 2 harmful follows are not an anti-pattern, 3 are
     for n in 0..2 {
@@ -744,4 +744,8 @@ fn ledger_rules() {
         .iter()
         .filter(|e| e.skill == "e")
         .all(|e| e.effect.is_none()));
+}
+
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
 }

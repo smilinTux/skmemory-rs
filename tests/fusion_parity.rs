@@ -418,10 +418,10 @@ fn golden_case_count() {
 }
 
 /// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
+}
+
 fn owner() -> skmem::audience::ReaderScope {
-    skmem::audience::ReaderScope::resolve(
-        None,
-        &skmem::env::Env::empty(),
-        &skmem::audience::AudienceConfig::empty(),
-    )
+    own().reader_scope().clone()
 }

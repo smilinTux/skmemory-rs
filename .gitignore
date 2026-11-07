@@ -12,3 +12,5 @@ wheels/
 .pytest_cache/
 .DS_Store
 *.swp
+
+/tests/forge_check/*/target

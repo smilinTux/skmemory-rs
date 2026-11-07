@@ -164,13 +164,14 @@ fn tombstone_bytes_match_python() {
                 p["forgotten_at"].as_str().unwrap(),
                 p["reason"].as_str().unwrap(),
                 p.get("agent").and_then(Value::as_str),
+                &own(),
             )
             .unwrap();
         assert_eq!(
             fs::read_to_string(path).unwrap(),
             t["bytes"].as_str().unwrap()
         );
-        assert!(store.is_tombstoned(p["id"].as_str().unwrap()));
+        assert!(store.is_tombstoned(p["id"].as_str().unwrap(), &own()));
     }
     let _ = fs::remove_dir_all(&dir);
 }
@@ -189,7 +190,7 @@ fn py_loads_rust_output() {
     for n in case_names() {
         let inp = fs::read(golden().join("in").join(format!("{n}.json"))).unwrap();
         let m = Memory::from_stored_json(&inp).unwrap();
-        store.save(&m).unwrap();
+        store.save(&m, &own()).unwrap();
     }
     let status = std::process::Command::new(py)
         .arg(golden().join("verify_rust_written.py"))
@@ -206,10 +207,10 @@ fn py_loads_rust_output() {
 }
 
 /// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&skmem::env::Env::empty()).unwrap()
+}
+
 fn owner() -> skmem::audience::ReaderScope {
-    skmem::audience::ReaderScope::resolve(
-        None,
-        &skmem::env::Env::empty(),
-        &skmem::audience::AudienceConfig::empty(),
-    )
+    own().reader_scope().clone()
 }

@@ -35,8 +35,12 @@ fn scope(reader: Option<&str>, env_reader: Option<&str>) -> ReaderScope {
     ReaderScope::resolve(reader, &env, &AudienceConfig::empty())
 }
 
+fn own() -> skmem::audience::OwnerScope {
+    skmem::audience::OwnerScope::resolve(&Env::empty()).unwrap()
+}
+
 fn owner() -> ReaderScope {
-    scope(None, None)
+    own().reader_scope().clone()
 }
 
 fn public() -> ReaderScope {
@@ -279,7 +283,7 @@ fn seeded_store(tag: &str) -> (Store, PathBuf) {
     let dir = tmp(tag);
     let store = Store::open(dir.join("m")).unwrap();
     for r in ROWS {
-        store.save(&memory(r)).unwrap();
+        store.save(&memory(r), &own()).unwrap();
     }
     (store, dir)
 }
@@ -358,7 +362,8 @@ fn seeded_index(tag: &str, fts: bool) -> (Index, PathBuf) {
     let idx = Index::open(store.root(), fts).unwrap();
     for r in ROWS {
         let m = memory(r);
-        idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
+        idx.index_memory(&m, &store.path_for(&m).unwrap(), &own())
+            .unwrap();
     }
     (idx, dir)
 }
@@ -944,6 +949,7 @@ mod pg {
                         &json!({"id": id, "t": format!("node {id}")}),
                         1,
                         None,
+                        &own(),
                     )
                     .unwrap();
                 }
@@ -962,6 +968,7 @@ mod pg {
                         &json!({"a": a, "b": b}),
                         1,
                         None,
+                        &own(),
                     )
                     .unwrap();
                 }
@@ -1067,10 +1074,110 @@ mod pg {
                 &json!({}),
                 1,
                 None,
+                &own(),
             )
             .unwrap();
             assert!(!hits(arm, &p).contains(&"orphan".to_string()));
             assert!(hits(arm, &o).contains(&"orphan".to_string()));
+        });
+    }
+
+    /// SKMEM-R-06D item 3: a visible hit never names a hidden row, on the
+    /// vector arm and on both lexical statements.
+    fn linked_memory() -> Memory {
+        let mut m = memory(&Row {
+            id: "m-link",
+            ctx: "@public",
+            tags: &[],
+        });
+        m.related_ids = vec![
+            "m-pub".into(),
+            "m-chef".into(),
+            "ghost".into(),
+            "m-rom".into(),
+        ];
+        m.parent_id = Some("m-chef".into());
+        m.supersedes_id = Some("m-chef".into());
+        m.metadata.insert(
+            "superseded_by".into(),
+            json!({"id": "m-chef", "reason": "x"}),
+        );
+        m
+    }
+
+    fn insert_linked(c: &mut Client, schema: &str) {
+        let m = linked_memory();
+        let emb = pgvector::Vector::from(det_embed(&skmem::embed::embed_text(
+            &m.title, &m.content, &m.summary,
+        )));
+        let mj: Value = serde_json::from_str(&m.to_json()).unwrap();
+        c.execute(
+            &format!(
+                "INSERT INTO {schema}.memories (id, agent, layer, role, title, content, summary, tags, source, memory_json, embedding) \
+                 VALUES ($1,$2,'short-term','user',$3,$4,$5,$6,'manual',$7,$8)"
+            ),
+            &[&m.id, &AGENT, &m.title, &m.content, &m.summary, &m.tags, &mj, &emb],
+        )
+        .unwrap();
+    }
+
+    fn assert_links(m: &Memory, related: &[&str]) {
+        assert_eq!(m.related_ids, related);
+        assert_eq!(m.parent_id, None);
+        assert_eq!(m.supersedes_id, None);
+        assert!(
+            !m.metadata.contains_key("superseded_by"),
+            "{:?}",
+            m.metadata
+        );
+    }
+
+    #[test]
+    fn pg_arms_redact_links_to_hidden_and_dangling_rows() {
+        let Some(dsn) = test_dsn() else { return };
+        with_schema(&dsn, |schema, path, c| {
+            seed(c, schema);
+            insert_linked(c, schema);
+            let f = Filters::default();
+            let (mut arm, _log) = vec_arm(&dsn, path);
+            let get = |arm: &mut VectorArm, sc: &ReaderScope| {
+                arm.search_semantic("amberfox river stone", 50, &f, sc)
+                    .unwrap()
+                    .into_iter()
+                    .find(|h| h.memory.id == "m-link")
+                    .map(|h| h.memory)
+            };
+            assert_links(&get(&mut arm, &public()).unwrap(), &["m-pub", "m-rom"]);
+            // the per-call owner under a public ceiling cannot widen it
+            assert_links(
+                &get(&mut arm, &scope(Some("owner"), Some("@public"))).unwrap(),
+                &["m-pub", "m-rom"],
+            );
+            let cfg = AudienceConfig::from_json(
+                r#"{"channels":{"c":{"context_tag":"@public","members":["A"]}},
+                    "people":{"A":{"trust_level":1,"never_share":["romantic"]}}}"#,
+            );
+            let ch = ReaderScope::resolve(Some("channel:c"), &Env::empty(), &cfg);
+            assert_links(&get(&mut arm, &ch).unwrap(), &["m-pub"]);
+            // the owner sees every link as stored
+            let own_m = get(&mut arm, &owner()).unwrap();
+            assert_eq!(own_m.related_ids.len(), 4);
+            assert_eq!(own_m.parent_id.as_deref(), Some("m-chef"));
+            assert_eq!(own_m.metadata["superseded_by"]["id"], "m-chef");
+
+            for pin in [true, false] {
+                let mut lex = lex_arm(&dsn, path, pin);
+                let hit = |lex: &mut LexicalArm, sc: &ReaderScope| {
+                    lex.search_lexical("amberfox", 50, &f, sc)
+                        .unwrap()
+                        .into_iter()
+                        .find(|h| h.memory.id == "m-link")
+                        .map(|h| h.memory)
+                };
+                assert_links(&hit(&mut lex, &public()).unwrap(), &["m-pub", "m-rom"]);
+                assert_links(&hit(&mut lex, &ch).unwrap(), &["m-pub"]);
+                assert_eq!(hit(&mut lex, &owner()).unwrap().related_ids.len(), 4);
+            }
         });
     }
 }
