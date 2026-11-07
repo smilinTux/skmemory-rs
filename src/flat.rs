@@ -118,7 +118,7 @@ fn conflict_copy_id(name: &str) -> Option<&str> {
 
 /// Visible `*.json` entries of a directory (Python `glob("*.json")`: dotfiles
 /// such as in-flight temp files are not matched).
-fn json_files(dir: &Path) -> Vec<PathBuf> {
+pub(crate) fn json_files(dir: &Path) -> Vec<PathBuf> {
     let mut v: Vec<PathBuf> = match fs::read_dir(dir) {
         Ok(rd) => rd
             .filter_map(Result::ok)
