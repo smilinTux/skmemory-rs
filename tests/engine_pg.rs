@@ -276,10 +276,12 @@ fn pg_vector_arm_matches_python_pages_page_for_page() {
     eprintln!("pg vector + LIKE: 53/53 pages identical to Python");
 }
 
-/// pgvector exactly as it is (no cosine floor) with SQLite LIKE: the head of
-/// every page agrees with Python, the tail may carry zero-similarity rows that
-/// KNN returns and the in-memory bench arm does not. Gate: no class metric below
-/// the golden, no leak; the page agreement is reported.
+/// pgvector exactly as it is (no cosine floor) with SQLite LIKE. Pages are NOT
+/// all the same as Python's: KNN fills the tail with zero-similarity rows the
+/// in-memory bench arm never returns, and those rows join the fusion, so a few
+/// pages differ even at rank 1 (for example q-absent-01 and q-privacy-02).
+/// Gate: no class metric below the golden, no leak; the page agreement is
+/// reported, not asserted.
 #[test]
 fn pg_vector_arm_without_floor_meets_or_beats_python_per_class() {
     let Some(dsn) = dsn() else { return };

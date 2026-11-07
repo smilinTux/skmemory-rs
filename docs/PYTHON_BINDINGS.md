@@ -87,15 +87,20 @@ rare-term rerank, supersession demotion, decay when configured, tier cap, proced
   not guess one: its Postgres arms report `failed`. `pg=False` leaves them off. Connections are made
   lazily on the first search, inside the arm's worker thread and under the deadline, so a dead
   server is a per-search `failed` status that is retried, never an engine that cannot open.
-- **One deadline** (`SKMEMORY_SEARCH_DEADLINE_S`, default 4 s) covers every arm. An arm still
+- **One deadline** (`SKMEMORY_SEARCH_DEADLINE_S`, default 4 s) covers every arm, the SQLite arms
+  included (a watchdog interrupts the SQLite statement when it expires and the arm is `timeout`;
+  flat-file hydration afterwards is outside it). An arm still
   running at the deadline is `timeout`, never an empty result, and `report["degraded"]` is
   `"arms timed out"`. The abandoned call is left to finish and its result is dropped; while it
   runs, the next search reports that arm `timeout` at once instead of queuing behind it (Python's
-  `ArmGuard`). When nothing fused and an arm timed out the page is empty and the legacy path is not
+  `ArmGuard`), and after a timeout the arm cools down for `SKMEMORY_ARM_COOLDOWN_S` (default 10 s):
+  it is not called and reports `timeout` ("cooling down ..."); the abandoned call finishing normally
+  clears it. The in-flight cap is 1 (Python's `SKMEMORY_ARM_MAX_INFLIGHT` default is 2). When nothing fused and an arm timed out the page is empty and the legacy path is not
   taken (it would call the hung backends again).
 - Each arm is `ok`, `abstained` (ran, no hits), `unavailable` (no backend), `failed` (raised),
   `disabled` (switched off by config) or `timeout`. `search_report` returns them per arm with the
-  ids each contributed, the `route`, `rerank_applied`, `path` (`fused`, `legacy_like`, `empty`) and
+  ids each contributed, per-arm `hits` and `ms` (Python's `retrieval_log` shape, with `elapsed_ms`;
+  a timed-out arm's `ms` is the time waited), the `route`, `rerank_applied`, `path` (`fused`, `legacy_like`, `empty`) and
   timings. It never carries the query text. Writing `retrieval.jsonl` from it stays in the shim.
 - Scope: every arm receives the reader scope and filters in its own query; hydrated rows are
   re-checked; `search` drops any id the reader may not see before fusing (R-06C, R-06D, R-07B).
@@ -105,7 +110,10 @@ rare-term rerank, supersession demotion, decay when configured, tier cap, proced
 - A process under a `SKMEMORY_READER` ceiling opens `index.db` READ-ONLY: SQLite URI `mode=ro`
   plus `PRAGMA query_only`, no schema setup, no migration, no WAL checkpoint, no FTS creation. A
   missing `index.db` is an EMPTY IN-MEMORY index: a reader never creates a file or a directory.
-  (SQLite may create the `-shm` side file to read a WAL database; `index.db` itself is not written.)
+  A reader MAY create `index.db-wal` and `index.db-shm` beside the database: SQLite needs them to read
+  a WAL-mode file, and there is no read-only way around that without `immutable=1`, which is unsafe
+  on a live index. `index.db` itself is never written; the reader needs write access to the
+  directory only for those sidecars.
   Its Postgres connections are opened `default_transaction_read_only=on`.
 - `read_only=True` gives an owner process the same (a live diagnostic); every write then raises
   `PermissionError`. `read_only=False` under a ceiling raises `PermissionError`.
@@ -122,12 +130,16 @@ that wants the enum wraps it: `MemoryLayer(m["layer"])`. `tests/python` pins bot
 
 ## Differences from Python (deliberate or not yet ported)
 
-- **Temporal window parser:** `skmem::bench::time_window` is a SUBSET of Python
-  `parse_time_window(strict=True)`: `yesterday`, `today`, `N day|week|month(s) ago`,
-  `last|past N ...`, `last <weekday>`, `this|last week|month`, and an unambiguous month name after a
-  time preposition. It abstains where Python answers for ISO dates and months, bare years, `may` and
-  `march`, month plus day, and `the past month`. It is checked against Python on every fixture query
-  (`tests/class_bench.rs`); a full port needs a regex engine (no new dependency) and is not done.
+- **Temporal window parser:** `skmem::bench::time_window` returns EXACTLY Python's
+  `parse_time_window(strict=True)` window or abstains; it never returns a different window.
+  `tests/temporal_parity.rs` checks 5604 Python-generated queries (every phrase family: ISO dates and
+  months, month plus day or year, bare years, since/before/between, relative days/weeks/months,
+  last/past N, "the past month", weekdays, this/last week/month, may/march, punctuation, unicode,
+  pairs): 3105 exact, 1642 abstained where Python answers, 0 wrong. It answers the relative phrases
+  in Python's regex order and a lone unambiguous month name right after a time preposition. It
+  abstains on an ISO-shaped date, a non-ASCII digit, any digit or a second month word near a month
+  name, bare years, `may` and `march`, and the cue forms (`of june`, `june 2025`, ...). When the
+  temporal arm abstains where Python answers, that arm contributes nothing the Python arm would have.
 - **Legacy path:** when no arm fused and none timed out, Python tries the pgvector `search_text`
   (embedding KNN, then BM25, then ILIKE, unscoped) before SQLite. Rust goes straight to the SQLite
   `LIKE` path (scoped); the pgvector `search_text` fallback is not ported.

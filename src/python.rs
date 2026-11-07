@@ -270,12 +270,16 @@ fn report_value(r: &SearchReport) -> Value {
     let arms: Vec<Value> = r
         .arms
         .iter()
-        .map(|a| {
+        .enumerate()
+        .map(|(i, a)| {
+            let ms = (r.arm_ms[i] * 10.0).round() / 10.0;
             json!({
                 "name": a.name,
                 "status": a.status.as_str(),
                 "detail": a.detail,
+                "hits": a.ids.len(),
                 "count": a.ids.len(),
+                "ms": ms,
                 "ids": a.ids,
             })
         })
@@ -290,6 +294,7 @@ fn report_value(r: &SearchReport) -> Value {
             SearchPath::LegacyLike => "legacy_like",
             SearchPath::Empty => "empty",
         },
+        "elapsed_ms": (r.elapsed.as_secs_f64() * 10_000.0).round() / 10.0,
         "elapsed_s": r.elapsed.as_secs_f64(),
         "deadline_s": r.deadline.as_secs_f64(),
     })
@@ -519,7 +524,14 @@ impl Engine {
         }
         let ro = read_only.unwrap_or(!is_owner);
         let agent = agent.or_else(|| agent_of(&memory_dir));
-        let arms = build_arms(agent.as_deref(), pg, pg_read_only.unwrap_or(ro));
+        // A reader process never gets a writable Postgres session, whatever it passes.
+        if pg_read_only == Some(false) && !is_owner {
+            return Err(PyPermissionError::new_err(
+                "a reader process cannot open Postgres writable",
+            ));
+        }
+        let pg_ro = !is_owner || pg_read_only.unwrap_or(ro);
+        let arms = build_arms(agent.as_deref(), pg, pg_ro);
         let core = Core::open(
             memory_dir,
             EngineOptions {

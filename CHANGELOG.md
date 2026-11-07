@@ -8,6 +8,12 @@ All notable changes to `skmem` are documented here. The format follows
 
 ### Changed
 
+- Review fixes for R-07C (PR 14): the temporal window is now exactly Python's or an abstain (never a
+  different window; 5604-query Python golden, 0 wrong); a reader can never open Postgres writable
+  (`pg_read_only=False` raises); arm reports carry `hits` and `ms` like Python's retrieval log; an arm
+  that timed out cools down for `SKMEMORY_ARM_COOLDOWN_S` (10 s); the SQLite arms run under the same
+  deadline (interrupt watchdog).
+
 - Engine arm set (SKMEM-R-07C): new `skmem::engine::Engine` runs every arm Python fusion runs
   (pgvector `semantic`, pg_search BM25 or SQLite `LIKE` as `lexical`, FTS5 `lexical_local`, optional
   `graph`, `temporal`) concurrently under one `SKMEMORY_SEARCH_DEADLINE_S` deadline (default 4 s), with
@@ -45,7 +51,7 @@ All notable changes to `skmem` are documented here. The format follows
   `grep_substring`, `vector_only`, `fallback_chain`, the `full_context` oracle and the `candidate`
   (the Rust arms plus `skmem::search` over a real SQLite index) per query class on the vendored
   synthetic v1 fixtures (`tests/fixtures/eval-v1/corpus-v1.jsonl`, `queries-v1.jsonl`), with a
-  hashed bag-of-concepts embedding (blake2b-8) and a fixture-checked subset of the temporal window
+  hashed bag-of-concepts embedding (blake2b-8) and a subset of the temporal window
   parser. `cargo run --example class_bench` prints the table. `tests/class_bench.rs` asserts the
   candidate meets or beats the Python numbers recorded by `tests/golden/gen_class_bench_golden.py`
   for every class, and matches Python's ranked page on all 53 queries. `reimpl_fusion` is not ported.

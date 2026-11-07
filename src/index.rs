@@ -629,6 +629,11 @@ impl Index {
         })
     }
 
+    /// A handle that interrupts a running statement on this connection (from any thread).
+    pub fn interrupt_handle(&self) -> rusqlite::InterruptHandle {
+        self.conn.get_interrupt_handle()
+    }
+
     /// Whether this handle was opened read-only.
     pub fn is_read_only(&self) -> bool {
         self.read_only

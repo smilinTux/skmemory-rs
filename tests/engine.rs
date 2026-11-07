@@ -198,7 +198,7 @@ fn a_slow_arm_times_out_and_the_others_still_answer() {
         t.elapsed()
     );
     assert_eq!(status(&out, "semantic"), ArmStatus::Timeout);
-    assert!(out.report.arms[0].detail.contains("still running"));
+    assert!(out.report.arms[0].detail.contains("cooling down"));
 }
 
 #[test]
@@ -450,4 +450,98 @@ fn open_readonly_index_has_no_schema_setup_and_reads_existing_rows() {
             || err.to_string().contains("read only"),
         "{err}"
     );
+}
+
+#[test]
+fn a_timed_out_arm_cools_down_and_a_finished_call_clears_it() {
+    let mut slow = Fake::new(vec![]);
+    slow.delay = Duration::from_millis(600);
+    let calls = slow.calls.clone();
+    let arms = Arms {
+        semantic: Attach::ready(Box::new(slow)),
+        lexical: Attach::Absent,
+        graph: Attach::Absent,
+    };
+    let (e, _) = seeded("cooldown", arms);
+    let env = env_deadline("0.2").with("SKMEMORY_ARM_COOLDOWN_S", "30");
+    let out = e
+        .search(&req("amberfox"), own().reader_scope(), &env)
+        .unwrap();
+    assert_eq!(status(&out, "semantic"), ArmStatus::Timeout);
+    assert!(
+        out.report.arm_ms[0] >= 150.0,
+        "waited {}",
+        out.report.arm_ms[0]
+    );
+    // The abandoned call finishes normally (clears the cooldown, as Python's finished()).
+    std::thread::sleep(Duration::from_millis(900));
+    let out = e
+        .search(&req("amberfox"), own().reader_scope(), &env_deadline("5"))
+        .unwrap();
+    assert_eq!(status(&out, "semantic"), ArmStatus::Abstained);
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    // A timeout whose call is still running sets the cooldown; the next search does not call it.
+    let mut hung = Fake::new(vec![]);
+    hung.delay = Duration::from_secs(3);
+    let hc = hung.calls.clone();
+    let arms = Arms {
+        semantic: Attach::ready(Box::new(hung)),
+        lexical: Attach::Absent,
+        graph: Attach::Absent,
+    };
+    let (e, _) = seeded("cooldown2", arms);
+    e.search(&req("amberfox"), own().reader_scope(), &env)
+        .unwrap();
+    let t = Instant::now();
+    let out = e
+        .search(&req("amberfox"), own().reader_scope(), &env)
+        .unwrap();
+    assert!(t.elapsed() < Duration::from_millis(500));
+    assert!(
+        out.report.arms[0].detail.contains("cooling down"),
+        "{}",
+        out.report.arms[0].detail
+    );
+    assert_eq!(hc.load(Ordering::SeqCst), 1, "a cooling arm is not called");
+}
+
+#[test]
+fn the_sqlite_arms_run_under_the_same_deadline() {
+    // The watchdog interrupts a long statement on the index connection.
+    let (e, _) = seeded("sqlite-deadline", Arms::none());
+    let idx = e.index();
+    let h = idx.interrupt_handle();
+    let t = Instant::now();
+    let killer = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(200));
+        h.interrupt();
+    });
+    let r = idx.connection(&own()).query_row(
+        "WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < 2000000000) SELECT count(*) FROM c",
+        [],
+        |r| r.get::<_, i64>(0),
+    );
+    killer.join().unwrap();
+    assert!(r.is_err(), "the long statement was interrupted");
+    assert!(t.elapsed() < Duration::from_secs(5));
+    // And a search with an expired deadline reports the SQLite arms as timeout or still answers
+    // (tiny scratch store); it must never report an interrupted arm as an empty result.
+    drop(idx);
+    let out = e
+        .search(
+            &req("amberfox"),
+            own().reader_scope(),
+            &env_deadline("0.000001"),
+        )
+        .unwrap();
+    for a in &out.report.arms {
+        if a.name == "lexical_local" || a.name == "lexical" {
+            assert!(
+                matches!(a.status, ArmStatus::Ok | ArmStatus::Timeout),
+                "{}: {:?}",
+                a.name,
+                a.status
+            );
+        }
+    }
 }

@@ -242,6 +242,9 @@ pub struct SearchReport {
     pub degraded: Option<&'static str>,
     pub elapsed: Duration,
     pub deadline: Duration,
+    /// Milliseconds each arm took, in [`ARM_NAMES`] order (a timed-out arm: the time
+    /// waited; an arm that was not run: 0). Python's `retrieval_log` `ms`.
+    pub arm_ms: [f64; 5],
     pub path: SearchPath,
     /// The fused id order after each stage (empty off the fused path).
     pub fused: Vec<String>,
@@ -259,6 +262,44 @@ enum Payload {
     Ids(Vec<String>),
 }
 
+/// Python's `ArmGuard` cooldown: after an arm times out it is not called for
+/// `SKMEMORY_ARM_COOLDOWN_S` (default 10 s) and reports `timeout` saying so; the
+/// abandoned call finishing normally clears it. In-flight cap is 1 here (Python's
+/// is 2): a second call while one still runs reports `timeout` at once.
+#[derive(Default)]
+struct Guard {
+    down_until: Mutex<[Option<Instant>; 5]>,
+}
+
+impl Guard {
+    fn cooling(&self, i: usize) -> Option<f64> {
+        let g = self.down_until.lock().unwrap_or_else(|p| p.into_inner());
+        g[i].and_then(|t| t.checked_duration_since(Instant::now()))
+            .map(|d| d.as_secs_f64())
+    }
+
+    fn timed_out(&self, i: usize, cooldown: Duration) {
+        self.down_until.lock().unwrap_or_else(|p| p.into_inner())[i] =
+            Some(Instant::now() + cooldown);
+    }
+
+    fn finished(&self, i: usize) {
+        self.down_until.lock().unwrap_or_else(|p| p.into_inner())[i] = None;
+    }
+}
+
+/// `SKMEMORY_ARM_COOLDOWN_S`.
+fn arm_cooldown(env: &Env) -> Duration {
+    let v = env
+        .get("SKMEMORY_ARM_COOLDOWN_S")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .and_then(|s| s.parse::<f64>().ok())
+        .filter(|v| v.is_finite())
+        .map_or(10.0, |v| v.max(0.0));
+    Duration::from_secs_f64(v.min(86_400.0))
+}
+
 enum ArmRun {
     Done(Result<Payload, String>),
     /// The previous call on this arm is still running (an abandoned thread).
@@ -266,6 +307,10 @@ enum ArmRun {
 }
 
 /// Run `f` on the slot unless a previous call still holds it.
+fn cooling_input(left: f64) -> ArmInput {
+    ArmInput::TimedOut(format!("cooling down after a timeout ({left:.1}s left)"))
+}
+
 fn guarded<T: ?Sized, R>(
     slot: &Shared<T>,
     f: impl FnOnce(&mut T) -> Result<R, String>,
@@ -286,6 +331,7 @@ pub struct Engine {
     cfg: AudienceConfig,
     arms: Arms,
     read_only: bool,
+    guard: Arc<Guard>,
 }
 
 impl Engine {
@@ -320,6 +366,7 @@ impl Engine {
             cfg,
             arms: opts.arms,
             read_only,
+            guard: Arc::new(Guard::default()),
         })
     }
 
@@ -415,7 +462,9 @@ impl Engine {
         };
 
         // ---- pg arms: one thread each, results over a channel ----------------
-        let (tx, rx) = mpsc::channel::<(usize, ArmRun)>();
+        let (tx, rx) = mpsc::channel::<(usize, ArmRun, f64)>();
+        let cooldown = arm_cooldown(env);
+        let mut arm_ms = [0.0f64; 5];
         let mut pending = 0usize;
         let mut prelim: [Option<ArmInput>; 5] = [None, None, None, None, None];
         let mut payloads: [Option<Payload>; 5] = [None, None, None, None, None];
@@ -428,20 +477,31 @@ impl Engine {
                 }
                 Attach::Disabled(why) => prelim[i] = Some(ArmInput::Disabled(why.clone())),
                 Attach::Failed(why) => prelim[i] = Some(ArmInput::Failed(why.clone())),
+                Attach::Ready(_) if self.guard.cooling(i).is_some() => {
+                    prelim[i] = Some(cooling_input(self.guard.cooling(i).unwrap_or(0.0)))
+                }
                 Attach::Ready(slot) => {
                     let (slot, tx) = (Arc::clone(slot), tx.clone());
                     let (q, f, sc) = (query.clone(), filters.clone(), scope.clone());
+                    let g = Arc::clone(&self.guard);
                     let spawned =
                         std::thread::Builder::new()
                             .name("skmem-arm".into())
                             .spawn(move || {
+                                let t0 = Instant::now();
                                 let run = match guarded(&slot, |a| a.search(&q, arm_limit, &f, &sc))
                                 {
-                                    Ok(m) => ArmRun::Done(Ok(Payload::Mems(m))),
-                                    Err(Some(e)) => ArmRun::Done(Err(e)),
+                                    Ok(m) => {
+                                        g.finished(i);
+                                        ArmRun::Done(Ok(Payload::Mems(m)))
+                                    }
+                                    Err(Some(e)) => {
+                                        g.finished(i);
+                                        ArmRun::Done(Err(e))
+                                    }
                                     Err(None) => ArmRun::Busy,
                                 };
-                                let _ = tx.send((i, run));
+                                let _ = tx.send((i, run, t0.elapsed().as_secs_f64() * 1000.0));
                             });
                     match spawned {
                         Ok(_) => *pending += 1,
@@ -455,19 +515,30 @@ impl Engine {
             Attach::Absent => prelim[3] = Some(ArmInput::Unattached),
             Attach::Disabled(why) => prelim[3] = Some(ArmInput::Disabled(why.clone())),
             Attach::Failed(why) => prelim[3] = Some(ArmInput::Failed(why.clone())),
+            Attach::Ready(_) if self.guard.cooling(3).is_some() => {
+                prelim[3] = Some(cooling_input(self.guard.cooling(3).unwrap_or(0.0)))
+            }
             Attach::Ready(slot) => {
                 let (slot, tx) = (Arc::clone(slot), tx.clone());
                 let (q, f, sc) = (query.clone(), filters.clone(), scope.clone());
+                let g = Arc::clone(&self.guard);
                 let spawned =
                     std::thread::Builder::new()
                         .name("skmem-arm".into())
                         .spawn(move || {
+                            let t0 = Instant::now();
                             let run = match guarded(&slot, |a| a.search(&q, arm_limit, &f, &sc)) {
-                                Ok(ids) => ArmRun::Done(Ok(Payload::Ids(ids))),
-                                Err(Some(e)) => ArmRun::Done(Err(e)),
+                                Ok(ids) => {
+                                    g.finished(3);
+                                    ArmRun::Done(Ok(Payload::Ids(ids)))
+                                }
+                                Err(Some(e)) => {
+                                    g.finished(3);
+                                    ArmRun::Done(Err(e))
+                                }
                                 Err(None) => ArmRun::Busy,
                             };
-                            let _ = tx.send((3, run));
+                            let _ = tx.send((3, run, t0.elapsed().as_secs_f64() * 1000.0));
                         });
                 match spawned {
                     Ok(_) => pending += 1,
@@ -488,27 +559,60 @@ impl Engine {
         let mut found: HashMap<String, Memory> = HashMap::new();
         let load = |id: &str| -> Option<Memory> { self.store.load(id, scope).ok().flatten() };
         let idx = self.index();
+        // The SQLite arms run on this thread under the SAME deadline: a watchdog
+        // interrupts the connection when it expires, and an interrupted arm is
+        // `timeout`, never an empty result.
+        let (wd_tx, wd_rx) = mpsc::channel::<()>();
+        let handle = idx.interrupt_handle();
+        let left = deadline.saturating_sub(started.elapsed());
+        let watchdog = std::thread::spawn(move || {
+            if matches!(
+                wd_rx.recv_timeout(left),
+                Err(mpsc::RecvTimeoutError::Timeout)
+            ) {
+                handle.interrupt();
+            }
+        });
+        let local_input = |e: IndexError| -> ArmInput {
+            if matches!(&e, IndexError::Sqlite(rusqlite::Error::SqliteFailure(f, _))
+                if f.code == rusqlite::ErrorCode::OperationInterrupted)
+            {
+                ArmInput::TimedOut(format!(
+                    "no answer within {:.2}s deadline",
+                    deadline.as_secs_f64()
+                ))
+            } else {
+                ArmInput::Failed(e.to_string())
+            }
+        };
+        let t = Instant::now();
         // lexical_local
         let local_ids: Vec<String> = match idx.search_lexical(&query, arm_limit, &sf, scope) {
             Ok(rows) => rows.into_iter().map(|r| r.id).collect(),
             Err(e) => {
-                prelim[2] = Some(ArmInput::Failed(e.to_string()));
+                prelim[2] = Some(local_input(e));
                 Vec::new()
             }
         };
+        arm_ms[2] = t.elapsed().as_secs_f64() * 1000.0;
         // lexical without a BM25 backend: SQLite LIKE
+        let t = Instant::now();
         let like_ids: Option<Vec<String>> = if matches!(self.arms.lexical, Attach::Absent) {
             match idx.search_text_like(&query, arm_limit, scope) {
                 Ok(v) => Some(v),
                 Err(e) => {
-                    prelim[1] = Some(ArmInput::Failed(e.to_string()));
+                    prelim[1] = Some(local_input(e));
                     None
                 }
             }
         } else {
             None
         };
+        if like_ids.is_some() || prelim[1].is_some() {
+            arm_ms[1] = t.elapsed().as_secs_f64() * 1000.0;
+        }
         // temporal
+        let t = Instant::now();
         let temporal_ids: Vec<String> =
             match crate::bench::time_window(&query, crate::bench::unix_secs(now)) {
                 None => Vec::new(),
@@ -516,21 +620,25 @@ impl Engine {
                     match idx.created_between(&after, &before, &sf, arm_limit, scope) {
                         Ok(v) => v,
                         Err(e) => {
-                            prelim[4] = Some(ArmInput::Failed(e.to_string()));
+                            prelim[4] = Some(local_input(e));
                             Vec::new()
                         }
                     }
                 }
             };
+        arm_ms[4] = t.elapsed().as_secs_f64() * 1000.0;
+        let _ = wd_tx.send(());
+        let _ = watchdog.join();
 
         // ---- wait for the pg arms under the one deadline ----------------------
         let mut reached = [false; 5];
         while pending > 0 {
             let left = deadline.saturating_sub(started.elapsed());
             match rx.recv_timeout(left) {
-                Ok((i, run)) => {
+                Ok((i, run, ms)) => {
                     pending -= 1;
                     reached[i] = true;
+                    arm_ms[i] = ms;
                     match run {
                         ArmRun::Done(Ok(p)) => payloads[i] = Some(p),
                         ArmRun::Done(Err(e)) => prelim[i] = Some(ArmInput::Failed(e)),
@@ -553,6 +661,10 @@ impl Engine {
                 _ => matches!(self.arms.graph, Attach::Ready(_)),
             };
             if spawned_arm && !reached[i] && prelim[i].is_none() {
+                arm_ms[i] = elapsed_now.as_secs_f64() * 1000.0;
+                if elapsed_now >= deadline {
+                    self.guard.timed_out(i, cooldown);
+                }
                 prelim[i] = Some(if elapsed_now >= deadline {
                     ArmInput::TimedOut(format!(
                         "no answer within {:.2}s deadline ({:.2}s elapsed)",
@@ -671,6 +783,7 @@ impl Engine {
             degraded: timed_out.then_some(DEGRADED_ARMS_TIMED_OUT),
             elapsed: started.elapsed(),
             deadline,
+            arm_ms,
             path: SearchPath::Fused,
             fused: Vec::new(),
         };

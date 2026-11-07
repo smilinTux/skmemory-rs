@@ -208,6 +208,16 @@ def test_reader_process_does_not_create_the_store(tmp_path, monkeypatch):
     assert list(home.iterdir()) == []
 
 
+def test_a_reader_cannot_open_postgres_writable(eng, monkeypatch):
+    seed(eng)
+    monkeypatch.setenv("SKMEMORY_READER", "@public")
+    with pytest.raises(PermissionError):
+        Engine(eng.root, pg_read_only=False)
+    with pytest.raises(PermissionError):
+        Engine(eng.root, read_only=False)
+    Engine(eng.root, pg_read_only=True)
+
+
 def _sha(path):
     import hashlib
 
@@ -309,6 +319,10 @@ def test_search_report_states_every_arm_without_the_query(eng):
     assert arms["lexical_local"]["status"] == "ok"
     assert rep["path"] == "fused" and rep["degraded"] is None
     assert "amberfox" not in json.dumps(rep)
+    # Python retrieval_log shape: per arm {status, hits, ms}, plus elapsed_ms
+    for a in rep["arms"]:
+        assert isinstance(a["hits"], int) and isinstance(a["ms"], float) and a["ms"] >= 0
+    assert arms["lexical_local"]["hits"] >= 1 and rep["elapsed_ms"] > 0
 
 
 def test_health_reader_gets_verdict_only(eng, monkeypatch):
