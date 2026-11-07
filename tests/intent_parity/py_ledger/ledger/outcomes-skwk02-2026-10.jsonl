@@ -1,0 +1,15 @@
+{"skill": "recover-schema", "version": "1.2", "event": "served", "at": "2026-08-13T12:00:00+00:00", "effect": null, "session": "s1", "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+{"skill": "idless", "version": "1", "event": "followed", "at": "2026-10-10T00:00:00+00:00", "effect": "success", "session": "s9"}
+{"skill": "numver", "version": 2, "event": "served", "at": "2026-10-10T00:00:00Z", "effect": null, "session": "s9", "id": "n1"}
+{"skill": "floatver", "version": 1.5, "event": "served", "at": "2026-10-10T00:00:00Z", "effect": null, "session": "s9", "id": "n2"}
+{"skill": "nullver", "version": null, "event": "served", "at": "2026-10-10T00:00:00Z", "effect": null, "session": "s9", "id": "n3"}
+{"skill": "listver", "version": ["a", 1, null, true, {"k": 1.0}], "event": "served", "at": "2026-10-10T00:00:00Z", "effect": null, "session": "s9", "id": "n4"}
+not json at all
+{"skill": "badevent", "version": "1", "event": "bogus", "at": "2026-10-10T00:00:00Z", "effect": null, "session": "s"}
+{"skill": "badat", "version": "1", "event": "served", "at": "yesterday", "effect": null, "session": "s"}
+{"skill": "missing", "version": "1", "event": "served", "at": "2026-10-10T00:00:00Z"}
+[1, 2]
+{"skill": "emptyid", "version": "1", "event": "served", "at": "2026-10-10T00:00:00Z", "effect": null, "session": "s", "id": ""}
+{"skill": "noeffectkey", "version": "1", "event": "followed", "at": "2026-10-10T00:00:00Z", "session": "s", "id": "n5", "source": "", "missing": 5}
+{"skill": "torn", "version": "1", "event": "served", "at": "2026-10-1
+{"skill":"after-torn","version":"1","event":"served","at":"2026-10-11T00:00:00+00:00","effect":null,"session":"s","id":"t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0"}

@@ -295,7 +295,7 @@ fn is_corruption(e: &rusqlite::Error) -> bool {
 static LAST_CHECKPOINT: Mutex<Option<HashMap<String, Instant>>> = Mutex::new(None);
 
 /// `wal_guard.apply`: bound the WAL. Never fails.
-fn wal_apply(conn: &Connection) {
+pub(crate) fn wal_apply(conn: &Connection) {
     let _ = conn.query_row(
         &format!("PRAGMA journal_size_limit={JOURNAL_SIZE_LIMIT}"),
         [],
