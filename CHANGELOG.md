@@ -8,6 +8,14 @@ All notable changes to `skmem` are documented here. The format follows
 
 ### Added
 
+- Class bench (SKMEM-R-06B): `skmem::bench::run_bench` and `format_table` score `bm25_only`,
+  `grep_substring`, `vector_only`, `fallback_chain`, the `full_context` oracle and the `candidate`
+  (the Rust arms plus `skmem::search` over a real SQLite index) per query class on the vendored
+  synthetic v1 fixtures (`tests/fixtures/eval-v1/corpus-v1.jsonl`, `queries-v1.jsonl`), with a
+  hashed bag-of-concepts embedding (blake2b-8) and a fixture-checked subset of the temporal window
+  parser. `cargo run --example class_bench` prints the table. `tests/class_bench.rs` asserts the
+  candidate meets or beats the Python numbers recorded by `tests/golden/gen_class_bench_golden.py`
+  for every class, and matches Python's ranked page on all 53 queries. `reimpl_fusion` is not ported.
 - Retrieval fusion (SKMEM-R-06): `skmem::fusion` (`run_arm`, `route_query` identifier vs
   natural, `reciprocal_rank_fusion`, `rank_interleave`, `pinned_rrf`, `fuse`: identifier
   route pins `lexical_local` then `lexical` at depth 3, natural route pins the vector head
@@ -18,7 +26,7 @@ All notable changes to `skmem` are documented here. The format follows
   `skmem::decay` and `skmem::env::Env`. Parity with the current Python on 577 golden cases
   (`tests/golden/gen_fusion_golden.py`, `tests/fusion_parity.rs`), including a
   `MemoryStore.search` run over fake backends. Not ported: threads and arm guard, temporal
-  window parser, reader filter, query sanitizer, `run_bench` (fixtures not vendored).
+  window parser, reader filter, query sanitizer.
 - Bootstrap: crate `skmem` (library plus `skmem` binary that prints the version),
   optional `python` feature (pyo3 0.24, `abi3-py39`) producing module `skmem_core`
   with a maturin mixed layout, CI (rustfmt, clippy with `-D warnings`, tests on the
