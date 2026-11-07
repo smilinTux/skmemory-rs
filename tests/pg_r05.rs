@@ -213,7 +213,12 @@ fn run_lex_cases(dsn: &str, search_path: &str, mode: &str, pin_tsrank: bool) -> 
             a
         });
         let limit = c["limit"].as_i64().unwrap();
-        let got = arm.search_lexical(c["query"].as_str().unwrap(), limit, &filters(&c["filters"]));
+        let got = arm.search_lexical(
+            c["query"].as_str().unwrap(),
+            limit,
+            &filters(&c["filters"]),
+            &owner(),
+        );
         if c.get("expect_error").is_some() {
             assert!(matches!(got, Err(PgError::BadAsOf(_))), "{name}: {got:?}");
         } else {
@@ -277,7 +282,7 @@ fn lexical_tsrank_parity_in_a_scratch_schema() {
         assert_eq!(n, 44);
         let mut arm = lex_arm(&dsn, path, "skrs-r05-a");
         let hits = arm
-            .search_lexical("river", 100, &Filters::default())
+            .search_lexical("river", 100, &Filters::default(), &owner())
             .unwrap();
         assert!(!hits.is_empty());
         assert!(
@@ -345,7 +350,12 @@ fn lexical_tsrank_json_fallback_for_as_of() {
             }
             let limit = e["limit"].as_i64().unwrap();
             let got: Vec<(String, f64)> = arm
-                .search_lexical(e["query"].as_str().unwrap(), limit, &filters(&e["filters"]))
+                .search_lexical(
+                    e["query"].as_str().unwrap(),
+                    limit,
+                    &filters(&e["filters"]),
+                    &owner(),
+                )
                 .unwrap()
                 .into_iter()
                 .map(|h| (h.memory.id, h.score))
@@ -440,19 +450,19 @@ fn hostile_values_are_bound_not_interpolated() {
                     context_tag: Some(ContextTag::AnyOf(vec![h.to_string()])),
                     ..Filters::default()
                 };
-                let r = arm.search_lexical(h, 10, &f);
+                let r = arm.search_lexical(h, 10, &f, &owner());
                 if let Ok(hits) = r {
                     assert!(hits.is_empty(), "{h:?} matched {hits:?}");
                 }
                 // the same text as the QUERY alone is also harmless
-                let _ = arm.search_lexical(h, 10, &Filters::default());
+                let _ = arm.search_lexical(h, 10, &Filters::default(), &owner());
             }
         }
         assert_eq!(count(c), before, "a hostile value changed the table");
         // and the table still answers
         let mut arm = lex_arm(&dsn, path, "skrs-r05-a");
         assert!(!arm
-            .search_lexical("river", 10, &Filters::default())
+            .search_lexical("river", 10, &Filters::default(), &owner())
             .unwrap()
             .is_empty());
     });
@@ -465,13 +475,15 @@ fn an_empty_search_path_is_a_typed_error_not_a_missing_relation() {
         seed_lex(c, &format!("{schema}.memories"), true);
         for bad in ["''", "no_such_schema_r05"] {
             let mut arm = lex_arm(&dsn, bad, "skrs-r05-a");
-            match arm.search_lexical("river", 5, &Filters::default()) {
+            match arm.search_lexical("river", 5, &Filters::default(), &owner()) {
                 Err(PgError::EmptySearchPath) => {}
                 other => panic!("search_path {bad}: {other:?}"),
             }
         }
         let mut arm = lex_arm(&dsn, path, "skrs-r05-a");
-        assert!(arm.search_lexical("river", 5, &Filters::default()).is_ok());
+        assert!(arm
+            .search_lexical("river", 5, &Filters::default(), &owner())
+            .is_ok());
     });
 }
 
@@ -481,7 +493,7 @@ fn limit_zero_and_bad_as_of_never_reach_sql() {
     with_schema(&dsn, true, |_, path, _| {
         let mut arm = lex_arm(&dsn, path, "skrs-r05-a");
         assert!(arm
-            .search_lexical("river", 0, &Filters::default())
+            .search_lexical("river", 0, &Filters::default(), &owner())
             .unwrap()
             .is_empty());
         for bad in ["now", "yesterday", "infinity", "2026-13-45"] {
@@ -490,7 +502,10 @@ fn limit_zero_and_bad_as_of_never_reach_sql() {
                 ..Filters::default()
             };
             assert!(
-                matches!(arm.search_lexical("river", 5, &f), Err(PgError::BadAsOf(_))),
+                matches!(
+                    arm.search_lexical("river", 5, &f, &owner()),
+                    Err(PgError::BadAsOf(_))
+                ),
                 "{bad}"
             );
         }
@@ -636,7 +651,7 @@ fn graph_parity_with_python() {
             let limit = a["limit"].as_u64().unwrap_or(0) as usize;
             let as_of = sopt(&a["as_of"]);
             if c.get("rust_expect_error").is_some() {
-                let r = arm.currently_valid_memories(as_of.as_deref(), limit);
+                let r = arm.currently_valid_memories(as_of.as_deref(), limit, &owner());
                 assert!(matches!(r, Err(PgError::BadAsOf(_))), "{name}: {r:?}");
                 checked += 1;
                 continue;
@@ -649,9 +664,9 @@ fn graph_parity_with_python() {
                     let f = filters(&c["filters"]);
                     let q = a["query"].as_str().unwrap();
                     let hits = if m == "search_by_entity" {
-                        arm.search_by_entity(q, limit, &f)
+                        arm.search_by_entity(q, limit, &f, &owner())
                     } else {
-                        arm.search_by_entity_tokens(q, limit, &f)
+                        arm.search_by_entity_tokens(q, limit, &f, &owner())
                     }
                     .unwrap_or_else(|e| panic!("{name}: {e}"));
                     let got: Vec<Value> = hits
@@ -668,7 +683,7 @@ fn graph_parity_with_python() {
                 }
                 "currently_valid_memories" => {
                     let got = arm
-                        .currently_valid_memories(as_of.as_deref(), limit)
+                        .currently_valid_memories(as_of.as_deref(), limit, &owner())
                         .unwrap();
                     let want = want.as_array().unwrap();
                     if name == "cv_limit5" {
@@ -688,13 +703,13 @@ fn graph_parity_with_python() {
                 }
                 "is_currently_valid" => {
                     let got = arm
-                        .is_currently_valid(a["id"].as_str().unwrap(), as_of.as_deref())
+                        .is_currently_valid(a["id"].as_str().unwrap(), as_of.as_deref(), &owner())
                         .unwrap();
                     assert_eq!(Value::Bool(got), *want, "{name}");
                 }
                 "neighbors" => {
                     let got: Vec<Value> = arm
-                        .neighbors(a["id"].as_str().unwrap(), as_of.as_deref())
+                        .neighbors(a["id"].as_str().unwrap(), as_of.as_deref(), &owner())
                         .unwrap()
                         .iter()
                         .map(stub_json)
@@ -703,7 +718,7 @@ fn graph_parity_with_python() {
                 }
                 "supersedes_chain" => {
                     let got: Vec<Value> = arm
-                        .supersedes_chain(a["id"].as_str().unwrap(), as_of.as_deref())
+                        .supersedes_chain(a["id"].as_str().unwrap(), as_of.as_deref(), &owner())
                         .unwrap()
                         .iter()
                         .map(stub_json)
@@ -712,7 +727,11 @@ fn graph_parity_with_python() {
                 }
                 "get_related" => {
                     let got: Vec<Value> = arm
-                        .get_related(a["id"].as_str().unwrap(), a["depth"].as_i64().unwrap())
+                        .get_related(
+                            a["id"].as_str().unwrap(),
+                            a["depth"].as_i64().unwrap(),
+                            &owner(),
+                        )
                         .unwrap()
                         .iter()
                         .map(stub_json)
@@ -726,7 +745,7 @@ fn graph_parity_with_python() {
                 }
                 "get_lineage" => {
                     let got: Vec<Value> = arm
-                        .get_lineage(a["id"].as_str().unwrap())
+                        .get_lineage(a["id"].as_str().unwrap(), &owner())
                         .unwrap()
                         .iter()
                         .map(stub_json)
@@ -762,7 +781,7 @@ fn graph_survives_an_empty_search_path_and_does_not_leak_its_own() {
             c.batch_execute("SET search_path = ''").unwrap();
         }
         let hits = arm
-            .search_by_entity("Ali Al-Zaidi", 10, &Filters::default())
+            .search_by_entity("Ali Al-Zaidi", 10, &Filters::default(), &owner())
             .unwrap();
         assert!(!hits.is_empty());
         let sp: String = arm
@@ -786,7 +805,9 @@ fn graph_search_arm_is_off_by_default_and_a_capped_arm_abstains() {
         // a second, disabled arm over the same graph answers nothing and says why
         let client = Client::connect(&dsn, NoTls).unwrap();
         let mut off = GraphArm::from_client(client, "skrs-r05", Some(graph), false);
-        let out = off.search("Ali Al-Zaidi", 10, &Filters::default()).unwrap();
+        let out = off
+            .search("Ali Al-Zaidi", 10, &Filters::default(), &owner())
+            .unwrap();
         assert!(out.hits.is_empty());
         assert_eq!(out.state.state, "disabled");
         assert!(out
@@ -795,13 +816,24 @@ fn graph_search_arm_is_off_by_default_and_a_capped_arm_abstains() {
             .unwrap()
             .contains("disabled by config (SKMEMORY_GRAPH_ARM is off"));
         // the enabled arm returns rows through the same entry point
-        let on = arm.search("Ali Al-Zaidi", 10, &Filters::default()).unwrap();
+        let on = arm
+            .search("Ali Al-Zaidi", 10, &Filters::default(), &owner())
+            .unwrap();
         assert_eq!(on.state.state, "enabled");
         assert!(!on.hits.is_empty());
         // a 1 ms cap cannot finish a regex scan plus the join: the token fan-out
         // abstains (empty) instead of failing the arm
         arm.set_search_timeout_ms(1);
-        let r = arm.search("skgateway Casey invoice", 10, &Filters::default());
+        let r = arm.search("skgateway Casey invoice", 10, &Filters::default(), &owner());
         assert!(r.is_ok(), "{r:?}");
     });
+}
+
+/// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn owner() -> skmem::audience::ReaderScope {
+    skmem::audience::ReaderScope::resolve(
+        None,
+        &skmem::env::Env::empty(),
+        &skmem::audience::AudienceConfig::empty(),
+    )
 }

@@ -177,6 +177,7 @@ fn run_cases(dsn: &str, search_path: &str, only_as_of: bool) -> usize {
             c["query"].as_str().unwrap(),
             c["limit"].as_i64().unwrap(),
             &filters(&c["filters"]),
+            &owner(),
         );
         if c.get("expect_error").is_some() {
             assert!(matches!(got, Err(PgError::BadAsOf(_))), "{name}: {got:?}");
@@ -243,7 +244,7 @@ fn parity_with_python_typed_columns() {
         assert_eq!(n, 46);
         let mut arm = arm_on(&dsn, path, "skrs-r04-a");
         let _ = arm
-            .search_semantic("river stone amber", 10, &Filters::default())
+            .search_semantic("river stone amber", 10, &Filters::default(), &owner())
             .unwrap();
         assert!(
             arm.unparseable >= 1,
@@ -274,7 +275,7 @@ fn parity_with_python_json_fallback_for_as_of() {
             ..Filters::default()
         };
         let ids: Vec<String> = arm
-            .search_semantic("river stone amber", 100, &f)
+            .search_semantic("river stone amber", 100, &f, &owner())
             .unwrap()
             .into_iter()
             .map(|h| h.memory.id)
@@ -313,7 +314,7 @@ fn context_tag_empty_list_returns_nothing_not_everything() {
         seed(c, &format!("{schema}.memories"), true);
         let mut arm = arm_on(&dsn, path, "skrs-r04-a");
         let all = arm
-            .search_semantic("river stone", 10, &Filters::default())
+            .search_semantic("river stone", 10, &Filters::default(), &owner())
             .unwrap();
         assert!(!all.is_empty());
         let f = Filters {
@@ -321,7 +322,7 @@ fn context_tag_empty_list_returns_nothing_not_everything() {
             ..Filters::default()
         };
         assert!(arm
-            .search_semantic("river stone", 10, &f)
+            .search_semantic("river stone", 10, &f, &owner())
             .unwrap()
             .is_empty());
     });
@@ -332,7 +333,7 @@ fn dimension_mismatch_is_a_typed_error() {
     let Some(dsn) = test_dsn() else { return };
     with_schema(&dsn, true, |_, path, _| {
         let mut arm = arm_on(&dsn, path, "skrs-r04-a");
-        match arm.search_vector(vec![0.1; 768], 5, &Filters::default()) {
+        match arm.search_vector(vec![0.1; 768], 5, &Filters::default(), &owner()) {
             Err(PgError::DimensionMismatch { expected, actual }) => {
                 assert_eq!((expected, actual), (1024, 768))
             }
@@ -349,7 +350,7 @@ fn dimension_mismatch_is_a_typed_error() {
         }));
         let mut arm = VectorArm::from_client(c, "skrs-r04-a", bad).unwrap();
         assert!(matches!(
-            arm.search_semantic("q", 5, &Filters::default()),
+            arm.search_semantic("q", 5, &Filters::default(), &owner()),
             Err(PgError::DimensionMismatch {
                 expected: 1024,
                 actual: 768
@@ -372,7 +373,7 @@ fn unembeddable_query_abstains_with_empty_result() {
         }));
         let mut arm = VectorArm::from_client(c2, "skrs-r04-a", dead).unwrap();
         assert!(arm
-            .search_semantic("q", 5, &Filters::default())
+            .search_semantic("q", 5, &Filters::default(), &owner())
             .unwrap()
             .is_empty());
     });
@@ -433,7 +434,7 @@ fn bad_as_of_is_rejected_before_any_sql() {
             };
             assert!(
                 matches!(
-                    arm.search_semantic("river", 5, &f),
+                    arm.search_semantic("river", 5, &f, &owner()),
                     Err(PgError::BadAsOf(_))
                 ),
                 "{bad}"
@@ -452,7 +453,7 @@ fn search_settings_do_not_leak_onto_the_connection() {
             .batch_execute("SET TimeZone = 'Asia/Tokyo'; SET hnsw.ef_search = 77")
             .unwrap();
         let hits = arm
-            .search_semantic("river stone", 5, &Filters::default())
+            .search_semantic("river stone", 5, &Filters::default(), &owner())
             .unwrap();
         assert!(!hits.is_empty());
         let show = |arm: &mut VectorArm, what: &str| -> String {
@@ -468,7 +469,7 @@ fn search_settings_do_not_leak_onto_the_connection() {
             as_of: Some("2026-06-01T00:00:00Z".into()),
             ..Filters::default()
         };
-        assert!(arm.search_semantic("river stone", 5, &f).is_ok());
+        assert!(arm.search_semantic("river stone", 5, &f, &owner()).is_ok());
         assert_eq!(show(&mut arm, "TimeZone"), "Asia/Tokyo");
     });
 }
@@ -483,7 +484,7 @@ fn dead_connection_is_re_established() {
         let (e, _) = embedder();
         let mut arm = VectorArm::connect_config(cfg, "skrs-r04-a", e, false).unwrap();
         let before = arm
-            .search_semantic("river stone", 5, &Filters::default())
+            .search_semantic("river stone", 5, &Filters::default(), &owner())
             .unwrap();
         let pid: i32 = arm
             .client_mut()
@@ -494,7 +495,7 @@ fn dead_connection_is_re_established() {
             .unwrap();
         std::thread::sleep(std::time::Duration::from_millis(300));
         let after = arm
-            .search_semantic("river stone", 5, &Filters::default())
+            .search_semantic("river stone", 5, &Filters::default(), &owner())
             .unwrap();
         let ids = |h: &[skmem::pg::Hit]| h.iter().map(|x| x.memory.id.clone()).collect::<Vec<_>>();
         assert_eq!(ids(&before), ids(&after));
@@ -509,7 +510,16 @@ fn dead_connection_is_re_established() {
             .unwrap();
         std::thread::sleep(std::time::Duration::from_millis(300));
         assert!(wrapped
-            .search_semantic("river", 5, &Filters::default())
+            .search_semantic("river", 5, &Filters::default(), &owner())
             .is_err());
     });
+}
+
+/// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn owner() -> skmem::audience::ReaderScope {
+    skmem::audience::ReaderScope::resolve(
+        None,
+        &skmem::env::Env::empty(),
+        &skmem::audience::AudienceConfig::empty(),
+    )
 }

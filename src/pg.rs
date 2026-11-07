@@ -15,6 +15,7 @@
 pub mod graph_arm;
 pub mod lexical_arm;
 
+use crate::audience::ReaderScope;
 use crate::embed::{EmbedError, Embedder, VECTOR_DIM};
 use crate::model::{Layer, Memory};
 use pgvector::Vector;
@@ -282,7 +283,12 @@ pub(crate) fn push_bind(binds: &mut Binds, b: Box<dyn ToSql + Sync>) -> usize {
 /// source), each value a bound parameter. `as_of` is the caller's business: it
 /// differs per arm. An empty tag list, empty source and `None` are "no
 /// filter"; an empty `context_tag` list matches nothing (fail closed).
-pub(crate) fn filter_clauses(agent: &str, filters: &Filters, binds: &mut Binds) -> Vec<String> {
+pub(crate) fn filter_clauses(
+    agent: &str,
+    filters: &Filters,
+    scope: &ReaderScope,
+    binds: &mut Binds,
+) -> Vec<String> {
     let mut clauses = Vec::new();
     let p = push_bind(binds, Box::new(agent.to_string()));
     clauses.push(format!("agent=${p}"));
@@ -294,15 +300,38 @@ pub(crate) fn filter_clauses(agent: &str, filters: &Filters, binds: &mut Binds) 
         let p = push_bind(binds, Box::new(filters.tags.clone()));
         clauses.push(format!("tags @> ${p}"));
     }
-    match &filters.context_tag {
-        None => {}
-        Some(ContextTag::One(t)) => {
-            let p = push_bind(binds, Box::new(t.clone()));
-            clauses.push(format!("memory_json->>'context_tag' = ${p}"));
+    if scope.unrestricted() {
+        match &filters.context_tag {
+            None => {}
+            Some(ContextTag::One(t)) => {
+                let p = push_bind(binds, Box::new(t.clone()));
+                clauses.push(format!("memory_json->>'context_tag' = ${p}"));
+            }
+            Some(ContextTag::AnyOf(list)) => {
+                let p = push_bind(binds, Box::new(list.clone()));
+                clauses.push(format!("memory_json->>'context_tag' = ANY(${p})"));
+            }
         }
-        Some(ContextTag::AnyOf(list)) => {
-            let p = push_bind(binds, Box::new(list.clone()));
-            clauses.push(format!("memory_json->>'context_tag' = ANY(${p})"));
+    } else {
+        // The reader ceiling, intersected with any caller filter, in SQL: rows
+        // it hides never reach the LIMIT. An empty set matches nothing.
+        let wanted: Option<Vec<String>> = match &filters.context_tag {
+            None => None,
+            Some(ContextTag::One(t)) => Some(vec![t.clone()]),
+            Some(ContextTag::AnyOf(list)) => Some(list.clone()),
+        };
+        match scope.context_filter(wanted.as_deref()) {
+            Some(list) if !list.is_empty() => {
+                let p = push_bind(binds, Box::new(list));
+                clauses.push(format!("memory_json->>'context_tag' = ANY(${p})"));
+            }
+            _ => clauses.push("false".to_string()),
+        }
+        let ex = scope.exclusions();
+        if !ex.is_empty() {
+            // A NULL `tags` makes this NULL, which drops the row (fail closed).
+            let p = push_bind(binds, Box::new(ex));
+            clauses.push(format!("NOT (tags && ${p})"));
         }
     }
     if let Some(src) = filters.source.as_deref().filter(|s| !s.is_empty()) {
@@ -498,7 +527,8 @@ impl VectorArm {
         Ok(v)
     }
 
-    /// The underlying client (tests inspect session state through it).
+    /// The underlying client (tests inspect session state through it). RAW
+    /// ACCESS: bypasses the reader ceiling; a seeding and diagnostics handle.
     pub fn client_mut(&mut self) -> &mut Client {
         &mut self.client
     }
@@ -513,11 +543,12 @@ impl VectorArm {
         &mut self,
         qvec: Vec<f32>,
         filters: &Filters,
+        scope: &ReaderScope,
         limit: i64,
         as_of: Option<String>,
     ) -> Result<(String, Vec<Box<dyn ToSql + Sync>>), PgError> {
         let mut binds: Binds = vec![Box::new(Vector::from(qvec))];
-        let mut clauses = filter_clauses(&self.agent, filters, &mut binds);
+        let mut clauses = filter_clauses(&self.agent, filters, scope, &mut binds);
         clauses.insert(1, "embedding IS NOT NULL".to_string());
         if let Some(as_of) = as_of {
             let v2 = self.has_v2_columns()?;
@@ -534,7 +565,10 @@ impl VectorArm {
         Ok((sql, binds))
     }
 
-    /// Dense cosine search. When the query cannot be embedded the arm
+    /// Dense cosine search as `scope` sees it: the reader ceiling is part of
+    /// the SQL `WHERE` (so hidden rows never take a `LIMIT` slot) and is checked
+    /// again on every hydrated row. The query is sanitized before embedding, as
+    /// Python's `search_semantic` does. When the query cannot be embedded the arm
     /// abstains with an empty list rather than falling back to an unfiltered
     /// text search. A wrong-length vector is a typed error.
     pub fn search_semantic(
@@ -542,12 +576,15 @@ impl VectorArm {
         query: &str,
         limit: i64,
         filters: &Filters,
+        scope: &ReaderScope,
     ) -> Result<Vec<Hit>, PgError> {
-        let qvec = self.embedder.embed(query, false)?;
+        let qvec = self
+            .embedder
+            .embed(&crate::query_sanitizer::sanitize_query(query), false)?;
         if qvec.is_empty() {
             return Ok(Vec::new());
         }
-        self.search_vector(qvec, limit, filters)
+        self.search_vector(qvec, limit, filters, scope)
     }
 
     /// Same, with the query vector already computed.
@@ -556,6 +593,7 @@ impl VectorArm {
         qvec: Vec<f32>,
         limit: i64,
         filters: &Filters,
+        scope: &ReaderScope,
     ) -> Result<Vec<Hit>, PgError> {
         if qvec.len() != VECTOR_DIM {
             return Err(PgError::DimensionMismatch {
@@ -571,7 +609,7 @@ impl VectorArm {
         if self.client.is_closed() && self.reconnect.is_some() {
             self.reconnect()?;
         }
-        let (sql, binds) = self.plan(qvec, filters, limit, as_of)?;
+        let (sql, binds) = self.plan(qvec, filters, scope, limit, as_of)?;
         let refs: Vec<&(dyn ToSql + Sync)> = binds.iter().map(|b| b.as_ref()).collect();
         let first = self.run(&sql, &refs, limit);
         let rows = match first {
@@ -588,6 +626,8 @@ impl VectorArm {
             let json: Value = row.get(0);
             let dist: f64 = row.get(1);
             match parse_memory_cell(json) {
+                // Last gate: a row the SQL let through is re-checked.
+                Some(memory) if !scope.allows_memory(&memory) => {}
                 Some(memory) => out.push(Hit {
                     memory,
                     distance: dist,

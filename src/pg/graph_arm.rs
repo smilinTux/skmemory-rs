@@ -28,8 +28,10 @@
 //!   parsed values ([`crate::validity`]).
 
 use super::{
-    allow_remote_from_env, check_dsn_is_local, open_client, scrub, ContextTag, Filters, PgError,
+    allow_remote_from_env, check_dsn_is_local, filter_clauses, open_client, parse_memory_cell,
+    push_bind, scrub, Binds, ContextTag, Filters, PgError,
 };
+use crate::audience::ReaderScope;
 use crate::model::py_strip;
 use crate::util::{iso_from_unix, now_iso};
 use crate::validity::{normalize_as_of, parse_ts, valid_at};
@@ -324,6 +326,7 @@ impl GraphArm {
     }
 
     /// The connected client, if any (tests inspect session state through it).
+    /// RAW ACCESS: bypasses the reader ceiling, as [`GraphArm::cypher`] does.
     pub fn client_mut(&mut self) -> Option<&mut Client> {
         self.client.as_mut()
     }
@@ -386,7 +389,9 @@ impl GraphArm {
     /// `query` must be a constant (it is placed between `$$` quotes); every
     /// caller value goes in `params`. `timeout_ms` caps this statement only
     /// (`SET LOCAL` semantics). Public so a seeding harness can write the
-    /// graph with the same bound-parameter path.
+    /// graph with the same bound-parameter path. RAW ACCESS: this bypasses the
+    /// reader ceiling and returns whatever the Cypher selects. It is a
+    /// seeding and diagnostics handle for the owner, never a search path.
     pub fn cypher(
         &mut self,
         query: &str,
@@ -501,6 +506,242 @@ impl GraphArm {
         Ok((where_, params))
     }
 
+    // ------------------------------------------------------------------
+    // reader-scoped entry points (SKMEM-R-06C)
+    //
+    // Graph nodes carry no trustworthy audience, so for a restricted reader
+    // visibility is decided against `memories` in the same database (the
+    // authoritative `memory_json`): an id with no row there is hidden (fail
+    // closed). A hidden id reads exactly like a missing one in every result.
+    // ------------------------------------------------------------------
+
+    /// Over-fetch factor for a restricted reader, so hiding rows does not
+    /// silently shorten a page.
+    const RESTRICTED_FETCH: usize = 4;
+
+    /// Which of `ids` the reader may see. The owner sees all of them.
+    fn visible_ids(
+        &mut self,
+        ids: &[String],
+        scope: &ReaderScope,
+    ) -> Result<HashSet<String>, PgError> {
+        if scope.unrestricted() || ids.is_empty() {
+            return Ok(ids.iter().cloned().collect());
+        }
+        let mut binds: Binds = Vec::new();
+        let mut clauses = filter_clauses(&self.agent, &Filters::default(), scope, &mut binds);
+        let p = push_bind(&mut binds, Box::new(ids.to_vec()));
+        clauses.push(format!("id = ANY(${p})"));
+        let sql = format!(
+            "SELECT id, memory_json FROM memories WHERE {}",
+            clauses.join(" AND ")
+        );
+        let refs: Vec<&(dyn ToSql + Sync)> = binds.iter().map(|b| b.as_ref()).collect();
+        let rows = self
+            .client()?
+            .query(sql.as_str(), &refs)
+            .map_err(|e| PgError::Query(e.to_string()))?;
+        let mut out = HashSet::new();
+        for row in rows {
+            let id: String = row.get(0);
+            let json: Value = row.get(1);
+            // Last gate on the authoritative document.
+            if parse_memory_cell(json).is_some_and(|m| scope.allows_memory(&m)) {
+                out.insert(id);
+            }
+        }
+        Ok(out)
+    }
+
+    fn can_see(&mut self, id: &str, scope: &ReaderScope) -> Result<bool, PgError> {
+        Ok(self.visible_ids(&[id.to_string()], scope)?.contains(id))
+    }
+
+    /// Entity search as `scope` sees it.
+    pub fn search_by_entity(
+        &mut self,
+        query: &str,
+        limit: usize,
+        filters: &Filters,
+        scope: &ReaderScope,
+    ) -> Result<Vec<EntityHit>, PgError> {
+        if scope.unrestricted() {
+            return self.search_by_entity_raw(query, limit, filters);
+        }
+        let hits = self.search_by_entity_raw(
+            query,
+            limit.saturating_mul(Self::RESTRICTED_FETCH),
+            filters,
+        )?;
+        let ids: Vec<String> = hits.iter().filter_map(|h| h.id.clone()).collect();
+        let vis = self.visible_ids(&ids, scope)?;
+        let mut out: Vec<EntityHit> = hits
+            .into_iter()
+            .filter(|h| h.id.as_ref().is_some_and(|i| vis.contains(i)))
+            .collect();
+        out.truncate(limit);
+        Ok(out)
+    }
+
+    /// Memories valid at `as_of`, as `scope` sees them.
+    pub fn currently_valid_memories(
+        &mut self,
+        as_of: Option<&str>,
+        limit: usize,
+        scope: &ReaderScope,
+    ) -> Result<Vec<Stub>, PgError> {
+        if scope.unrestricted() {
+            return self.currently_valid_memories_raw(as_of, limit);
+        }
+        let rows =
+            self.currently_valid_memories_raw(as_of, limit.saturating_mul(Self::RESTRICTED_FETCH))?;
+        let ids: Vec<String> = rows.iter().filter_map(|s| s.id.clone()).collect();
+        let vis = self.visible_ids(&ids, scope)?;
+        let mut out: Vec<Stub> = rows
+            .into_iter()
+            .filter(|s| s.id.as_ref().is_some_and(|i| vis.contains(i)))
+            .collect();
+        out.truncate(limit);
+        Ok(out)
+    }
+
+    /// Whether `memory_id` is valid at `as_of`. A hidden id is `false`, like a
+    /// missing one.
+    pub fn is_currently_valid(
+        &mut self,
+        memory_id: &str,
+        as_of: Option<&str>,
+        scope: &ReaderScope,
+    ) -> Result<bool, PgError> {
+        if !scope.unrestricted() && !self.can_see(memory_id, scope)? {
+            // Still validate `as_of` so a bad value errors the same either way.
+            Self::resolve_ts(as_of)?;
+            return Ok(false);
+        }
+        self.is_currently_valid_raw(memory_id, as_of)
+    }
+
+    /// Direct neighbourhood as `scope` sees it: a hidden start is empty, hidden
+    /// neighbours are dropped before the cap.
+    pub fn neighbors(
+        &mut self,
+        memory_id: &str,
+        as_of: Option<&str>,
+        scope: &ReaderScope,
+    ) -> Result<Vec<Stub>, PgError> {
+        if scope.unrestricted() {
+            return self.neighbors_raw(memory_id, as_of, 50);
+        }
+        if !self.can_see(memory_id, scope)? {
+            Self::resolve_ts(as_of)?;
+            return Ok(Vec::new());
+        }
+        let rows = self.neighbors_raw(memory_id, as_of, usize::MAX)?;
+        let ids: Vec<String> = rows.iter().filter_map(|s| s.id.clone()).collect();
+        let vis = self.visible_ids(&ids, scope)?;
+        let mut out: Vec<Stub> = rows
+            .into_iter()
+            .filter(|s| s.id.as_ref().is_some_and(|i| vis.contains(i)))
+            .collect();
+        out.truncate(50);
+        Ok(out)
+    }
+
+    /// The `SUPERSEDES` lineage as `scope` sees it: a hidden start is empty and
+    /// a hidden ancestor is cut (neither returned nor walked through).
+    pub fn supersedes_chain(
+        &mut self,
+        memory_id: &str,
+        as_of: Option<&str>,
+        scope: &ReaderScope,
+    ) -> Result<Vec<Stub>, PgError> {
+        if scope.unrestricted() {
+            return self.supersedes_chain_raw(memory_id, as_of, &mut |_, _| Ok(true));
+        }
+        if !self.can_see(memory_id, scope)? {
+            Self::resolve_ts(as_of)?;
+            return Ok(Vec::new());
+        }
+        self.supersedes_chain_raw(memory_id, as_of, &mut |arm, id| arm.can_see(id, scope))
+    }
+
+    /// Relatives up to `depth` hops as `scope` sees them: walked one hop at a
+    /// time and never through a hidden node (Python `graph_related`).
+    pub fn get_related(
+        &mut self,
+        memory_id: &str,
+        depth: i64,
+        scope: &ReaderScope,
+    ) -> Result<Vec<Stub>, PgError> {
+        if scope.unrestricted() {
+            return self.get_related_raw(memory_id, depth, 50);
+        }
+        if !self.can_see(memory_id, scope)? {
+            return Ok(Vec::new());
+        }
+        let depth = depth.clamp(1, 5);
+        let mut seen: HashSet<String> = HashSet::from([memory_id.to_string()]);
+        let mut frontier = vec![memory_id.to_string()];
+        let mut out: Vec<Stub> = Vec::new();
+        for level in 1..=depth {
+            let mut next = Vec::new();
+            for node in &frontier {
+                let rows = self.get_related_raw(node, 1, usize::MAX)?;
+                let fresh: Vec<Stub> = rows
+                    .into_iter()
+                    .filter(|r| {
+                        r.id.as_ref()
+                            .is_some_and(|i| !i.is_empty() && seen.insert(i.clone()))
+                    })
+                    .collect();
+                let ids: Vec<String> = fresh.iter().filter_map(|s| s.id.clone()).collect();
+                let vis = self.visible_ids(&ids, scope)?;
+                for mut s in fresh {
+                    let id = s.id.clone().unwrap_or_default();
+                    if !vis.contains(&id) {
+                        continue;
+                    }
+                    s.distance = Some(level);
+                    next.push(id);
+                    out.push(s);
+                }
+            }
+            frontier = next;
+        }
+        out.sort_by(|a, b| {
+            (a.distance.unwrap_or(0), a.title.as_deref().unwrap_or(""))
+                .cmp(&(b.distance.unwrap_or(0), b.title.as_deref().unwrap_or("")))
+        });
+        out.truncate(50);
+        Ok(out)
+    }
+
+    /// Ancestors as `scope` sees them: a hidden start is empty and the chain is
+    /// cut at the first hidden ancestor.
+    pub fn get_lineage(
+        &mut self,
+        memory_id: &str,
+        scope: &ReaderScope,
+    ) -> Result<Vec<Stub>, PgError> {
+        if scope.unrestricted() {
+            return self.get_lineage_raw(memory_id);
+        }
+        if !self.can_see(memory_id, scope)? {
+            return Ok(Vec::new());
+        }
+        let chain = self.get_lineage_raw(memory_id)?;
+        let ids: Vec<String> = chain.iter().filter_map(|s| s.id.clone()).collect();
+        let vis = self.visible_ids(&ids, scope)?;
+        let mut out = Vec::new();
+        for s in chain {
+            if !s.id.as_ref().is_some_and(|i| vis.contains(i)) {
+                break;
+            }
+            out.push(s);
+        }
+        Ok(out)
+    }
+
     /// The search arm entry point. When the arm is not enabled it returns its
     /// state and no hits without touching the database. Otherwise it is
     /// [`GraphArm::search_by_entity_tokens`].
@@ -509,6 +750,7 @@ impl GraphArm {
         query: &str,
         limit: usize,
         filters: &Filters,
+        scope: &ReaderScope,
     ) -> Result<ArmOutcome, PgError> {
         let state = self.state();
         if state.state != "enabled" {
@@ -517,7 +759,7 @@ impl GraphArm {
                 hits: Vec::new(),
             });
         }
-        let hits = self.search_by_entity_tokens(query, limit, filters)?;
+        let hits = self.search_by_entity_tokens(query, limit, filters, scope)?;
         Ok(ArmOutcome { state, hits })
     }
 
@@ -525,7 +767,7 @@ impl GraphArm {
     /// (case-insensitive substring), filters applied before `LIMIT`. With
     /// `as_of` the Cypher over-fetches 3x and the exact validity rule runs on
     /// parsed instants. Capped by the search timeout.
-    pub fn search_by_entity(
+    fn search_by_entity_raw(
         &mut self,
         query: &str,
         limit: usize,
@@ -590,6 +832,7 @@ impl GraphArm {
         query: &str,
         limit: usize,
         filters: &Filters,
+        scope: &ReaderScope,
     ) -> Result<Vec<EntityHit>, PgError> {
         if self.graph.is_none() {
             return Err(PgError::BadGraphName(format!("{}_knowledge", self.agent)));
@@ -603,7 +846,7 @@ impl GraphArm {
         let budget_left =
             |started: &Instant| budget_s <= 0.0 || started.elapsed().as_secs_f64() < budget_s;
         let lookup = |arm: &mut GraphArm, text: &str| -> Result<Vec<EntityHit>, PgError> {
-            match arm.search_by_entity(text, limit, filters) {
+            match arm.search_by_entity(text, limit, filters, scope) {
                 Err(e) if is_timeout(&e) => Ok(Vec::new()),
                 other => other,
             }
@@ -703,7 +946,7 @@ impl GraphArm {
     /// then. Parsed instants throughout. The scan over-fetches 3x `limit`
     /// before the exclusion, in unspecified node order, as Python's `LIMIT`
     /// does.
-    pub fn currently_valid_memories(
+    fn currently_valid_memories_raw(
         &mut self,
         as_of: Option<&str>,
         limit: usize,
@@ -744,7 +987,7 @@ impl GraphArm {
 
     /// Whether `memory_id` exists, has come into being by `as_of`, and is not
     /// superseded as of then.
-    pub fn is_currently_valid(
+    fn is_currently_valid_raw(
         &mut self,
         memory_id: &str,
         as_of: Option<&str>,
@@ -786,10 +1029,11 @@ impl GraphArm {
     /// Direct Memory-to-Memory neighbourhood over an edge valid at `as_of`
     /// (default now), sorted by title, capped at 50. Each of the five edge
     /// types is queried separately (AGE has no relationship alternation).
-    pub fn neighbors(
+    fn neighbors_raw(
         &mut self,
         memory_id: &str,
         as_of: Option<&str>,
+        cap: usize,
     ) -> Result<Vec<Stub>, PgError> {
         let ts = Self::resolve_ts(as_of)?;
         let t = parse_ts(&ts).ok_or_else(|| PgError::BadAsOf(ts.clone()))?;
@@ -825,17 +1069,18 @@ impl GraphArm {
                 .unwrap_or("")
                 .cmp(b.title.as_deref().unwrap_or(""))
         });
-        merged.truncate(50);
+        merged.truncate(cap);
         Ok(merged)
     }
 
     /// The `SUPERSEDES` lineage valid at `as_of` (default now), one hop at a
     /// time with the window applied per hop, nearest first, depth capped at
     /// 10. SUPERSEDES only: promotion and chunk edges never retire a parent.
-    pub fn supersedes_chain(
+    fn supersedes_chain_raw(
         &mut self,
         memory_id: &str,
         as_of: Option<&str>,
+        visible: &mut dyn FnMut(&mut GraphArm, &str) -> Result<bool, PgError>,
     ) -> Result<Vec<Stub>, PgError> {
         let ts = Self::resolve_ts(as_of)?;
         let t = parse_ts(&ts).ok_or_else(|| PgError::BadAsOf(ts.clone()))?;
@@ -864,6 +1109,10 @@ impl GraphArm {
                 if !visited.insert(pid.clone()) {
                     continue;
                 }
+                // A hidden ancestor is cut: not returned, not walked through.
+                if !visible(self, &pid)? {
+                    continue;
+                }
                 chain.push(Stub {
                     id: Some(pid.clone()),
                     title: str_of(&r[1]),
@@ -881,7 +1130,12 @@ impl GraphArm {
     /// Memory-to-Memory relatives up to `depth` hops (1 to 5, clamped) over
     /// the five link edges, minimum hop per relative, sorted by distance then
     /// title, capped at 50. Edge validity is not applied (as in Python).
-    pub fn get_related(&mut self, memory_id: &str, depth: i64) -> Result<Vec<Stub>, PgError> {
+    fn get_related_raw(
+        &mut self,
+        memory_id: &str,
+        depth: i64,
+        cap: usize,
+    ) -> Result<Vec<Stub>, PgError> {
         let safe = depth.clamp(1, 5);
         let mut merged: HashMap<String, Stub> = HashMap::new();
         let mut order: Vec<String> = Vec::new();
@@ -925,13 +1179,13 @@ impl GraphArm {
             (a.distance.unwrap_or(0), a.title.as_deref().unwrap_or(""))
                 .cmp(&(b.distance.unwrap_or(0), b.title.as_deref().unwrap_or("")))
         });
-        out.truncate(50);
+        out.truncate(cap);
         Ok(out)
     }
 
     /// Ancestors over `PROMOTED_FROM`, `CHUNK_OF` and `SUPERSEDES` (up to 10
     /// hops), minimum depth per ancestor, nearest first.
-    pub fn get_lineage(&mut self, memory_id: &str) -> Result<Vec<Stub>, PgError> {
+    fn get_lineage_raw(&mut self, memory_id: &str) -> Result<Vec<Stub>, PgError> {
         let mut merged: HashMap<String, Stub> = HashMap::new();
         let mut order: Vec<String> = Vec::new();
         for rel in LINEAGE_WALK_EDGES {
@@ -977,6 +1231,14 @@ impl GraphArm {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn owner() -> ReaderScope {
+        ReaderScope::resolve(
+            None,
+            &crate::env::Env::empty(),
+            &crate::audience::AudienceConfig::empty(),
+        )
+    }
 
     #[test]
     fn arm_is_off_unless_asked() {
@@ -1057,12 +1319,14 @@ mod tests {
             st.reason.as_deref(),
             Some("disabled by config (SKMEMORY_GRAPH_ARM is off, the default)")
         );
-        let out = arm.search("anything", 5, &Filters::default()).unwrap();
+        let out = arm
+            .search("anything", 5, &Filters::default(), &owner())
+            .unwrap();
         assert!(out.hits.is_empty());
         assert_eq!(out.state.state, "disabled");
         // the direct reads are NOT gated by the flag: they try to connect
         let err = arm
-            .search_by_entity("x", 5, &Filters::default())
+            .search_by_entity("x", 5, &Filters::default(), &owner())
             .unwrap_err();
         assert!(matches!(err, PgError::Connect(_)), "{err:?}");
     }
@@ -1079,7 +1343,7 @@ mod tests {
             Err(PgError::BadGraphName(_))
         ));
         assert!(matches!(
-            arm.search("x", 1, &Filters::default()),
+            arm.search("x", 1, &Filters::default(), &owner()),
             Ok(ArmOutcome { hits, .. }) if hits.is_empty()
         ));
     }

@@ -24,6 +24,7 @@ use super::{
     allow_remote_from_env, as_of_clause, check_dsn_is_local, check_search_path, filter_clauses,
     open_client, parse_memory_cell, probe_v2_columns, push_bind, Binds, Filters, PgError,
 };
+use crate::audience::ReaderScope;
 use crate::model::Memory;
 use crate::validity::{normalize_as_of, valid_at};
 use postgres::types::ToSql;
@@ -181,10 +182,11 @@ impl LexicalArm {
         &mut self,
         query: &str,
         filters: &Filters,
+        scope: &ReaderScope,
         fetch: i64,
     ) -> Result<Vec<(Memory, f64)>, StatementError> {
         let mut binds: Binds = Vec::new();
-        let clauses = filter_clauses(&self.agent, filters, &mut binds);
+        let clauses = filter_clauses(&self.agent, filters, scope, &mut binds);
         let q = push_bind(&mut binds, Box::new(query.to_string()));
         let l = push_bind(&mut binds, Box::new(fetch));
         let sql = format!(
@@ -201,11 +203,12 @@ impl LexicalArm {
         &mut self,
         query: &str,
         filters: &Filters,
+        scope: &ReaderScope,
         as_of: Option<String>,
         limit: i64,
     ) -> Result<Vec<(Memory, f64)>, StatementError> {
         let mut binds: Binds = Vec::new();
-        let mut clauses = filter_clauses(&self.agent, filters, &mut binds);
+        let mut clauses = filter_clauses(&self.agent, filters, scope, &mut binds);
         if let Some(as_of) = as_of {
             let v2 = match self.v2_columns {
                 Some(v) => v,
@@ -255,13 +258,15 @@ impl LexicalArm {
         Ok(out)
     }
 
-    /// Pure lexical search. `limit <= 0` returns nothing. `as_of` is parsed
+    /// Pure lexical search as `scope` sees it (the reader ceiling is in the
+    /// SQL `WHERE` and re-checked on every hydrated row). `limit <= 0` returns nothing. `as_of` is parsed
     /// in Rust first: a value Python rejects never reaches SQL.
     pub fn search_lexical(
         &mut self,
         query: &str,
         limit: i64,
         filters: &Filters,
+        scope: &ReaderScope,
     ) -> Result<Vec<LexicalHit>, PgError> {
         let as_of = match filters.as_of.as_deref() {
             Some(raw) => normalize_as_of(raw)?,
@@ -278,18 +283,19 @@ impl LexicalArm {
         } else {
             limit
         };
-        let mut attempt = self.search_once(query, filters, as_of.as_deref(), limit, fetch);
+        let mut attempt = self.search_once(query, filters, scope, as_of.as_deref(), limit, fetch);
         if matches!(attempt, Err(PgError::Connect(_)) | Err(PgError::Query(_)))
             && self.client.is_closed()
             && self.reconnect.is_some()
         {
             self.reconnect()?;
-            attempt = self.search_once(query, filters, as_of.as_deref(), limit, fetch);
+            attempt = self.search_once(query, filters, scope, as_of.as_deref(), limit, fetch);
         }
         let (rows, path) = attempt?;
         self.last_run = Some(path);
         Ok(rows
             .into_iter()
+            .filter(|(m, _)| scope.allows_memory(m))
             .map(|(memory, score)| LexicalHit { memory, score })
             .collect())
     }
@@ -298,13 +304,14 @@ impl LexicalArm {
         &mut self,
         query: &str,
         filters: &Filters,
+        scope: &ReaderScope,
         as_of: Option<&str>,
         limit: i64,
         fetch: i64,
     ) -> Result<(Vec<(Memory, f64)>, LexicalPath), PgError> {
         let mut bm25_error = None;
         if self.has_bm25() {
-            match self.bm25_statement(query, filters, fetch) {
+            match self.bm25_statement(query, filters, scope, fetch) {
                 Ok(mut rows) => {
                     if let Some(t) = as_of {
                         rows.retain(|(m, _)| {
@@ -330,7 +337,7 @@ impl LexicalArm {
             }
         }
         let rows = self
-            .tsrank_statement(query, filters, as_of.map(str::to_string), limit)
+            .tsrank_statement(query, filters, scope, as_of.map(str::to_string), limit)
             .map_err(StatementError::into_pg)?;
         let path = match bm25_error {
             Some(m) => LexicalPath::TsRankAfterBm25Error(m),

@@ -3,6 +3,7 @@
 //! Storage core: the schema v2 [`model::Memory`] and the flat JSON
 //! [`flat::Store`], byte-compatible with the Python implementation.
 
+pub mod audience;
 pub mod bench;
 pub mod decay;
 pub mod embed;
@@ -19,6 +20,7 @@ mod printable_table;
 pub mod procedures;
 pub mod pyjson;
 pub mod pytime;
+pub mod query_sanitizer;
 pub mod rerank;
 pub mod search;
 mod sys;

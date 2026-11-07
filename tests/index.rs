@@ -64,7 +64,7 @@ fn index_sorted(idx: &Index, store: &Store) {
             .collect();
         fs_.sort();
         for p in fs_ {
-            let m = store.load_path(&p).unwrap();
+            let m = skmem::model::Memory::from_stored_json(&fs::read(&p).unwrap()).unwrap();
             idx.index_memory(&m, &p).unwrap();
         }
     }
@@ -112,7 +112,7 @@ fn diff_rows(got: &[Value], want: &Value, what: &str) {
 }
 
 fn all_json(idx: &Index, root: &Path) -> Vec<Value> {
-    idx.all_rows()
+    idx.all_rows(&owner())
         .unwrap()
         .iter()
         .map(|r| row_json(r, root))
@@ -201,7 +201,7 @@ fn schema_rows_fts_and_search_match_python() {
             as_of: q.get("as_of").and_then(Value::as_str),
         };
         let got: Vec<String> = idx
-            .search_lexical(q["q"].as_str().unwrap(), 10, &f)
+            .search_lexical(q["q"].as_str().unwrap(), 10, &f, &owner())
             .unwrap()
             .into_iter()
             .map(|r| r.id)
@@ -295,7 +295,7 @@ fn upsert_preserves_usage_and_reinforcement_step() {
     store.save(&m).unwrap();
     let p = store.path_for(&m).unwrap();
     idx.index_memory(&m, &p).unwrap();
-    let start = idx.get(&m.id).unwrap().unwrap();
+    let start = idx.get(&m.id, &owner()).unwrap().unwrap();
     assert_eq!(start.importance, initial_importance("short-term", 5.0));
     assert_eq!(start.access_count, 0);
 
@@ -303,7 +303,7 @@ fn upsert_preserves_usage_and_reinforcement_step() {
         idx.bump_access(&[&m.id], Some("2030-01-01T00:00:00+00:00"), None),
         1
     );
-    let bumped = idx.get(&m.id).unwrap().unwrap();
+    let bumped = idx.get(&m.id, &owner()).unwrap().unwrap();
     let step = start.importance + REINFORCE_IMPORTANCE_STEP * (1.0 - start.importance);
     assert!((bumped.importance - step).abs() < 1e-12);
     assert_eq!(bumped.access_count, 1);
@@ -312,19 +312,19 @@ fn upsert_preserves_usage_and_reinforcement_step() {
     m.content = "second body".into();
     m.title = "beta".into();
     idx.index_memory(&m, &p).unwrap();
-    let after = idx.get(&m.id).unwrap().unwrap();
+    let after = idx.get(&m.id, &owner()).unwrap().unwrap();
     assert_eq!(after.title, "beta");
     assert_eq!(after.access_count, 1);
     assert_eq!(after.last_accessed, bumped.last_accessed);
     assert_eq!(after.importance, bumped.importance);
     assert_eq!(
-        idx.search_lexical("second", 5, &SearchFilters::default())
+        idx.search_lexical("second", 5, &SearchFilters::default(), &owner())
             .unwrap()
             .len(),
         1
     );
     assert!(idx
-        .search_lexical("first", 5, &SearchFilters::default())
+        .search_lexical("first", 5, &SearchFilters::default(), &owner())
         .unwrap()
         .is_empty());
 
@@ -381,7 +381,7 @@ fn vaulted_store_indexes_no_plaintext_and_refuses_fts() {
         let m = Memory::new("t", &format!("{} SECRETSENTINELXYZ body", "p".repeat(300)));
         idx.index_memory(&m, &store.path_for(&m).unwrap()).unwrap();
         assert_eq!(
-            idx.search_lexical("SECRETSENTINELXYZ", 5, &SearchFilters::default())
+            idx.search_lexical("SECRETSENTINELXYZ", 5, &SearchFilters::default(), &owner())
                 .unwrap()
                 .len(),
             1
@@ -399,7 +399,7 @@ fn vaulted_store_indexes_no_plaintext_and_refuses_fts() {
         .unwrap();
     assert_eq!(n, 0, "FTS artefacts dropped");
     assert!(idx
-        .search_lexical("SECRETSENTINELXYZ", 5, &SearchFilters::default())
+        .search_lexical("SECRETSENTINELXYZ", 5, &SearchFilters::default(), &owner())
         .unwrap()
         .is_empty());
     assert!(idx.fts_status().unwrap().is_none());
@@ -454,7 +454,7 @@ fn open_is_idempotent_migrates_old_schema_and_survives_concurrent_openers() {
         h.join().unwrap();
     }
     let idx = Index::open_db(&db, true).unwrap();
-    let r = idx.get("old1").unwrap().unwrap();
+    let r = idx.get("old1", &owner()).unwrap().unwrap();
     assert_eq!(
         (r.importance, r.access_count, r.kind.as_str()),
         (0.5, 0, "episode")
@@ -502,16 +502,19 @@ fn reindex_keeps_orphans_unless_forced_and_restores_usage_atomically() {
         .unwrap();
     idx.bump_access(&[&a.id, &a.id], Some("2031-01-01T00:00:00+00:00"), None);
     idx.bump_access(&[&orphan.id], Some("2031-01-01T00:00:00+00:00"), None);
-    let imp_a = idx.get(&a.id).unwrap().unwrap().importance;
+    let imp_a = idx.get(&a.id, &owner()).unwrap().unwrap().importance;
 
     let rep = idx.reindex(&store, false).unwrap();
     assert_eq!((rep.indexed, rep.orphans_kept), (2, 1));
-    assert!(idx.get(&orphan.id).unwrap().is_some(), "orphan kept");
     assert!(
-        idx.get(&dead.id).unwrap().is_none(),
+        idx.get(&orphan.id, &owner()).unwrap().is_some(),
+        "orphan kept"
+    );
+    assert!(
+        idx.get(&dead.id, &owner()).unwrap().is_none(),
         "tombstoned row dropped"
     );
-    let ra = idx.get(&a.id).unwrap().unwrap();
+    let ra = idx.get(&a.id, &owner()).unwrap().unwrap();
     assert_eq!(ra.access_count, 1);
     assert_eq!(ra.importance, imp_a);
     assert_eq!(
@@ -519,19 +522,28 @@ fn reindex_keeps_orphans_unless_forced_and_restores_usage_atomically() {
         Some("2031-01-01T00:00:00+00:00")
     );
     assert_eq!(
-        idx.get(&orphan.id).unwrap().unwrap().access_count,
+        idx.get(&orphan.id, &owner()).unwrap().unwrap().access_count,
         1,
         "orphan counters untouched"
     );
     // FTS follows the rebuild: the dropped row is gone, the kept row remains.
     let f = SearchFilters::default();
-    assert!(idx.search_lexical("forgotten", 5, &f).unwrap().is_empty());
-    assert_eq!(idx.search_lexical("alpha", 5, &f).unwrap().len(), 1);
-    assert_eq!(idx.search_lexical("orphan", 5, &f).unwrap().len(), 1);
+    assert!(idx
+        .search_lexical("forgotten", 5, &f, &owner())
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        idx.search_lexical("alpha", 5, &f, &owner()).unwrap().len(),
+        1
+    );
+    assert_eq!(
+        idx.search_lexical("orphan", 5, &f, &owner()).unwrap().len(),
+        1
+    );
 
     idx.reindex(&store, true).unwrap();
     assert!(
-        idx.get(&orphan.id).unwrap().is_none(),
+        idx.get(&orphan.id, &owner()).unwrap().is_none(),
         "force drops orphans"
     );
     assert_eq!(idx.count().unwrap(), 2);
@@ -552,13 +564,13 @@ fn fts_backfill_indexes_rows_missing_from_a_python_index() {
         .unwrap();
     assert_eq!(idx.fts_status().unwrap().unwrap().missing, 1);
     assert!(idx
-        .search_lexical("needle", 5, &SearchFilters::default())
+        .search_lexical("needle", 5, &SearchFilters::default(), &owner())
         .unwrap()
         .is_empty());
     let r = idx.fts_backfill(&store, None, None).unwrap();
     assert!(r.complete && r.indexed == 1);
     assert_eq!(
-        idx.search_lexical("needle", 5, &SearchFilters::default())
+        idx.search_lexical("needle", 5, &SearchFilters::default(), &owner())
             .unwrap()
             .len(),
         1
@@ -687,11 +699,11 @@ fn bench_reindex() {
     );
     let t = std::time::Instant::now();
     let hits = idx
-        .search_lexical("w0042x1013 bench", 10, &SearchFilters::default())
+        .search_lexical("w0042x1013 bench", 10, &SearchFilters::default(), &owner())
         .unwrap();
     eprintln!("search: {} hits in {:?}", hits.len(), t.elapsed());
     let ids: Vec<String> = idx
-        .all_rows()
+        .all_rows(&owner())
         .unwrap()
         .into_iter()
         .take(500)
@@ -717,4 +729,13 @@ fn word_chars_matches_python_w() {
             .collect();
         assert_eq!(skmem::index::word_chars(input), want, "input {input:?}");
     }
+}
+
+/// The owner scope: no reader declared and no `SKMEMORY_READER` ceiling.
+fn owner() -> skmem::audience::ReaderScope {
+    skmem::audience::ReaderScope::resolve(
+        None,
+        &skmem::env::Env::empty(),
+        &skmem::audience::AudienceConfig::empty(),
+    )
 }
