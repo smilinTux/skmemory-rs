@@ -13,6 +13,14 @@ All notable changes to `skmem` are documented here. The format follows
   (`pg_read_only=False` raises); arm reports carry `hits` and `ms` like Python's retrieval log; an arm
   that timed out cools down for `SKMEMORY_ARM_COOLDOWN_S` (10 s); the SQLite arms run under the same
   deadline (interrupt watchdog).
+- Snapshot parity (SKMEM-R-07C part 2): `Engine::snapshot` (and `skmem_core.Engine.snapshot`) now does
+  the write-time work of `MemoryStore.snapshot` that is a function of the arguments: content-hash
+  dedup (a duplicate returns the stored memory and writes nothing), `source_tier` derived from
+  `source`, `metadata.authority_tier`, and valence inferred from emotion labels; content of 1200+
+  characters or `decompose=True` raises `NotImplementedError` and stores nothing (Python decomposes
+  it). Checked case by case against the real Python store (`tests/snapshot_parity.rs`, 35 cases).
+  `docs/PYTHON_BINDINGS.md` lists every other side effect (pgvector row, graph upsert, triage,
+  reweave, hooks, WAL) with who does it.
 
 - Engine arm set (SKMEM-R-07C): new `skmem::engine::Engine` runs every arm Python fusion runs
   (pgvector `semantic`, pg_search BM25 or SQLite `LIKE` as `lexical`, FTS5 `lexical_local`, optional

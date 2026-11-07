@@ -1,0 +1,976 @@
+[
+ {
+  "case": {
+   "name": "plain-manual",
+   "title": "plain",
+   "content": "hello world one"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "plain"
+ },
+ {
+  "case": {
+   "name": "dup-same-content",
+   "title": "other title",
+   "content": "hello world one"
+  },
+  "same_as": "plain-manual",
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "plain"
+ },
+ {
+  "case": {
+   "name": "src-web",
+   "title": "t web",
+   "content": "web content a",
+   "source": "web-fetch"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "web",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "web-fetch",
+  "title": "t web"
+ },
+ {
+  "case": {
+   "name": "src-http-upper",
+   "title": "t http",
+   "content": "web content b",
+   "source": "HTTP-client"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "web",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "HTTP-client",
+  "title": "t http"
+ },
+ {
+  "case": {
+   "name": "src-browser",
+   "title": "t br",
+   "content": "web content c",
+   "source": "browser"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "web",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "browser",
+  "title": "t br"
+ },
+ {
+  "case": {
+   "name": "src-generated",
+   "title": "t gen",
+   "content": "gen content a",
+   "source": "skwhisper"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "self-generated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "skwhisper",
+  "title": "t gen"
+ },
+ {
+  "case": {
+   "name": "src-generated-mcp",
+   "title": "t gen2",
+   "content": "gen content b",
+   "source": "mcp:memory_save_session"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "self-generated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "mcp:memory_save_session",
+  "title": "t gen2"
+ },
+ {
+  "case": {
+   "name": "src-tool",
+   "title": "t tool",
+   "content": "tool content a",
+   "source": "tool"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "tool-output",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "tool",
+  "title": "t tool"
+ },
+ {
+  "case": {
+   "name": "src-taskpack",
+   "title": "t tp",
+   "content": "tool content b",
+   "source": "task-pack"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "tool-output",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "task-pack",
+  "title": "t tp"
+ },
+ {
+  "case": {
+   "name": "src-user-telegram",
+   "title": "t tg",
+   "content": "user content a",
+   "source": "telegram"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "telegram",
+  "title": "t tg"
+ },
+ {
+  "case": {
+   "name": "src-import",
+   "title": "t imp",
+   "content": "user content b",
+   "source": "import-notion-2026"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "import-notion-2026",
+  "title": "t imp"
+ },
+ {
+  "case": {
+   "name": "src-unknown",
+   "title": "t unk",
+   "content": "unk content",
+   "source": "zzz-unknown"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "self-generated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "zzz-unknown",
+  "title": "t unk"
+ },
+ {
+  "case": {
+   "name": "src-padded-case",
+   "title": "t pad",
+   "content": "pad content",
+   "source": "  Manual "
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "  Manual ",
+  "title": "t pad"
+ },
+ {
+  "case": {
+   "name": "explicit-tier",
+   "title": "t et",
+   "content": "explicit tier content",
+   "source": "web-fetch",
+   "source_tier": "user-stated"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "web-fetch",
+  "title": "t et"
+ },
+ {
+  "case": {
+   "name": "val-positive",
+   "title": "v1",
+   "content": "val content 1",
+   "emotional": {
+    "labels": [
+     "joy",
+     "trust"
+    ]
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.7,
+  "intensity": 0.0,
+  "labels": [
+   "joy",
+   "trust"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v1"
+ },
+ {
+  "case": {
+   "name": "val-one-positive",
+   "title": "v1b",
+   "content": "val content 1b",
+   "emotional": {
+    "labels": [
+     "Gratitude"
+    ]
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.5,
+  "intensity": 0.0,
+  "labels": [
+   "Gratitude"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v1b"
+ },
+ {
+  "case": {
+   "name": "val-many-positive",
+   "title": "v1c",
+   "content": "val content 1c",
+   "emotional": {
+    "labels": [
+     "joy",
+     "love",
+     "hope",
+     "happy",
+     "trust"
+    ]
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 1.0,
+  "intensity": 0.0,
+  "labels": [
+   "joy",
+   "love",
+   "hope",
+   "happy",
+   "trust"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v1c"
+ },
+ {
+  "case": {
+   "name": "val-negative",
+   "title": "v2",
+   "content": "val content 2",
+   "emotional": {
+    "labels": [
+     "fear",
+     "anger",
+     "grief"
+    ]
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": -0.9000000000000001,
+  "intensity": 0.0,
+  "labels": [
+   "fear",
+   "anger",
+   "grief"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v2"
+ },
+ {
+  "case": {
+   "name": "val-tie",
+   "title": "v3",
+   "content": "val content 3",
+   "emotional": {
+    "labels": [
+     "joy",
+     "fear"
+    ]
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [
+   "joy",
+   "fear"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v3"
+ },
+ {
+  "case": {
+   "name": "val-explicit",
+   "title": "v4",
+   "content": "val content 4",
+   "emotional": {
+    "labels": [
+     "joy"
+    ],
+    "valence": -0.25
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": -0.25,
+  "intensity": 0.0,
+  "labels": [
+   "joy"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v4"
+ },
+ {
+  "case": {
+   "name": "val-unknown-label",
+   "title": "v5",
+   "content": "val content 5",
+   "emotional": {
+    "labels": [
+     "serene"
+    ]
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [
+   "serene"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v5"
+ },
+ {
+  "case": {
+   "name": "val-intensity",
+   "title": "v6",
+   "content": "val content 6",
+   "emotional": {
+    "labels": [
+     "sadness"
+    ],
+    "intensity": 7.5
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": -0.5,
+  "intensity": 7.5,
+  "labels": [
+   "sadness"
+  ],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "v6"
+ },
+ {
+  "case": {
+   "name": "auth-case",
+   "title": "Smith v. Jones opinion",
+   "content": "auth content 1"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "case"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "Smith v. Jones opinion"
+ },
+ {
+  "case": {
+   "name": "auth-statute",
+   "title": "26 USC 501 summary",
+   "content": "auth content 2"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "statute"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "26 USC 501 summary"
+ },
+ {
+  "case": {
+   "name": "auth-rule",
+   "title": "Federal rules",
+   "content": "auth content 3",
+   "tags": [
+    "usc",
+    "civil procedure"
+   ]
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "rule"
+  },
+  "layer": "short-term",
+  "tags": [
+   "usc",
+   "civil procedure"
+  ],
+  "source": "manual",
+  "title": "Federal rules"
+ },
+ {
+  "case": {
+   "name": "auth-form",
+   "title": "IRS Form 1040 notes",
+   "content": "auth content 4"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "form"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "IRS Form 1040 notes"
+ },
+ {
+  "case": {
+   "name": "auth-template",
+   "title": "meeting template",
+   "content": "auth content 5"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "template"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "meeting template"
+ },
+ {
+  "case": {
+   "name": "auth-secondary",
+   "title": "Black's Law handbook",
+   "content": "auth content 6"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "secondary"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "Black's Law handbook"
+ },
+ {
+  "case": {
+   "name": "auth-source-ref",
+   "title": "plain title",
+   "content": "auth content 7",
+   "source_ref": "reference/treatise.pdf"
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "secondary"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "plain title"
+ },
+ {
+  "case": {
+   "name": "auth-explicit",
+   "title": "plain title 2",
+   "content": "auth content 8",
+   "metadata": {
+    "authority_tier": " RULE "
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "rule"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "plain title 2"
+ },
+ {
+  "case": {
+   "name": "auth-explicit-bad",
+   "title": "plain title 3",
+   "content": "auth content 9",
+   "metadata": {
+    "authority_tier": "bogus"
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "plain title 3"
+ },
+ {
+  "case": {
+   "name": "auth-metadata-keep",
+   "title": "plain title 4",
+   "content": "auth content 10",
+   "metadata": {
+    "b": 1,
+    "a": {
+     "x": [
+      1,
+      2
+     ]
+    },
+    "file_path": "generated/x.md"
+   }
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "b",
+   "a",
+   "file_path",
+   "authority_tier"
+  ],
+  "metadata": {
+   "b": 1,
+   "a": {
+    "x": [
+     1,
+     2
+    ]
+   },
+   "file_path": "generated/x.md",
+   "authority_tier": "template"
+  },
+  "layer": "short-term",
+  "tags": [],
+  "source": "manual",
+  "title": "plain title 4"
+ },
+ {
+  "case": {
+   "name": "layer-long",
+   "title": "t lay",
+   "content": "layer content",
+   "layer": "long-term",
+   "tags": [
+    "x",
+    "y"
+   ]
+  },
+  "same_as": null,
+  "decomposed": false,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier"
+  ],
+  "metadata": {
+   "authority_tier": "memory"
+  },
+  "layer": "long-term",
+  "tags": [
+   "x",
+   "y"
+  ],
+  "source": "manual",
+  "title": "t lay"
+ },
+ {
+  "case": {
+   "name": "decompose-long",
+   "title": "t long",
+   "content": "A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox. A long paragraph about the river delta and the amberfox."
+  },
+  "same_as": null,
+  "decomposed": true,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier",
+   "decomposition",
+   "chunk_memory_ids",
+   "original_length"
+  ],
+  "metadata": {
+   "authority_tier": "memory",
+   "decomposition": {
+    "chunk_target": 900,
+    "chunk_overlap": 200,
+    "section_titles": [],
+    "citations": [],
+    "entities": [],
+    "claims": []
+   },
+   "chunk_memory_ids": [
+    "3bd6f16f-5e6b-4837-98cf-77d9e5c9d58a",
+    "e1adf197-1a34-406a-84ab-e83605541904",
+    "c48c3158-173f-4f67-bcd6-1df653ac19d3"
+   ],
+   "original_length": 1709
+  },
+  "layer": "short-term",
+  "tags": [
+   "decomposed",
+   "document-parent"
+  ],
+  "source": "manual",
+  "title": "t long"
+ },
+ {
+  "case": {
+   "name": "decompose-flag",
+   "title": "t flag",
+   "content": "short but flagged",
+   "decompose": true
+  },
+  "same_as": null,
+  "decomposed": true,
+  "source_tier": "user-stated",
+  "valence": 0.0,
+  "intensity": 0.0,
+  "labels": [],
+  "metadata_keys": [
+   "authority_tier",
+   "decomposition",
+   "chunk_memory_ids",
+   "original_length"
+  ],
+  "metadata": {
+   "authority_tier": "memory",
+   "decomposition": {
+    "chunk_target": 900,
+    "chunk_overlap": 200,
+    "section_titles": [],
+    "citations": [],
+    "entities": [],
+    "claims": []
+   },
+   "chunk_memory_ids": [
+    "b49f46e6-1836-4ab8-99a7-ef619b57a3b1"
+   ],
+   "original_length": 17
+  },
+  "layer": "short-term",
+  "tags": [
+   "decomposed",
+   "document-parent"
+  ],
+  "source": "manual",
+  "title": "t flag"
+ }
+]
