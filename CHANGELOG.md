@@ -8,6 +8,17 @@ All notable changes to `skmem` are documented here. The format follows
 
 ### Added
 
+- Retrieval fusion (SKMEM-R-06): `skmem::fusion` (`run_arm`, `route_query` identifier vs
+  natural, `reciprocal_rank_fusion`, `rank_interleave`, `pinned_rrf`, `fuse`: identifier
+  route pins `lexical_local` then `lexical` at depth 3, natural route pins the vector head
+  at `SKMEMORY_FUSION_VECTOR_PIN` (default 4) plus one lexical slot, interleave or RRF
+  fill, per-arm cap 25), `skmem::rerank` (rare-term reranker, abstains without an
+  identifier-shaped discriminating term), `skmem::search` (supersession demotion and the
+  ordered pipeline), `skmem::tiers` (40 percent source-tier cap), `skmem::procedures`,
+  `skmem::decay` and `skmem::env::Env`. Parity with the current Python on 577 golden cases
+  (`tests/golden/gen_fusion_golden.py`, `tests/fusion_parity.rs`), including a
+  `MemoryStore.search` run over fake backends. Not ported: threads and arm guard, temporal
+  window parser, reader filter, query sanitizer, `run_bench` (fixtures not vendored).
 - Bootstrap: crate `skmem` (library plus `skmem` binary that prints the version),
   optional `python` feature (pyo3 0.24, `abi3-py39`) producing module `skmem_core`
   with a maturin mixed layout, CI (rustfmt, clippy with `-D warnings`, tests on the
@@ -87,6 +98,10 @@ All notable changes to `skmem` are documented here. The format follows
   re-dumps the other's files byte for byte. Prefilter timing: `tests/intent_bench.rs`.
 
 ### Fixed
+
+- `skmem::pg` vector arm: `hnsw.ef_search` is floored at the query limit and capped at 1000,
+  and `hnsw.max_scan_tuples` (`SKMEMORY_HNSW_MAX_SCAN_TUPLES`, default 10000) is set with the
+  iterative scan, matching skmemory PRs 147 and 148.
 
 - `index::word_chars` (FTS query sanitiser) now follows Python `\w` through a generated table
   instead of `char::is_alphanumeric`, which accepted combining marks and circled letters.

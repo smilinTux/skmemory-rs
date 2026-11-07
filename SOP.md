@@ -9,11 +9,20 @@ sk-standards SK_REPO_DOC_STANDARD section layout.
 Rust, the Python long tail (importers, ritual, wizard) stays Python and calls in
 through the optional `python` feature (module `skmem_core`).
 
-**Current state:** bootstrap. The library exposes `skmem::version()` and the binary
-prints it. There is no engine yet.
+**Current state:** storage, index, embed client, pg arms, intentions and ledger, and the
+retrieval fusion pipeline are in the library.
 
-**Held:** the retrieval fusion card (R-06) is held by the stop rule of the SKRSI target
-`skmemory-retrieval` until live results hold.
+**Retrieval fusion (R-06), in progress:** the post-arm half of `MemoryStore.search` is
+ported and held to exact parity with Python: `skmem::fusion` (arm classification, route
+query, RRF, rank interleave, pinned RRF, `fuse`), `skmem::rerank` (rare-term reranker),
+`skmem::search::demote_superseded` and the ordered `skmem::search::search` pipeline
+(fuse, rerank, demote, decay, demote, tier cap, procedure order), `skmem::tiers`,
+`skmem::procedures` and `skmem::decay`. Not ported: the thread pool and arm guard (the
+caller runs the arms), the temporal window parser (its outcome enters `fuse` as an arm),
+the reader filter, the query sanitizer, access reinforcement, the legacy fallback chain
+(`search` returns `None` where Python falls back), and `run_bench()` (the class-bench
+corpus and queries fixtures are not vendored here; only the `corpus-valid-to`
+projection is). Python reads `os.environ`; Rust takes an explicit `skmem::env::Env`.
 
 **Out of scope here:** importers, the ritual, the wizard, and any real data.
 
@@ -56,13 +65,23 @@ CHANGELOG entry with every version bump.
 
 ## 6. Configuration
 
-None yet. The crate reads no environment and no files.
+The retrieval stages read these through an explicit `Env` (never the process
+environment implicitly): `SKMEMORY_FUSION_STRATEGY`, `_FUSION_PIN`, `_FUSION_VECTOR_PIN`,
+`_FUSION_ROUTE`, `_FUSION_FILL`, `SKMEMORY_SEARCH_RERANK`, `_SEARCH_RERANK_DIVISOR`,
+`SKMEMORY_TIER_CAP`, `SKMEMORY_DECAY`, plus the pg arm's `SKMEMORY_HNSW_EF_SEARCH`,
+`_HNSW_ITERATIVE_SCAN` and `_HNSW_MAX_SCAN_TUPLES`.
 
 ## 7. API
 
 | Item | Description |
 | --- | --- |
 | `skmem::version()` | the crate version string |
+| `skmem::fusion::{run_arm, route_query, fuse, pinned_rrf, rank_interleave, reciprocal_rank_fusion}` | arm classification, routing and the mergers |
+| `skmem::rerank::Reranker` | rare-term reranker (`SKMEMORY_SEARCH_RERANK`, `_DIVISOR`) |
+| `skmem::search::{search, demote_superseded, Candidate}` | the ordered post-arm pipeline |
+| `skmem::tiers::apply_tier_cap` | source-tier occupancy cap (`SKMEMORY_TIER_CAP`) |
+| `skmem::procedures::order_procedures` | failure procedures never above successes for a how-to |
+| `skmem::decay::{rerank, decay_score, configured_channel}` | decay channels (`SKMEMORY_DECAY`) |
 | `skmem_core.version()` | same, from Python |
 | `skmem_core.__version__` | same, as an attribute |
 

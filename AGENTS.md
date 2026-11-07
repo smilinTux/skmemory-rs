@@ -3,7 +3,7 @@
 Rules for AI agents and humans working in this repo.
 
 - This is the Rust engine for skmemory under the strangler plan. Read README.md.
-- Scope is the card you were given. The fusion card R-06 is held: do not start it.
+- Scope is the card you were given. The fusion card R-06 is in progress (the hold was lifted 2026-11-07 after P1-09 closed); do not start other cards unasked.
 - Never touch a real agent memory store. Tests use synthetic data and temp dirs.
 - Work on a branch, open a PR, do not merge your own PR, never push to `main`.
 - Commit before long verification runs. Uncommitted work is not saved.
