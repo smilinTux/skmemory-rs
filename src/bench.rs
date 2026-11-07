@@ -21,9 +21,9 @@
 //! * the graph arm, which `SKMEMORY_GRAPH_ARM` leaves OFF by default, so the
 //!   Python candidate never runs it either.
 //!
-//! Python quirk kept for parity: its `_to_memory` does not pass the fixture
-//! `kind` or `outcome` to the `Memory`, so every stored memory is an
-//! `episode` and procedure ordering never fires.
+//! Parity: Python's `_to_memory` passes the fixture `kind`, `outcome` and
+//! `event_at` to the `Memory` (SKMEM-P1-12), so procedure ordering and outcome
+//! handling see the real fixture values here too.
 
 use crate::audience::OwnerScope;
 use crate::env::{casefold, Env};
@@ -562,9 +562,8 @@ fn load_corpus(dir: &Path) -> Result<Vec<Doc>, String> {
             m.supersedes_id = jopt(r, "supersedes_id");
             m.source_tier = jstr(r, "source_tier")?;
             m.schema_version = r.get("schema_version").and_then(Value::as_i64).unwrap_or(2);
-            // Python's bench never forwards kind or outcome (module docs).
-            m.kind = "episode".into();
-            m.outcome = None;
+            m.kind = jstr(r, "kind")?;
+            m.outcome = jopt(r, "outcome");
             let e = r.get("emotional").ok_or("missing emotional")?;
             m.emotional.intensity = e.get("intensity").and_then(Value::as_f64).unwrap_or(0.0);
             m.emotional.valence = e.get("valence").and_then(Value::as_f64).unwrap_or(0.0);
