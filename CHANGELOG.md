@@ -6,6 +6,24 @@ All notable changes to `skmem` are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Engine arm set (SKMEM-R-07C): new `skmem::engine::Engine` runs every arm Python fusion runs
+  (pgvector `semantic`, pg_search BM25 or SQLite `LIKE` as `lexical`, FTS5 `lexical_local`, optional
+  `graph`, `temporal`) concurrently under one `SKMEMORY_SEARCH_DEADLINE_S` deadline (default 4 s), with
+  per-arm `timeout`, `failed`, `unavailable` and `disabled` status and an abandoned-call guard, then
+  the unchanged post-arm pipeline. The Python `Engine` delegates to it, attaches Postgres when
+  `SKMEMORY_PG_DSN` is set (the wheel now builds with the `pg` feature), and adds `search_report`.
+  Class bench through the Engine with pgvector on a throwaway skmem-pg: 53 of 53 pages identical to
+  the Python golden (cosine floor and tie-break harness), and with the production arm set (pgvector
+  plus BM25) no class metric below it (`tests/engine_pg.rs`, `tests/class_bench.rs`).
+  `docs/PYTHON_BINDINGS.md` lists every remaining difference.
+- A reader process no longer writes `index.db` (R-07B review notes): `Index::open_readonly` opens it
+  `mode=ro` with no schema setup (a missing file is an empty in-memory index), `Engine(read_only=)`
+  gives an owner the same, and reinforcement (`access_count`, `importance`) is owner only (Python's
+  `recall` reinforces for readers; Rust does not). `layer` and `role` stay plain `str`, with a
+  `str`-Enum accepted as input; documented and pinned in `tests/python`.
+
 ### Fixed
 
 - Class bench (SKMEM-P1-12): `load_corpus` now sets `kind`, `outcome` from the fixture row, matching
