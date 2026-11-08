@@ -22,14 +22,29 @@ fn declared_reader_ceiling_refuses_owner_only_and_cannot_be_widened() {
     assert!(engine.is_read_only(), "a reader process opens read-only");
     let s = Server::with_engine(engine);
 
-    for tool in ["memory_remind", "memory_intentions", "memory_intention_done", "memory_promote"] {
+    for tool in [
+        "memory_remind",
+        "memory_intentions",
+        "memory_intention_done",
+        "memory_promote",
+    ] {
         assert_eq!(
-            text(&s, tool, json!({"title": "x", "due_at": "in 1 day", "id": "a"})),
-            format!(r#"{{"error": "{tool} is owner-only and cannot be used by a declared reader"}}"#)
+            text(
+                &s,
+                tool,
+                json!({"title": "x", "due_at": "in 1 day", "id": "a"})
+            ),
+            format!(
+                r#"{{"error": "{tool} is owner-only and cannot be used by a declared reader"}}"#
+            )
         );
         // naming the owner per call does not widen the ceiling
-        assert!(text(&s, tool, json!({"reader": "owner", "title": "x", "due_at": "in 1 day"}))
-            .contains("owner-only and cannot be used by a declared reader"));
+        assert!(text(
+            &s,
+            tool,
+            json!({"reader": "owner", "title": "x", "due_at": "in 1 day"})
+        )
+        .contains("owner-only and cannot be used by a declared reader"));
     }
 
     // Reads still work, narrowed; a store is refused and nothing is written.

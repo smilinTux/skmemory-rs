@@ -45,7 +45,10 @@ fn served_tools_equal_python_name_description_and_schema() {
 fn served_plus_not_served_is_exactly_the_python_tool_set() {
     let py: BTreeSet<String> = py_tools().into_keys().collect();
     let ours: BTreeSet<String> = all_tool_names().into_iter().map(String::from).collect();
-    assert_eq!(ours, py, "a Python tool is neither served nor listed as left to Python");
+    assert_eq!(
+        ours, py,
+        "a Python tool is neither served nor listed as left to Python"
+    );
     assert_eq!(all_tool_names().len(), py.len(), "a tool is listed twice");
 }
 
@@ -74,7 +77,10 @@ fn reader_policy_matches_python() {
     for t in tool_list() {
         let name = t["name"].as_str().unwrap();
         if reader_tools().contains(&name) {
-            assert!(t["inputSchema"]["properties"]["reader"].is_object(), "{name}");
+            assert!(
+                t["inputSchema"]["properties"]["reader"].is_object(),
+                "{name}"
+            );
         }
     }
 }

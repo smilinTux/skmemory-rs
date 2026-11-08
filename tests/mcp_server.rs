@@ -160,7 +160,11 @@ fn result_text_is_python_json_dumps_indent_2() {
     assert_eq!(e, r#"{"error": "Memory not found: zz"}"#);
     let k = raw(&f.server, "memory_recall", json!({}));
     assert_eq!(k, r#"{"error": "'memory_id'"}"#);
-    let s = raw(&f.server, "memory_store", json!({"title": "t", "content": "caf\u{e9} zebra"}));
+    let s = raw(
+        &f.server,
+        "memory_store",
+        json!({"title": "t", "content": "caf\u{e9} zebra"}),
+    );
     assert!(s.starts_with("{\n  \"memory_id\": \""), "{s}");
 }
 
@@ -168,7 +172,14 @@ fn result_text_is_python_json_dumps_indent_2() {
 fn per_call_reader_narrows_and_hidden_reads_as_not_found() {
     let f = fx("rd");
     save(&f, "pub1", "open", "a public zebra fact", "@public", &[]);
-    save(&f, "priv1", "closed", "a private zebra secret", "@chef-only", &[]);
+    save(
+        &f,
+        "priv1",
+        "closed",
+        "a private zebra secret",
+        "@chef-only",
+        &[],
+    );
 
     // owner sees both, a public reader only the public one.
     let all = call(&f.server, "memory_list", json!({}));
@@ -177,16 +188,40 @@ fn per_call_reader_narrows_and_hidden_reads_as_not_found() {
     assert_eq!(pubs.as_array().unwrap().len(), 1);
     assert_eq!(pubs[0]["id"], "pub1");
 
-    let hidden = raw(&f.server, "memory_recall", json!({"memory_id": "priv1", "reader": "@public"}));
-    let missing = raw(&f.server, "memory_recall", json!({"memory_id": "nonesuch", "reader": "@public"}));
-    assert_eq!(hidden.replace("priv1", "X"), missing.replace("nonesuch", "X"));
+    let hidden = raw(
+        &f.server,
+        "memory_recall",
+        json!({"memory_id": "priv1", "reader": "@public"}),
+    );
+    let missing = raw(
+        &f.server,
+        "memory_recall",
+        json!({"memory_id": "nonesuch", "reader": "@public"}),
+    );
+    assert_eq!(
+        hidden.replace("priv1", "X"),
+        missing.replace("nonesuch", "X")
+    );
     assert!(hidden.contains("Memory not found: priv1"));
 
-    let h = raw(&f.server, "memory_history", json!({"memory_id": "priv1", "reader": "@public"}));
+    let h = raw(
+        &f.server,
+        "memory_history",
+        json!({"memory_id": "priv1", "reader": "@public"}),
+    );
     assert!(h.contains("Memory not found"), "{h}");
 
-    let s = call(&f.server, "memory_search", json!({"query": "zebra", "reader": "@public"}));
-    let ids: Vec<&str> = s.as_array().unwrap().iter().map(|r| r["id"].as_str().unwrap()).collect();
+    let s = call(
+        &f.server,
+        "memory_search",
+        json!({"query": "zebra", "reader": "@public"}),
+    );
+    let ids: Vec<&str> = s
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["id"].as_str().unwrap())
+        .collect();
     assert_eq!(ids, vec!["pub1"]);
 }
 
@@ -201,10 +236,16 @@ fn owner_only_tools_are_refused_to_a_per_call_reader_identically() {
         "memory_export",
         "memory_verify",
     ] {
-        let t = raw(&f.server, tool, json!({"reader": "@public", "title": "x", "due_at": "in 1 day", "id": "a"}));
+        let t = raw(
+            &f.server,
+            tool,
+            json!({"reader": "@public", "title": "x", "due_at": "in 1 day", "id": "a"}),
+        );
         assert_eq!(
             t,
-            format!(r#"{{"error": "{tool} is owner-only and cannot be used by a declared reader"}}"#)
+            format!(
+                r#"{{"error": "{tool} is owner-only and cannot be used by a declared reader"}}"#
+            )
         );
     }
 }
@@ -236,14 +277,26 @@ fn intentions_remind_list_done() {
         json!({"error": "Intention not found: nope"})
     );
     assert_eq!(
-        call(&f.server, "memory_remind", json!({"title": "", "due_at": "in 1 day"})),
+        call(
+            &f.server,
+            "memory_remind",
+            json!({"title": "", "due_at": "in 1 day"})
+        ),
         json!({"error": "title is required"})
     );
     assert_eq!(
-        call(&f.server, "memory_remind", json!({"title": "x", "due_at": "in 1 day", "interval_s": 5})),
+        call(
+            &f.server,
+            "memory_remind",
+            json!({"title": "x", "due_at": "in 1 day", "interval_s": 5})
+        ),
         json!({"error": "interval_s must be at least 60 seconds"})
     );
-    let bad = call(&f.server, "memory_remind", json!({"title": "x", "due_at": "someday"}));
+    let bad = call(
+        &f.server,
+        "memory_remind",
+        json!({"title": "x", "due_at": "someday"}),
+    );
     assert!(bad["error"].is_string());
 }
 
@@ -260,7 +313,12 @@ fn history_walks_the_supersession_chain() {
     engine.save(&n, &own).unwrap();
 
     let h = call(&f.server, "memory_history", json!({"memory_id": "new1"}));
-    let ids: Vec<&str> = h.as_array().unwrap().iter().map(|r| r["id"].as_str().unwrap()).collect();
+    let ids: Vec<&str> = h
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["id"].as_str().unwrap())
+        .collect();
     assert_eq!(ids, vec!["old1", "new1"]);
     assert_eq!(h[1]["requested"], true);
     assert_eq!(h[0]["superseded_by"], "new1");
@@ -270,7 +328,10 @@ fn history_walks_the_supersession_chain() {
 fn unserved_and_unknown_tools_say_so() {
     let f = fx("ns");
     let t = call(&f.server, "memory_health", json!({}));
-    assert!(t["error"].as_str().unwrap().contains("not served by skmem-mcp"));
+    assert!(t["error"]
+        .as_str()
+        .unwrap()
+        .contains("not served by skmem-mcp"));
     assert_eq!(
         call(&f.server, "memory_nope", json!({})),
         json!({"error": "Unknown tool: memory_nope"})

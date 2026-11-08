@@ -82,7 +82,11 @@ pub const NOT_SERVED: [(&str, bool); 18] = [
 ];
 
 /// Owner-only among the served tools.
-const OWNER_ONLY_SERVED: [&str; 3] = ["memory_remind", "memory_intentions", "memory_intention_done"];
+const OWNER_ONLY_SERVED: [&str; 3] = [
+    "memory_remind",
+    "memory_intentions",
+    "memory_intention_done",
+];
 
 /// Tools that gain a `reader` property (Python `_READER_TOOLS`).
 const READER_TOOLS: [&str; 8] = [
@@ -159,9 +163,11 @@ pub fn resolve_agent(get: &dyn Fn(&str) -> Option<String>) -> Result<String, Str
                  SK_DEFAULT_AGENT), or pass --memory-dir"
                     .to_string()
             }),
-        _ => Err("conflicting agent selectors (SKAGENT, SKCAPSTONE_AGENT, SKMEMORY_AGENT): \
+        _ => Err(
+            "conflicting agent selectors (SKAGENT, SKCAPSTONE_AGENT, SKMEMORY_AGENT): \
                   set them all to the same agent or none"
-            .to_string()),
+                .to_string(),
+        ),
     }
 }
 
@@ -386,7 +392,11 @@ pub fn tier_for_explicit_store(source: &str, owner: bool) -> &'static str {
         "web" => 1,
         _ => 0,
     };
-    let base = if owner { "user-stated" } else { "self-generated" };
+    let base = if owner {
+        "user-stated"
+    } else {
+        "self-generated"
+    };
     let label = crate::env::casefold(py_strip(source));
     let cand = if GENERATED.contains(&label.as_str()) {
         "self-generated"
@@ -446,8 +456,9 @@ impl Server {
     }
 
     fn owner_rw(&self) -> Result<OwnerScope, String> {
-        let own = OwnerScope::from_process()
-            .map_err(|_| "a declared reader cannot write: the engine's writes are owner only".to_string())?;
+        let own = OwnerScope::from_process().map_err(|_| {
+            "a declared reader cannot write: the engine's writes are owner only".to_string()
+        })?;
         if self.engine.is_read_only() {
             return Err("this engine was opened read-only".into());
         }
@@ -513,18 +524,23 @@ impl Server {
             .metadata
             .get("write_triage")
             .and_then(Value::as_object)
-            .is_some_and(|t| !t.get("target").and_then(Value::as_str).is_some_and(&mut vis));
+            .is_some_and(|t| {
+                !t.get("target")
+                    .and_then(Value::as_str)
+                    .is_some_and(&mut vis)
+            });
         if hide_triage {
             m.metadata.remove("write_triage");
         }
         if let Some(Value::Object(d)) = m.metadata.get("decomposition").cloned() {
             if d.get("parent_id").is_some_and(|p| !p.is_null() && p != "") {
-                let ok = d.get("parent_id").and_then(Value::as_str).is_some_and(&mut vis);
+                let ok = d
+                    .get("parent_id")
+                    .and_then(Value::as_str)
+                    .is_some_and(&mut vis);
                 if !ok {
-                    let kept: Map<String, Value> = d
-                        .into_iter()
-                        .filter(|(k, _)| k != "parent_id")
-                        .collect();
+                    let kept: Map<String, Value> =
+                        d.into_iter().filter(|(k, _)| k != "parent_id").collect();
                     m.metadata
                         .insert("decomposition".into(), Value::Object(kept));
                 }
@@ -556,7 +572,11 @@ impl Server {
                 if lost {
                     let head = m.content.split("\n\n").next().unwrap_or("").to_string();
                     let leaks = |t: &str| hidden.iter().any(|h| t.contains(h.as_str()));
-                    m.content = if leaks(&head) { "Observation".into() } else { head };
+                    m.content = if leaks(&head) {
+                        "Observation".into()
+                    } else {
+                        head
+                    };
                     if leaks(&m.title) {
                         m.title = "Observation".into();
                     }
@@ -631,7 +651,9 @@ impl Server {
                 SnapshotError::Invalid(e) => e.to_string(),
                 SnapshotError::Engine(e) => engine_msg(&e),
             })?;
-        Ok(ok_json(&json!({"memory_id": snap.memory.id, "stored": true})))
+        Ok(ok_json(
+            &json!({"memory_id": snap.memory.id, "stored": true}),
+        ))
     }
 
     // ----- memory_search ----------------------------------------------------
@@ -686,7 +708,8 @@ impl Server {
                     o.insert("superseded".into(), Value::Bool(sup.contains_key(&m.id)));
                     o.insert(
                         "superseded_by".into(),
-                        sup.get(&m.id).map_or(Value::Null, |s| Value::from(s.as_str())),
+                        sup.get(&m.id)
+                            .map_or(Value::Null, |s| Value::from(s.as_str())),
                     );
                 }
                 v
@@ -952,7 +975,10 @@ impl Server {
     fn t_intention_done(&self, args: &Map<String, Value>) -> ToolResult {
         let iid = args.get("id").and_then(Value::as_str).unwrap_or("");
         let st = self.intention_store()?;
-        match st.apply(iid, "done", None, None).map_err(|e| e.to_string())? {
+        match st
+            .apply(iid, "done", None, None)
+            .map_err(|e| e.to_string())?
+        {
             None => Err(format!("Intention not found: {iid}")),
             Some(i) => Ok(ok_json(&json!({"id": iid, "state": i.state.as_str()}))),
         }
