@@ -75,7 +75,6 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
           args: --release --locked --out dist
-          sccache: "true"
       - name: smoke test, clean venv
         if: matrix.smoke == 'venv'
         run: |
@@ -124,8 +123,9 @@ jobs:
           for b in $bins; do
             f=target/x86_64-unknown-linux-musl/release/$b
             test -x "$f"
-            if ldd "$f" 2>&1 | grep -qv -e 'not a dynamic' -e 'statically linked'; then
-              echo "$b is dynamically linked:" >&2; ldd "$f" >&2; exit 1
+            out=$(ldd "$f" 2>&1 || true)
+            if ! printf '%s' "$out" | grep -Eq 'not a dynamic executable|statically linked'; then
+              echo "$b is not verified static, ldd said: '$out'" >&2; exit 1
             fi
             cp "$f" "out/$b-x86_64-unknown-linux-musl"
             "out/$b-x86_64-unknown-linux-musl" --version || true
