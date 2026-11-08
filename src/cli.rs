@@ -2,7 +2,7 @@
 //! Rust engine (SKMEM-R-10).
 //!
 //! Commands: `search`, `recall` (alias `show`), `list`, `health`, `snapshot`,
-//! `reindex`, `intentions {list,done}`, `ledger top`. Flags and plain-text output
+//! `reindex`, `intentions {list,done,reindex}`, `ledger top`. Flags and plain-text output
 //! match `skmemory/cli.py`; `recall` and `health` print JSON like Python does.
 //! `--json` on `search`, `list` and `intentions list` is an addition (Python has
 //! no machine output for them): the rows are the `Memory.model_dump()` dicts the
@@ -281,7 +281,8 @@ fn memory_dir(base_opt: Option<&str>) -> Res<PathBuf> {
         return Ok(PathBuf::from(h).join("memory"));
     }
     let base = agents_base();
-    let agent = active_agent(&base).map_err(|e| bare(format!("No active agent memory profile: {e}")))?;
+    let agent =
+        active_agent(&base).map_err(|e| bare(format!("No active agent memory profile: {e}")))?;
     Ok(base.join(agent).join("memory"))
 }
 
@@ -555,7 +556,10 @@ pub fn redact_links(m: &Memory, vis: &mut dyn FnMut(&str) -> bool) -> Memory {
         }
     }
     if let Some(Value::Array(items)) = meta.get("possible_conflict_with").cloned() {
-        let kept: Vec<Value> = items.into_iter().filter(|i| is_str_visible(i, vis)).collect();
+        let kept: Vec<Value> = items
+            .into_iter()
+            .filter(|i| is_str_visible(i, vis))
+            .collect();
         if kept.is_empty() {
             meta.shift_remove("possible_conflict_with");
         } else {
@@ -568,14 +572,21 @@ pub fn redact_links(m: &Memory, vis: &mut dyn FnMut(&str) -> bool) -> Memory {
         }
     }
     if let Some(Value::Array(items)) = meta.get("chunk_memory_ids").cloned() {
-        let kept: Vec<Value> = items.into_iter().filter(|i| is_str_visible(i, vis)).collect();
+        let kept: Vec<Value> = items
+            .into_iter()
+            .filter(|i| is_str_visible(i, vis))
+            .collect();
         meta.insert("chunk_memory_ids".into(), Value::Array(kept));
     }
     let mut title = m.title.clone();
     let mut content = m.content.clone();
     if let Some(Value::Object(obs)) = meta.get("observation").cloned() {
         if let Some(Value::Array(ev)) = obs.get("evidence_ids") {
-            let kept: Vec<Value> = ev.iter().filter(|i| is_str_visible(i, vis)).cloned().collect();
+            let kept: Vec<Value> = ev
+                .iter()
+                .filter(|i| is_str_visible(i, vis))
+                .cloned()
+                .collect();
             let mut new_obs = obs.clone();
             new_obs.insert("evidence_ids".into(), Value::Array(kept.clone()));
             if obs.contains_key("proof_count") {
@@ -646,7 +657,9 @@ const GLOBAL_FLAG: &[&str] = &["no-vector", "ai"];
 
 fn search_cmd(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> Res<i32> {
     let spec = Spec {
-        value: &["limit", "reader", "as-of", "layer", "tags", "source", "base"],
+        value: &[
+            "limit", "reader", "as-of", "layer", "tags", "source", "base",
+        ],
         flag: &["json", "no-vector"],
         positional: &["query"],
     };
@@ -654,9 +667,9 @@ fn search_cmd(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> Res<
     let limit = p.int("limit", 10)?.max(0) as usize;
     let layer = parse_layer_opt(p.get("layer"))?;
     let as_of = match p.get("as-of") {
-        Some(a) => normalize_as_of(a).map_err(|e| {
-            usage(format!("Invalid value for '--as-of': {e}"))
-        })?,
+        Some(a) => {
+            normalize_as_of(a).map_err(|e| usage(format!("Invalid value for '--as-of': {e}")))?
+        }
         None => None,
     };
     let tags = csv(p.get("tags"));
@@ -701,7 +714,8 @@ fn search_cmd(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> Res<
                 o.insert("superseded".into(), Value::Bool(sup.contains_key(&m.id)));
                 o.insert(
                     "superseded_by".into(),
-                    sup.get(&m.id).map_or(Value::Null, |s| Value::String(s.clone())),
+                    sup.get(&m.id)
+                        .map_or(Value::Null, |s| Value::String(s.clone())),
                 );
                 v
             })
@@ -741,7 +755,11 @@ fn search_cmd(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> Res<
 /// Find a memory by exact id, else (id of 6+ chars) by file-name prefix across
 /// the tier directories, like the Python `recall`.
 fn find_for_recall(eng: &Engine, id: &str, scope: &ReaderScope) -> Res<Option<Memory>> {
-    let load = |i: &str| eng.store().load(i, scope).map_err(|e| click_err(e.to_string()));
+    let load = |i: &str| {
+        eng.store()
+            .load(i, scope)
+            .map_err(|e| click_err(e.to_string()))
+    };
     if let Some(m) = load(id)? {
         return Ok(Some(m));
     }
@@ -791,7 +809,8 @@ fn recall_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
         );
     }
     if scope.unrestricted() && !eng.is_read_only() && OwnerScope::from_process().is_ok() {
-        eng.index().bump_access(&[m.id.as_str()], None, None, &scope);
+        eng.index()
+            .bump_access(&[m.id.as_str()], None, None, &scope);
     }
     let m = if scope.unrestricted() {
         m
@@ -838,7 +857,12 @@ fn list_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
         let tag_str = if m.tags.is_empty() {
             "none".to_string()
         } else {
-            m.tags.iter().take(5).cloned().collect::<Vec<_>>().join(", ")
+            m.tags
+                .iter()
+                .take(5)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
         };
         let _ = writeln!(
             out,
@@ -847,7 +871,12 @@ fn list_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
             chars_prefix(&m.id, 12),
             m.title
         );
-        let _ = writeln!(out, "    Tags: {} | Emotion: {}", tag_str, m.emotional.signature());
+        let _ = writeln!(
+            out,
+            "    Tags: {} | Emotion: {}",
+            tag_str,
+            m.emotional.signature()
+        );
         let _ = writeln!(out);
     }
     Ok(0)
@@ -873,7 +902,9 @@ fn health_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
 fn health_report(eng: &Engine, scope: &ReaderScope) -> Res<Value> {
     let idx = eng.index();
     let fts_ok = !idx.fts_enabled() || idx.fts_ok();
-    let own = OwnerScope::from_process().ok().filter(|_| scope.unrestricted());
+    let own = OwnerScope::from_process()
+        .ok()
+        .filter(|_| scope.unrestricted());
     let Some(own) = own else {
         return Ok(json!({
             "engine": "skmem-rust",
@@ -926,7 +957,14 @@ fn health_report(eng: &Engine, scope: &ReaderScope) -> Res<Value> {
 fn snapshot_cmd(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> Res<i32> {
     let spec = Spec {
         value: &[
-            "layer", "role", "tags", "intensity", "valence", "emotions", "resonance", "source",
+            "layer",
+            "role",
+            "tags",
+            "intensity",
+            "valence",
+            "emotions",
+            "resonance",
+            "source",
             "base",
         ],
         flag: &["decompose", "no-vector"],
@@ -1041,6 +1079,20 @@ fn intentions_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
             let _ = writeln!(out, "{}", dumps_indent2(&Value::Array(rows)));
             Ok(0)
         }
+        "reindex" => {
+            let spec = Spec {
+                value: &["base"],
+                flag: &[],
+                positional: &[],
+            };
+            let p = parse(&spec, rest)?;
+            let own = owner()?;
+            let dir = memory_dir(p.get("base"))?;
+            let st = IntentionStore::open(&dir, &own).map_err(|e| click_err(e.to_string()))?;
+            let n = st.reindex().map_err(|e| click_err(e.to_string()))?;
+            let _ = writeln!(out, "Indexed {n} intentions.");
+            Ok(0)
+        }
         "done" => {
             let spec = Spec {
                 value: &["base"],
@@ -1081,7 +1133,9 @@ fn ledger_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
     let p = parse(&spec, rest)?;
     let limit = p.int("limit", 20)?.max(0) as usize;
     let as_of = match p.get("as-of") {
-        Some(s) => Some(Dt::parse(s).ok_or_else(|| bare(format!("Invalid isoformat string: '{s}'")))?),
+        Some(s) => {
+            Some(Dt::parse(s).ok_or_else(|| bare(format!("Invalid isoformat string: '{s}'")))?)
+        }
         None => None,
     };
     let own = owner()?;
@@ -1120,7 +1174,7 @@ fn ledger_cmd(args: &[String], out: &mut dyn Write) -> Res<i32> {
     Ok(0)
 }
 
-const HELP: &str = "Usage: skmem [OPTIONS] COMMAND [ARGS]...\n\n  SKMemory engine CLI (Rust).\n\nOptions:\n  --base DIR     Memory directory (default: the active agent's memory)\n  --no-vector    Flat JSON + SQLite only (no Postgres arms)\n  --version      Show the version and exit.\n  --help         Show this message and exit.\n\nCommands:\n  health      Check memory system health.\n  intentions  list | done\n  ledger      top\n  list        List stored memories.\n  recall      Retrieve a specific memory by ID (alias: show).\n  reindex     Rebuild the SQLite index from JSON files on disk.\n  search      Search memories by text or meaning.\n  snapshot    Take a polaroid: capture a moment as a memory.\n";
+const HELP: &str = "Usage: skmem [OPTIONS] COMMAND [ARGS]...\n\n  SKMemory engine CLI (Rust).\n\nOptions:\n  --base DIR     Memory directory (default: the active agent's memory)\n  --no-vector    Flat JSON + SQLite only (no Postgres arms)\n  --version      Show the version and exit.\n  --help         Show this message and exit.\n\nCommands:\n  health      Check memory system health.\n  intentions  list | done | reindex\n  ledger      top\n  list        List stored memories.\n  recall      Retrieve a specific memory by ID (alias: show).\n  reindex     Rebuild the SQLite index from JSON files on disk.\n  search      Search memories by text or meaning.\n  snapshot    Take a polaroid: capture a moment as a memory.\n";
 
 /// Run the CLI. Returns the process exit status.
 pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
@@ -1227,4 +1281,123 @@ fn split_group(all: &[String]) -> (Vec<String>, Vec<String>) {
         }
     }
     (g, all[i..].to_vec())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn set(ids: &[&str]) -> BTreeSet<String> {
+        ids.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn ev(ids: &[&str]) -> Vec<String> {
+        ids.iter().map(|s| s.to_string()).collect()
+    }
+
+    // Expected values are what `observations.redact_observation_text` returns.
+    const TITLE: &str = "Observation: A recurring pattern connects 3 memories around 'x'.";
+    const CONTENT: &str = "A recurring pattern connects 3 memories around 'x'.\n\n\"first quote\" (memory a1)\n\"multi\nline\" (memory b2)\n\"third (memory c3) here\" (memory c3)";
+
+    #[test]
+    fn observation_redaction_matches_python() {
+        let (t, c) = redact_observation_text(
+            TITLE,
+            CONTENT,
+            &ev(&["a1", "b2", "c3"]),
+            &set(&["a1", "c3"]),
+        );
+        assert_eq!(
+            t,
+            "Observation: A recurring pattern connects 2 memories around 'x'."
+        );
+        assert_eq!(
+            c,
+            "A recurring pattern connects 2 memories around 'x'.\n\n\"first quote\" (memory a1)\n\"third (memory c3) here\" (memory c3)"
+        );
+        let (t, c) = redact_observation_text(TITLE, CONTENT, &ev(&["a1", "b2", "c3"]), &set(&[]));
+        assert_eq!(
+            t,
+            "Observation: A recurring pattern connects 0 memories around 'x'."
+        );
+        assert_eq!(c, "A recurring pattern connects 0 memories around 'x'.");
+        // fail closed: a hidden id left in the title or text collapses it.
+        let (t, c) = redact_observation_text(
+            "t b2",
+            "Head connects 2 memories.\n\n\"leaks b2 id\" (memory a1)",
+            &ev(&["a1", "b2"]),
+            &set(&["a1"]),
+        );
+        assert_eq!(
+            (t.as_str(), c.as_str()),
+            ("Observation", "Head connects 1 memories.")
+        );
+        // nothing hidden: untouched.
+        let (t, c) = redact_observation_text(TITLE, CONTENT, &ev(&["a1"]), &set(&["a1"]));
+        assert_eq!((t.as_str(), c.as_str()), (TITLE, CONTENT));
+    }
+
+    #[test]
+    fn redact_links_drops_hidden_ids_and_keeps_visible_ones() {
+        let mut m = Memory::new("T", "C");
+        m.related_ids = ev(&["seen", "hidden"]);
+        m.parent_id = Some("hidden".into());
+        m.supersedes_id = Some("hidden".into());
+        let meta = json!({
+            "parent_relation": "child",
+            "superseded_by": {"id": "hidden", "at": "x"},
+            "possible_conflict_with": ["hidden"],
+            "promoted_id": "hidden",
+            "chunk_memory_ids": ["seen", "hidden"],
+            "write_triage": {"target": "hidden"},
+            "decomposition": {"parent_id": "hidden", "chunks": 2},
+            "keep": 1,
+        });
+        m.metadata = meta.as_object().unwrap().clone();
+        let r = redact_links(&m, &mut |id| id == "seen");
+        assert_eq!(r.related_ids, ev(&["seen"]));
+        assert_eq!(r.parent_id, None);
+        assert_eq!(r.supersedes_id, None);
+        assert_eq!(
+            Value::Object(r.metadata),
+            json!({"chunk_memory_ids": ["seen"], "decomposition": {"chunks": 2}, "keep": 1})
+        );
+        // a visible parent keeps its relation
+        let mut m2 = Memory::new("T", "C");
+        m2.parent_id = Some("seen".into());
+        m2.metadata = json!({"parent_relation": "child"})
+            .as_object()
+            .unwrap()
+            .clone();
+        let r2 = redact_links(&m2, &mut |id| id == "seen");
+        assert_eq!(r2.parent_id.as_deref(), Some("seen"));
+        assert!(r2.metadata.contains_key("parent_relation"));
+    }
+
+    #[test]
+    fn click_style_parsing() {
+        let spec = Spec {
+            value: &["limit"],
+            flag: &["json"],
+            positional: &["q"],
+        };
+        let a = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let p = parse(&spec, &a(&["--limit=3", "hello world", "--json"])).unwrap();
+        assert_eq!(
+            (
+                p.int("limit", 10).unwrap(),
+                p.has("json"),
+                p.pos[0].as_str()
+            ),
+            (3, true, "hello world")
+        );
+        assert!(parse(&spec, &a(&[])).is_err());
+        assert!(parse(&spec, &a(&["q", "--nope"])).is_err());
+        assert!(parse(&spec, &a(&["q", "--limit"])).is_err());
+        let p = parse(&spec, &a(&["--limit", "x", "q"])).unwrap();
+        assert_eq!(p.int("limit", 10).unwrap_err().code, 2);
+        // a leading-dash query is still a positional after `--`
+        let p = parse(&spec, &a(&["--", "--weird"])).unwrap();
+        assert_eq!(p.pos[0], "--weird");
+    }
 }

@@ -1,0 +1,320 @@
+{
+ "search-rare-id": {
+  "reader": null,
+  "args": [
+   "search",
+   "prb-6f069c5e"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-6f3b10.. | Postgres rebuild remediation plan prb-6f069c5e | neutral@0.3/+0.0\n\n"
+ },
+ "search-rare-id-limit1": {
+  "reader": null,
+  "args": [
+   "search",
+   "prb-6f069c5e",
+   "--limit",
+   "1"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-6f3b10.. | Postgres rebuild remediation plan prb-6f069c5e | neutral@0.3/+0.0\n\n"
+ },
+ "search-incident": {
+  "reader": null,
+  "args": [
+   "search",
+   "inc-9b2e41"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-8801b2.. | Incident inc-9b2e41 pgvector table empty on skap03 | neutral@0.7/+0.0\n\n"
+ },
+ "search-embedding-now": {
+  "reader": null,
+  "args": [
+   "search",
+   "embedding model"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-794ef9.. | Embedding model is mxbai-embed-large (October) | neutral@0.3/+0.0\n\n[mid-term] m-06159e.. | Embedding model was bge-legal-v2 (June) | neutral@0.3/+0.0\n\n"
+ },
+ "search-as-of-past": {
+  "reader": null,
+  "args": [
+   "search",
+   "embedding model",
+   "--as-of",
+   "2026-10-20T00:00:00+00:00"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-06159e.. | Embedding model was bge-legal-v2 (June) | neutral@0.3/+0.0\n\n"
+ },
+ "search-as-of-future": {
+  "reader": null,
+  "args": [
+   "search",
+   "embedding model",
+   "--as-of",
+   "2026-12-01"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-794ef9.. | Embedding model is mxbai-embed-large (October) | neutral@0.3/+0.0\n\n"
+ },
+ "search-agent-default": {
+  "reader": null,
+  "args": [
+   "search",
+   "default agent",
+   "--limit",
+   "3"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-ab47e0.. | No implicit default agent | neutral@0.3/+0.0\n\n[mid-term] m-d26e6c.. | Default agent is lumina | neutral@0.3/+0.0\n\n"
+ },
+ "search-none": {
+  "reader": null,
+  "args": [
+   "search",
+   "zzzzqqqq"
+  ],
+  "code": 0,
+  "stdout": "No memories found.\n"
+ },
+ "search-bad-as-of": {
+  "reader": null,
+  "args": [
+   "search",
+   "x",
+   "--as-of",
+   "not-a-date"
+  ],
+  "code": 2,
+  "stdout": ""
+ },
+ "search-private-owner": {
+  "reader": null,
+  "args": [
+   "search",
+   "medication timing"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-2ae3e4.. | Private: medication timing | neutral@0.3/+0.0\n\n"
+ },
+ "search-private-public-reader": {
+  "reader": "@public",
+  "args": [
+   "search",
+   "medication timing"
+  ],
+  "code": 0,
+  "stdout": "No memories found.\n"
+ },
+ "search-private-reader-flag": {
+  "reader": null,
+  "args": [
+   "search",
+   "salary discussion",
+   "--reader",
+   "@public"
+  ],
+  "code": 0,
+  "stdout": "No memories found.\n"
+ },
+ "search-rare-id-public-ceiling": {
+  "reader": "@public",
+  "args": [
+   "search",
+   "prb-6f069c5e"
+  ],
+  "code": 0,
+  "stdout": "[mid-term] m-6f3b10.. | Postgres rebuild remediation plan prb-6f069c5e | neutral@0.3/+0.0\n\n"
+ },
+ "recall-exact": {
+  "reader": null,
+  "args": [
+   "recall",
+   "m-6f3b104385"
+  ],
+  "code": 0,
+  "stdout": "{\n  \"id\": \"m-6f3b104385\",\n  \"created_at\": \"2026-10-02T12:00:00+00:00\",\n  \"updated_at\": \"2026-10-02T12:00:00+00:00\",\n  \"layer\": \"mid-term\",\n  \"role\": \"general\",\n  \"title\": \"Postgres rebuild remediation plan prb-6f069c5e\",\n  \"content\": \"Per-node postgres rebuild: drop and recreate the public schema from deploy/skmem-pg/schema.sql, then reconcile(refresh=True). Tracking id prb-6f069c5e. Owner: fleet ops.\",\n  \"summary\": \"\",\n  \"tags\": [\n    \"postgres\",\n    \"remediation\"\n  ],\n  \"source\": \"manual\",\n  \"source_ref\": \"\",\n  \"emotional\": {\n    \"intensity\": 0.3,\n    \"valence\": 0.0,\n    \"labels\": [],\n    \"resonance_note\": \"\",\n    \"cloud9_achieved\": false\n  },\n  \"related_ids\": [],\n  \"parent_id\": null,\n  \"context_tag\": \"@public\",\n  \"intent\": \"\",\n  \"integrity_hash\": \"\",\n  \"metadata\": {},\n  \"kind\": \"fact\",\n  \"outcome\": null,\n  \"event_at\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_from\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_to\": null,\n  \"supersedes_id\": null,\n  \"source_tier\": \"user-stated\",\n  \"schema_version\": 2\n}\n"
+ },
+ "recall-prefix": {
+  "reader": null,
+  "args": [
+   "recall",
+   "m-6f3b10"
+  ],
+  "code": 0,
+  "stdout": "{\n  \"id\": \"m-6f3b104385\",\n  \"created_at\": \"2026-10-02T12:00:00+00:00\",\n  \"updated_at\": \"2026-10-02T12:00:00+00:00\",\n  \"layer\": \"mid-term\",\n  \"role\": \"general\",\n  \"title\": \"Postgres rebuild remediation plan prb-6f069c5e\",\n  \"content\": \"Per-node postgres rebuild: drop and recreate the public schema from deploy/skmem-pg/schema.sql, then reconcile(refresh=True). Tracking id prb-6f069c5e. Owner: fleet ops.\",\n  \"summary\": \"\",\n  \"tags\": [\n    \"postgres\",\n    \"remediation\"\n  ],\n  \"source\": \"manual\",\n  \"source_ref\": \"\",\n  \"emotional\": {\n    \"intensity\": 0.3,\n    \"valence\": 0.0,\n    \"labels\": [],\n    \"resonance_note\": \"\",\n    \"cloud9_achieved\": false\n  },\n  \"related_ids\": [],\n  \"parent_id\": null,\n  \"context_tag\": \"@public\",\n  \"intent\": \"\",\n  \"integrity_hash\": \"\",\n  \"metadata\": {},\n  \"kind\": \"fact\",\n  \"outcome\": null,\n  \"event_at\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_from\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_to\": null,\n  \"supersedes_id\": null,\n  \"source_tier\": \"user-stated\",\n  \"schema_version\": 2\n}\n"
+ },
+ "recall-private-owner": {
+  "reader": null,
+  "args": [
+   "recall",
+   "m-34d500c6d0"
+  ],
+  "code": 0,
+  "stdout": "{\n  \"id\": \"m-34d500c6d0\",\n  \"created_at\": \"2026-10-26T12:00:00+00:00\",\n  \"updated_at\": \"2026-10-26T12:00:00+00:00\",\n  \"layer\": \"mid-term\",\n  \"role\": \"general\",\n  \"title\": \"Private: salary discussion\",\n  \"content\": \"Discussed the offer range with the recruiter.\",\n  \"summary\": \"\",\n  \"tags\": [\n    \"private\"\n  ],\n  \"source\": \"manual\",\n  \"source_ref\": \"\",\n  \"emotional\": {\n    \"intensity\": 0.3,\n    \"valence\": 0.0,\n    \"labels\": [],\n    \"resonance_note\": \"\",\n    \"cloud9_achieved\": false\n  },\n  \"related_ids\": [],\n  \"parent_id\": null,\n  \"context_tag\": \"@chef-only\",\n  \"intent\": \"\",\n  \"integrity_hash\": \"\",\n  \"metadata\": {},\n  \"kind\": \"episode\",\n  \"outcome\": null,\n  \"event_at\": \"2026-10-26T12:00:00+00:00\",\n  \"valid_from\": \"2026-10-26T12:00:00+00:00\",\n  \"valid_to\": null,\n  \"supersedes_id\": null,\n  \"source_tier\": \"user-stated\",\n  \"schema_version\": 2\n}\n"
+ },
+ "recall-private-public": {
+  "reader": "@public",
+  "args": [
+   "recall",
+   "m-34d500c6d0"
+  ],
+  "code": 1,
+  "stdout": ""
+ },
+ "recall-public-public": {
+  "reader": "@public",
+  "args": [
+   "recall",
+   "m-6f3b104385"
+  ],
+  "code": 0,
+  "stdout": "{\n  \"id\": \"m-6f3b104385\",\n  \"created_at\": \"2026-10-02T12:00:00+00:00\",\n  \"updated_at\": \"2026-10-02T12:00:00+00:00\",\n  \"layer\": \"mid-term\",\n  \"role\": \"general\",\n  \"title\": \"Postgres rebuild remediation plan prb-6f069c5e\",\n  \"content\": \"Per-node postgres rebuild: drop and recreate the public schema from deploy/skmem-pg/schema.sql, then reconcile(refresh=True). Tracking id prb-6f069c5e. Owner: fleet ops.\",\n  \"summary\": \"\",\n  \"tags\": [\n    \"postgres\",\n    \"remediation\"\n  ],\n  \"source\": \"manual\",\n  \"source_ref\": \"\",\n  \"emotional\": {\n    \"intensity\": 0.3,\n    \"valence\": 0.0,\n    \"labels\": [],\n    \"resonance_note\": \"\",\n    \"cloud9_achieved\": false\n  },\n  \"related_ids\": [],\n  \"parent_id\": null,\n  \"context_tag\": \"@public\",\n  \"intent\": \"\",\n  \"integrity_hash\": \"\",\n  \"metadata\": {},\n  \"kind\": \"fact\",\n  \"outcome\": null,\n  \"event_at\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_from\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_to\": null,\n  \"supersedes_id\": null,\n  \"source_tier\": \"user-stated\",\n  \"schema_version\": 2\n}\n"
+ },
+ "recall-superseded": {
+  "reader": null,
+  "args": [
+   "recall",
+   "m-06159e9b16"
+  ],
+  "code": 0,
+  "stdout": "{\n  \"id\": \"m-06159e9b16\",\n  \"created_at\": \"2026-06-14T12:00:00+00:00\",\n  \"updated_at\": \"2026-06-14T12:00:00+00:00\",\n  \"layer\": \"mid-term\",\n  \"role\": \"general\",\n  \"title\": \"Embedding model was bge-legal-v2 (June)\",\n  \"content\": \"As of June the embedding model is bge-legal-v2 at 1024 dims, served remotely.\",\n  \"summary\": \"\",\n  \"tags\": [\n    \"embedding\"\n  ],\n  \"source\": \"manual\",\n  \"source_ref\": \"\",\n  \"emotional\": {\n    \"intensity\": 0.3,\n    \"valence\": 0.0,\n    \"labels\": [],\n    \"resonance_note\": \"\",\n    \"cloud9_achieved\": false\n  },\n  \"related_ids\": [],\n  \"parent_id\": null,\n  \"context_tag\": \"@public\",\n  \"intent\": \"\",\n  \"integrity_hash\": \"\",\n  \"metadata\": {},\n  \"kind\": \"fact\",\n  \"outcome\": null,\n  \"event_at\": \"2026-06-14T12:00:00+00:00\",\n  \"valid_from\": \"2026-06-14T12:00:00+00:00\",\n  \"valid_to\": \"2026-10-25T12:00:00+00:00\",\n  \"supersedes_id\": null,\n  \"source_tier\": \"user-stated\",\n  \"schema_version\": 2\n}\n"
+ },
+ "recall-unicode-work": {
+  "reader": null,
+  "args": [
+   "recall",
+   "11111111-1111-4111-8111-111111111111"
+  ],
+  "code": 0,
+  "stdout": "{\n  \"id\": \"11111111-1111-4111-8111-111111111111\",\n  \"created_at\": \"2026-10-02T12:00:00+00:00\",\n  \"updated_at\": \"2026-10-02T12:00:00+00:00\",\n  \"layer\": \"long-term\",\n  \"role\": \"ai\",\n  \"title\": \"Caf\\u00e9 \\u65e5\\u672c\\u8a9e \\ud83d\\ude00 \\\"quoted\\\" back\\\\slash\",\n  \"content\": \"line1\\nline2\\ttab\\r\\n\\u0001ctl \\u007fdel \\u2028sep \\ud7ff end\",\n  \"summary\": \"s\",\n  \"tags\": [\n    \"b\",\n    \"a\",\n    \"\\u00fc\"\n  ],\n  \"source\": \"session\",\n  \"source_ref\": \"sess-1\",\n  \"emotional\": {\n    \"intensity\": 8.5,\n    \"valence\": 0.9,\n    \"labels\": [\n      \"trust\",\n      \"joy\",\n      \"love\"\n    ],\n    \"resonance_note\": \"felt \\u2665\",\n    \"cloud9_achieved\": true\n  },\n  \"related_ids\": [\n    \"x\",\n    \"y\"\n  ],\n  \"parent_id\": \"p-1\",\n  \"context_tag\": \"@work:chiro\",\n  \"intent\": \"why\",\n  \"integrity_hash\": \"\",\n  \"metadata\": {\n    \"k\": \"v\",\n    \"n\": 1,\n    \"f\": 0.1,\n    \"nested\": {\n      \"z\": [\n        1,\n        2.5,\n        null,\n        true\n      ]\n    }\n  },\n  \"kind\": \"fact\",\n  \"outcome\": \"success\",\n  \"event_at\": \"2026-10-01T00:00:00+00:00\",\n  \"valid_from\": \"2026-10-02T12:00:00+00:00\",\n  \"valid_to\": \"2027-01-01T00:00:00+00:00\",\n  \"supersedes_id\": \"old-1\",\n  \"source_tier\": \"web\",\n  \"schema_version\": 2\n}\n"
+ },
+ "recall-unicode-work-public": {
+  "reader": "@public",
+  "args": [
+   "recall",
+   "11111111-1111-4111-8111-111111111111"
+  ],
+  "code": 1,
+  "stdout": ""
+ },
+ "recall-missing": {
+  "reader": null,
+  "args": [
+   "recall",
+   "m-doesnotexist"
+  ],
+  "code": 1,
+  "stdout": ""
+ },
+ "list-all": {
+  "reader": null,
+  "args": [
+   "list",
+   "--limit",
+   "100"
+  ],
+  "code": 0,
+  "stdout": "Found 60 memories:\n\n  [mid-term] m-449a549be1.. | Next time we touch the rollout ring, add skap10 last\n    Tags: rollout, decision | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5fd4308ff1.. | Rollout ring is 5 of 9 nodes\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-ab47e0650a.. | No implicit default agent\n    Tags: agent, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a134220d4a.. | Follow up on the trusted publisher request in a week\n    Tags: pypi, followup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5c9fc7580d.. | skap02 is offline this week\n    Tags: host, skap02 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e56f225692.. | skwk12 ssh is port 22, the 2222 alias is wrong\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-c3d6bf6d4a.. | skwk12-wsl reachable only inside WSL\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-fe57962744.. | Review queue stalled after reboot\n    Tags: ops, review | Emotion: neutral@0.6/+0.0\n\n  [mid-term] m-4491d78901.. | PR #4121 pushes filters into the semantic arm\n    Tags: pr, retrieval | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-25f3146248.. | PR #4120 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-34d500c6d0.. | Private: salary discussion\n    Tags: private | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-be546a9be6.. | PR #4119 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-22f1f27f17.. | PR #4118 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-2ae3e47c3c.. | Private: medication timing\n    Tags: private | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-794ef9bd00.. | Embedding model is mxbai-embed-large (October)\n    Tags: embedding | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-af440837ed.. | Private: household calendar note\n    Tags: private | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7bf354d243.. | Dream job ran with no output\n    Tags: dream | Emotion: neutral@0.1/+0.0\n\n  [mid-term] m-5044ed823e.. | skap08 disk pressure note\n    Tags: host, skap08, ops | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-39ac2381ce.. | Package bumped on hosts by hand\n    Tags: rollout, skmemory | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-bc5703d73e.. | Pin file is the real control point\n    Tags: rollout, pins | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8c805a4449.. | Rollout halts on first gate failure\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-c0491b70a0.. | Procedure: clear red health by running sync (do not)\n    Tags: procedure, postgres | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-966f0b6489.. | Procedure: recover a host whose public schema was dropped\n    Tags: procedure, postgres | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8801b229e9.. | Incident inc-9b2e41 pgvector table empty on skap03\n    Tags: incident, pgvector | Emotion: neutral@0.7/+0.0\n\n  [mid-term] m-519ebcca74.. | Postgres maintenance window notes for skap04\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-9de9e9fb6d.. | Postgres maintenance window notes for skap03\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-2ffd9e0870.. | Postgres maintenance window notes for skap02\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-45381e6a47.. | Postgres maintenance window notes for skap01\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6f3b104385.. | Postgres rebuild remediation plan prb-6f069c5e\n    Tags: postgres, remediation | Emotion: neutral@0.3/+0.0\n\n  [long-term] 11111111-111.. | Café 日本語 😀 \"quoted\" back\\slash\n    Tags: b, a, ü | Emotion: joy+love+trust@8.5/+0.9\n\n  [mid-term] m-5b9a6b1698.. | Daily standup notes day 3\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-94763fd3f6.. | Daily standup notes day 2\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6e75caa376.. | Daily standup notes day 1\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a1c6233d3e.. | Daily standup notes day 0\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7c726170ca.. | Overnight consolidation job\n    Tags: ops, consolidation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-757c67d558.. | Summaries erode detail on every rewrite\n    Tags: design, consolidation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-70685de515.. | Context budget rationale\n    Tags: design, context | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-1197809263.. | Why the dense arm misses terse records\n    Tags: retrieval, design | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8f823497c0.. | Agent astra coordinates fleet ops\n    Tags: agent, astra | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-bc1a2ad74c.. | Agent marvin owns the review panes\n    Tags: agent, marvin | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-3c059f37b4.. | skap08 is the rollout authority\n    Tags: host, skap08 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7e9b3ed65b.. | Review queue healthy\n    Tags: ops, review | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e4e1ea1ff2.. | Dream job config\n    Tags: dream, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6de2377944.. | First dream run produced a real synthesis\n    Tags: dream, milestone | Emotion: neutral@0.9/+0.0\n\n  [mid-term] m-0ac0af922e.. | Rollout ring covers all chi nodes\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-124e3a751c.. | Filler note 11 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-20e7b54b06.. | skwk12 ssh alias uses port 2222\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-315d00e9ab.. | Filler note 10 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6dbe8d1950.. | Filler note 09 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e86e872a4e.. | Filler note 08 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-64b92520da.. | Filler note 07 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-9dd695cece.. | Filler note 06 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-808d605277.. | Filler note 05 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7f1047e652.. | Filler note 04 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-d83f92ad64.. | Filler note 03 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-f7fe681837.. | Filler note 02 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-ba0af1f1de.. | Filler note 01 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6b6b2ca4b9.. | Filler note 00 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-d26e6c752c.. | Default agent is lumina\n    Tags: agent, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-06159e9b16.. | Embedding model was bge-legal-v2 (June)\n    Tags: embedding | Emotion: neutral@0.3/+0.0\n\n"
+ },
+ "list-layer-long": {
+  "reader": null,
+  "args": [
+   "list",
+   "--layer",
+   "long-term"
+  ],
+  "code": 0,
+  "stdout": "Found 1 memories:\n\n  [long-term] 11111111-111.. | Café 日本語 😀 \"quoted\" back\\slash\n    Tags: b, a, ü | Emotion: joy+love+trust@8.5/+0.9\n\n"
+ },
+ "list-layer-mid": {
+  "reader": null,
+  "args": [
+   "list",
+   "--layer",
+   "mid-term",
+   "--limit",
+   "100"
+  ],
+  "code": 0,
+  "stdout": "Found 59 memories:\n\n  [mid-term] m-449a549be1.. | Next time we touch the rollout ring, add skap10 last\n    Tags: rollout, decision | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5fd4308ff1.. | Rollout ring is 5 of 9 nodes\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-ab47e0650a.. | No implicit default agent\n    Tags: agent, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a134220d4a.. | Follow up on the trusted publisher request in a week\n    Tags: pypi, followup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5c9fc7580d.. | skap02 is offline this week\n    Tags: host, skap02 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e56f225692.. | skwk12 ssh is port 22, the 2222 alias is wrong\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-c3d6bf6d4a.. | skwk12-wsl reachable only inside WSL\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-fe57962744.. | Review queue stalled after reboot\n    Tags: ops, review | Emotion: neutral@0.6/+0.0\n\n  [mid-term] m-4491d78901.. | PR #4121 pushes filters into the semantic arm\n    Tags: pr, retrieval | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-25f3146248.. | PR #4120 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-34d500c6d0.. | Private: salary discussion\n    Tags: private | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-be546a9be6.. | PR #4119 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-22f1f27f17.. | PR #4118 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-2ae3e47c3c.. | Private: medication timing\n    Tags: private | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-794ef9bd00.. | Embedding model is mxbai-embed-large (October)\n    Tags: embedding | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-af440837ed.. | Private: household calendar note\n    Tags: private | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7bf354d243.. | Dream job ran with no output\n    Tags: dream | Emotion: neutral@0.1/+0.0\n\n  [mid-term] m-5044ed823e.. | skap08 disk pressure note\n    Tags: host, skap08, ops | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-39ac2381ce.. | Package bumped on hosts by hand\n    Tags: rollout, skmemory | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-bc5703d73e.. | Pin file is the real control point\n    Tags: rollout, pins | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8c805a4449.. | Rollout halts on first gate failure\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-c0491b70a0.. | Procedure: clear red health by running sync (do not)\n    Tags: procedure, postgres | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-966f0b6489.. | Procedure: recover a host whose public schema was dropped\n    Tags: procedure, postgres | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8801b229e9.. | Incident inc-9b2e41 pgvector table empty on skap03\n    Tags: incident, pgvector | Emotion: neutral@0.7/+0.0\n\n  [mid-term] m-519ebcca74.. | Postgres maintenance window notes for skap04\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-9de9e9fb6d.. | Postgres maintenance window notes for skap03\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-2ffd9e0870.. | Postgres maintenance window notes for skap02\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-45381e6a47.. | Postgres maintenance window notes for skap01\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6f3b104385.. | Postgres rebuild remediation plan prb-6f069c5e\n    Tags: postgres, remediation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5b9a6b1698.. | Daily standup notes day 3\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-94763fd3f6.. | Daily standup notes day 2\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6e75caa376.. | Daily standup notes day 1\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a1c6233d3e.. | Daily standup notes day 0\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7c726170ca.. | Overnight consolidation job\n    Tags: ops, consolidation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-757c67d558.. | Summaries erode detail on every rewrite\n    Tags: design, consolidation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-70685de515.. | Context budget rationale\n    Tags: design, context | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-1197809263.. | Why the dense arm misses terse records\n    Tags: retrieval, design | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8f823497c0.. | Agent astra coordinates fleet ops\n    Tags: agent, astra | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-bc1a2ad74c.. | Agent marvin owns the review panes\n    Tags: agent, marvin | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-3c059f37b4.. | skap08 is the rollout authority\n    Tags: host, skap08 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7e9b3ed65b.. | Review queue healthy\n    Tags: ops, review | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e4e1ea1ff2.. | Dream job config\n    Tags: dream, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6de2377944.. | First dream run produced a real synthesis\n    Tags: dream, milestone | Emotion: neutral@0.9/+0.0\n\n  [mid-term] m-0ac0af922e.. | Rollout ring covers all chi nodes\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-124e3a751c.. | Filler note 11 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-20e7b54b06.. | skwk12 ssh alias uses port 2222\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-315d00e9ab.. | Filler note 10 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6dbe8d1950.. | Filler note 09 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e86e872a4e.. | Filler note 08 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-64b92520da.. | Filler note 07 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-9dd695cece.. | Filler note 06 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-808d605277.. | Filler note 05 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7f1047e652.. | Filler note 04 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-d83f92ad64.. | Filler note 03 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-f7fe681837.. | Filler note 02 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-ba0af1f1de.. | Filler note 01 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6b6b2ca4b9.. | Filler note 00 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-d26e6c752c.. | Default agent is lumina\n    Tags: agent, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-06159e9b16.. | Embedding model was bge-legal-v2 (June)\n    Tags: embedding | Emotion: neutral@0.3/+0.0\n\n"
+ },
+ "list-tags": {
+  "reader": null,
+  "args": [
+   "list",
+   "--tags",
+   "standup"
+  ],
+  "code": 0,
+  "stdout": "Found 4 memories:\n\n  [mid-term] m-5b9a6b1698.. | Daily standup notes day 3\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-94763fd3f6.. | Daily standup notes day 2\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6e75caa376.. | Daily standup notes day 1\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a1c6233d3e.. | Daily standup notes day 0\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n"
+ },
+ "list-tags-two": {
+  "reader": null,
+  "args": [
+   "list",
+   "--tags",
+   "host,skap08"
+  ],
+  "code": 0,
+  "stdout": "Found 2 memories:\n\n  [mid-term] m-5044ed823e.. | skap08 disk pressure note\n    Tags: host, skap08, ops | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-3c059f37b4.. | skap08 is the rollout authority\n    Tags: host, skap08 | Emotion: neutral@0.3/+0.0\n\n"
+ },
+ "list-none": {
+  "reader": null,
+  "args": [
+   "list",
+   "--tags",
+   "nosuchtag"
+  ],
+  "code": 0,
+  "stdout": "No memories found.\n"
+ },
+ "list-public": {
+  "reader": "@public",
+  "args": [
+   "list",
+   "--limit",
+   "50"
+  ],
+  "code": 0,
+  "stdout": "Found 50 memories:\n\n  [mid-term] m-449a549be1.. | Next time we touch the rollout ring, add skap10 last\n    Tags: rollout, decision | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5fd4308ff1.. | Rollout ring is 5 of 9 nodes\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-ab47e0650a.. | No implicit default agent\n    Tags: agent, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a134220d4a.. | Follow up on the trusted publisher request in a week\n    Tags: pypi, followup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5c9fc7580d.. | skap02 is offline this week\n    Tags: host, skap02 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e56f225692.. | skwk12 ssh is port 22, the 2222 alias is wrong\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-c3d6bf6d4a.. | skwk12-wsl reachable only inside WSL\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-fe57962744.. | Review queue stalled after reboot\n    Tags: ops, review | Emotion: neutral@0.6/+0.0\n\n  [mid-term] m-4491d78901.. | PR #4121 pushes filters into the semantic arm\n    Tags: pr, retrieval | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-25f3146248.. | PR #4120 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-be546a9be6.. | PR #4119 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-22f1f27f17.. | PR #4118 docs touch-ups in the retrieval package\n    Tags: pr, docs | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-794ef9bd00.. | Embedding model is mxbai-embed-large (October)\n    Tags: embedding | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7bf354d243.. | Dream job ran with no output\n    Tags: dream | Emotion: neutral@0.1/+0.0\n\n  [mid-term] m-5044ed823e.. | skap08 disk pressure note\n    Tags: host, skap08, ops | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-39ac2381ce.. | Package bumped on hosts by hand\n    Tags: rollout, skmemory | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-bc5703d73e.. | Pin file is the real control point\n    Tags: rollout, pins | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8c805a4449.. | Rollout halts on first gate failure\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-c0491b70a0.. | Procedure: clear red health by running sync (do not)\n    Tags: procedure, postgres | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-966f0b6489.. | Procedure: recover a host whose public schema was dropped\n    Tags: procedure, postgres | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8801b229e9.. | Incident inc-9b2e41 pgvector table empty on skap03\n    Tags: incident, pgvector | Emotion: neutral@0.7/+0.0\n\n  [mid-term] m-519ebcca74.. | Postgres maintenance window notes for skap04\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-9de9e9fb6d.. | Postgres maintenance window notes for skap03\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-2ffd9e0870.. | Postgres maintenance window notes for skap02\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-45381e6a47.. | Postgres maintenance window notes for skap01\n    Tags: postgres, maintenance | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6f3b104385.. | Postgres rebuild remediation plan prb-6f069c5e\n    Tags: postgres, remediation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-5b9a6b1698.. | Daily standup notes day 3\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-94763fd3f6.. | Daily standup notes day 2\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6e75caa376.. | Daily standup notes day 1\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-a1c6233d3e.. | Daily standup notes day 0\n    Tags: standup | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7c726170ca.. | Overnight consolidation job\n    Tags: ops, consolidation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-757c67d558.. | Summaries erode detail on every rewrite\n    Tags: design, consolidation | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-70685de515.. | Context budget rationale\n    Tags: design, context | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-1197809263.. | Why the dense arm misses terse records\n    Tags: retrieval, design | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-8f823497c0.. | Agent astra coordinates fleet ops\n    Tags: agent, astra | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-bc1a2ad74c.. | Agent marvin owns the review panes\n    Tags: agent, marvin | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-3c059f37b4.. | skap08 is the rollout authority\n    Tags: host, skap08 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7e9b3ed65b.. | Review queue healthy\n    Tags: ops, review | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e4e1ea1ff2.. | Dream job config\n    Tags: dream, config | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6de2377944.. | First dream run produced a real synthesis\n    Tags: dream, milestone | Emotion: neutral@0.9/+0.0\n\n  [mid-term] m-0ac0af922e.. | Rollout ring covers all chi nodes\n    Tags: rollout | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-124e3a751c.. | Filler note 11 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-20e7b54b06.. | skwk12 ssh alias uses port 2222\n    Tags: host, skwk12 | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-315d00e9ab.. | Filler note 10 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-6dbe8d1950.. | Filler note 09 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-e86e872a4e.. | Filler note 08 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-64b92520da.. | Filler note 07 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-9dd695cece.. | Filler note 06 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-808d605277.. | Filler note 05 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n  [mid-term] m-7f1047e652.. | Filler note 04 about dashboard tiles\n    Tags: dashboard | Emotion: neutral@0.3/+0.0\n\n"
+ },
+ "reindex": {
+  "reader": null,
+  "args": [
+   "reindex"
+  ],
+  "code": 0,
+  "stdout": "Indexed 60 memories into SQLite.\n"
+ },
+ "ledger-top": {
+  "reader": null,
+  "args": [
+   "ledger",
+   "top",
+   "--as-of",
+   "2026-11-01T12:00:00+00:00",
+   "--base",
+   "{MEM}"
+  ],
+  "code": 0,
+  "stdout": " #  skill@version                          net follow  srv  imp f/s  flags\n 1  recover-schema@1.2                   +1.17   2.00    1      0/0  \n 2  future-skill@1                       +1.00   0.00    0      0/0  \n 3  idless@1                             +0.84   0.00    0      0/0  \n 4  after-torn@1                         +0.00   0.00    1      0/0  \n 5  café-skill@sha:abc                   +0.00   0.00    1      0/0  \n 6  emptyid@1                            +0.00   0.00    1      0/0  \n 7  floatver@1.5                         +0.00   0.00    1      0/0  \n 8  hermes-skill@patch-2                 +0.00   0.00    0      3/1  \n 9  listver@['a', 1, None, True, {'k': 1.0}]   +0.00   0.00    1      0/0  \n10  neutral-skill@3                      +0.00   1.00    1      0/0  \n11  never-followed@1                     +0.00   0.00    3      0/0  served-never-followed\n12  noeffectkey@1                        +0.00   0.00    0      0/0  \n13  nullver@None                         +0.00   0.00    1      0/0  \n14  numver@2                             +0.00   0.00    1      0/0  \n15  sync-to-clear-red@1.0                -9.49   4.00    1      0/0  anti-pattern\n"
+ },
+ "ledger-top-limit2": {
+  "reader": null,
+  "args": [
+   "ledger",
+   "top",
+   "--as-of",
+   "2026-11-01T12:00:00+00:00",
+   "--limit",
+   "2",
+   "--base",
+   "{MEM}"
+  ],
+  "code": 0,
+  "stdout": " #  skill@version                          net follow  srv  imp f/s  flags\n 1  recover-schema@1.2                   +1.17   2.00    1      0/0  \n 2  future-skill@1                       +1.00   0.00    0      0/0  \n"
+ }
+}
