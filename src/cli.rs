@@ -49,6 +49,7 @@ const OWNER_ONLY: &str = "owner-only: unavailable while SKMEMORY_READER declares
 const SEARCH_HIT_DEBOUNCE_S: f64 = 3600.0;
 
 /// A command failure: the message for stderr and the exit status.
+#[derive(Debug)]
 struct Fail {
     code: i32,
     msg: String,
