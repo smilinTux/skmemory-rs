@@ -1,0 +1,726 @@
+{
+  "source": "skmemory/mcp_server.py list_tools() and TOOL_READER_POLICY",
+  "tools": [
+    {
+      "name": "memory_store",
+      "description": "Store a new memory in SKMemory (polaroid snapshot).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Short label for this memory."
+          },
+          "content": {
+            "type": "string",
+            "description": "The full memory content."
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "short-term",
+              "mid-term",
+              "long-term"
+            ],
+            "description": "Memory layer (default: short-term)."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional tags for categorisation."
+          },
+          "source": {
+            "type": "string",
+            "description": "Where this memory came from (default: mcp)."
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ]
+      }
+    },
+    {
+      "name": "memory_search",
+      "description": "Full-text search across all SKMemory layers with optional metadata filters.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max results (default: 10)."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter results to memories matching ALL specified tags."
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "short-term",
+              "mid-term",
+              "long-term"
+            ],
+            "description": "Filter results to a specific memory layer."
+          },
+          "source": {
+            "type": "string",
+            "description": "Filter results by source (e.g. 'manual', 'mcp', 'claude-code-hook')."
+          },
+          "as_of": {
+            "type": "string",
+            "description": "ISO-8601 instant. Only memories valid then: valid_from (or created_at) <= as_of and valid_to unset or > as_of. Omit for no temporal filter (closed facts are still returned)."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Only returns memories that audience may see. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          },
+          "detail": {
+            "type": "string",
+            "enum": [
+              "full",
+              "index"
+            ],
+            "description": "'full' (default) returns whole memories. 'index' returns one cheap row per hit (id, title, date, rank score, short snippet, source_ref, est_tokens vs est_tokens_full); follow with memory_recall for the full memory or memory_expand for the raw episode."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "memory_expand",
+      "description": "Return the raw episode (session JSONL slice) a digest memory was made from, when its source_ref resolves to a file under this agent's sessions directory. Capped in size. Owner sessions only: raw episodes carry no audience labels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The digest memory's ID."
+          },
+          "max_chars": {
+            "type": "integer",
+            "description": "Max characters returned (default 4000, hard cap 20000)."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": [
+          "memory_id"
+        ]
+      }
+    },
+    {
+      "name": "memory_check_duplicate",
+      "description": "Advisory pre-write duplicate check: semantically search for existing memories similar to a piece of candidate content, BEFORE storing it. Read-only \u2014 does not write, merge, or modify anything. Complements memory_store's automatic exact-hash dedup by catching near-duplicates (paraphrases, reworded notes) via embedding similarity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Candidate content to check for near-duplicates."
+          },
+          "threshold": {
+            "type": "number",
+            "description": "Minimum similarity 0.0-1.0 to count as a match (default: 0.73, tuned for mxbai-embed-large)."
+          },
+          "k": {
+            "type": "integer",
+            "description": "Max candidates to consider before threshold filtering (default: 5)."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": [
+          "content"
+        ]
+      }
+    },
+    {
+      "name": "memory_recall",
+      "description": "Recall a specific memory by its ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The memory's unique ID."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": [
+          "memory_id"
+        ]
+      }
+    },
+    {
+      "name": "memory_history",
+      "description": "Supersession chain through a memory, oldest first: what it replaced and what replaced it, with each record's validity window.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "Any memory in the chain."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": [
+          "memory_id"
+        ]
+      }
+    },
+    {
+      "name": "memory_list",
+      "description": "List memories with optional layer and tag filters.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "layer": {
+            "type": "string",
+            "enum": [
+              "short-term",
+              "mid-term",
+              "long-term"
+            ],
+            "description": "Filter by memory layer."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by tags (all must match)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max results (default: 50)."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "memory_forget",
+      "description": "Delete (forget) a memory by its ID.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "The memory's unique ID."
+          }
+        },
+        "required": [
+          "memory_id"
+        ]
+      }
+    },
+    {
+      "name": "memory_promote",
+      "description": "Promote a memory to a higher persistence tier (short\u2192mid\u2192long).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "description": "ID of the memory to promote."
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "mid-term",
+              "long-term"
+            ],
+            "description": "Target layer to promote to."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Optional compressed summary for the promoted memory."
+          }
+        },
+        "required": [
+          "memory_id",
+          "target"
+        ]
+      }
+    },
+    {
+      "name": "memory_consolidate",
+      "description": "Compress a session's short-term memories into one mid-term memory.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "description": "Session identifier to consolidate."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Human/AI-written summary of the session."
+          }
+        },
+        "required": [
+          "session_id",
+          "summary"
+        ]
+      }
+    },
+    {
+      "name": "memory_context",
+      "description": "Load token-efficient memory context for agent system prompt injection. Uses tiered lazy loading: today's memories (full), yesterday (summaries), older (reference counts only). Deep details available via memory_search.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "token_budget": {
+            "type": "integer",
+            "description": "Max tokens for context (default: 4000). Uses word_count * 1.3 approximation."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "memory_export",
+      "description": "Export all memories to a dated JSON backup file.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "memory_import",
+      "description": "Restore memories from a JSON backup file.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "backup_path": {
+            "type": "string",
+            "description": "Absolute path to the backup JSON file."
+          }
+        },
+        "required": [
+          "backup_path"
+        ]
+      }
+    },
+    {
+      "name": "memory_health",
+      "description": "Full health check across all backends (primary, vector, graph).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "memory_graph",
+      "description": "Graph operations: traverse connections, get lineage, find clusters, and pivot through entities or citations to related claims. Requires the AGE graph backend.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "traverse",
+              "around",
+              "lineage",
+              "clusters",
+              "related_claims"
+            ],
+            "description": "Graph operation to perform."
+          },
+          "memory_id": {
+            "type": "string",
+            "description": "Memory ID (required for traverse/around/lineage)."
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Traversal depth (default: 2, for traverse/around only)."
+          },
+          "pivot_type": {
+            "type": "string",
+            "enum": [
+              "entity",
+              "citation"
+            ],
+            "description": "Pivot type for related_claims."
+          },
+          "query": {
+            "type": "string",
+            "description": "Entity or citation text for related_claims."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for, e.g. '@public', '@community', '@work-circle', '@inner-circle', '@work:<x>' or 'channel:<id>'. Omit for the owner. Can only narrow a SKMEMORY_READER declared for the server process."
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    },
+    {
+      "name": "memory_synthesize_daily",
+      "description": "Synthesize today's (or a given date's) memories into a single narrative entry stored in mid-term. No LLM \u2014 uses tag frequency, emotional arc, and template-based narrative.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Date to synthesize (YYYY-MM-DD). Defaults to today."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "memory_synthesize_dreams",
+      "description": "Process dream-engine memories into curated narrative memories grouped by theme. Creates one mid-term memory per theme cluster.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "type": "string",
+            "description": "Only process dreams after this date (YYYY-MM-DD). Defaults to 7 days ago."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "memory_auto_context",
+      "description": "Search all memory layers for context related to keywords. Runs one search per keyword (max 10), deduplicates, and ranks by fused search relevance (reciprocal-rank sum across keywords); emotional intensity is only a tiebreak. Returns results within a token budget. Background tool: it does not count as a read, so it never reinforces memories. Use this for contextual auto-search.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "keywords": {
+            "type": "string",
+            "description": "Space-separated keywords to search for."
+          },
+          "token_budget": {
+            "type": "integer",
+            "description": "Max tokens for results (default: 2000)."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Audience the results are for (see memory_search). Omit for the owner."
+          }
+        },
+        "required": [
+          "keywords"
+        ]
+      }
+    },
+    {
+      "name": "memory_verify",
+      "description": "Verify integrity hashes for all stored memories. Returns a report of passed, tampered, and unsealed memories. Tampered memories are flagged with CRITICAL severity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "memory_audit",
+      "description": "Show the most recent audit trail entries. The audit trail is a chain-hashed JSONL log of every store/recall/delete/tamper operation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "last": {
+            "type": "integer",
+            "description": "Number of recent entries to return (default: 20)."
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "memory_extract",
+      "description": "Extract decisions, preferences, milestones, problems, and emotional moments from arbitrary text using regex pattern matching. Returns the matches without storing anything \u2014 useful for previewing what auto-save would capture.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Text to extract memory-worthy moments from."
+          },
+          "min_length": {
+            "type": "integer",
+            "description": "Minimum extracted-segment length (default: 20).",
+            "default": 20
+          }
+        },
+        "required": [
+          "text"
+        ]
+      }
+    },
+    {
+      "name": "memory_save_session",
+      "description": "Auto-extract memories from a conversation transcript and store each as a short-term memory. Mirrors the Stop hook used by Claude Code's settings.json but invoked directly via MCP. Returns counts + the IDs of saved memories.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "type": "string",
+            "description": "Full conversation transcript text."
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Session identifier (default: auto from CLAUDE_SESSION_ID env or 'mcp-session')."
+          },
+          "min_length": {
+            "type": "integer",
+            "description": "Minimum extracted-segment length (default: 100 \u2014 same as the Stop hook).",
+            "default": 100
+          },
+          "event_at": {
+            "type": "string",
+            "description": "ISO 8601 time the conversation happened. When given, relative dates (yesterday, next Monday) in each saved memory get the resolved ISO date appended, in this timestamp's own offset, and the memory's event_at is set. Absent: text is saved unchanged."
+          }
+        },
+        "required": [
+          "conversation"
+        ]
+      }
+    },
+    {
+      "name": "memory_pre_compact",
+      "description": "Emergency snapshot of current conversation context before context compression. Stores the last N characters as a single short-term memory tagged 'pre-compact'. Mirrors the PreCompact hook used by Claude Code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "type": "string",
+            "description": "Current conversation context to snapshot."
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Session identifier (default: auto)."
+          },
+          "tail_chars": {
+            "type": "integer",
+            "description": "How many trailing characters to save (default: 4000).",
+            "default": 4000
+          }
+        },
+        "required": [
+          "context"
+        ]
+      }
+    },
+    {
+      "name": "memory_remind",
+      "description": "Create a time intention: remember to do something at a later time. It is delivered through sk-alert by the intentions tick. Owner only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "What to remember."
+          },
+          "due_at": {
+            "type": "string",
+            "description": "ISO 8601 time, or 'in N days' / 'in N hours'."
+          },
+          "channel": {
+            "type": "string",
+            "description": "Delivery channel hint."
+          },
+          "interval_s": {
+            "type": "integer",
+            "description": "Repeat every N seconds (re-arms after each fire)."
+          },
+          "origin_memory_id": {
+            "type": "string",
+            "description": "Memory this reminder came from (optional)."
+          }
+        },
+        "required": [
+          "title",
+          "due_at"
+        ]
+      }
+    },
+    {
+      "name": "memory_intentions",
+      "description": "List intentions, optionally by state (pending, armed, fired, done...). Owner only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "Filter by state."
+          }
+        }
+      }
+    },
+    {
+      "name": "memory_intention_done",
+      "description": "Mark an intention done. Owner only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Intention id."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    }
+  ],
+  "reader_policy": {
+    "memory_search": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_auto_context": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_recall": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_expand": {
+      "class": "filtered",
+      "note": "hidden id is not-found; a declared reader is then refused, raw episodes are unlabeled"
+    },
+    "memory_history": {
+      "class": "filtered",
+      "note": "chain cut at the first hidden member; hidden start is not-found"
+    },
+    "memory_list": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_context": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_graph": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_health": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_check_duplicate": {
+      "class": "filtered",
+      "note": ""
+    },
+    "memory_store": {
+      "class": "filtered",
+      "note": "dedup only matches memories the reader can see"
+    },
+    "memory_save_session": {
+      "class": "filtered",
+      "note": "dedup only matches memories the reader can see"
+    },
+    "memory_pre_compact": {
+      "class": "filtered",
+      "note": "dedup only matches memories the reader can see"
+    },
+    "memory_promote": {
+      "class": "owner-only",
+      "note": "a write: a declared reader, per-call or env, is refused"
+    },
+    "memory_forget": {
+      "class": "owner-only",
+      "note": "a delete: a declared reader, per-call or env, is refused"
+    },
+    "memory_export": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_import": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_consolidate": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_verify": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_audit": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_synthesize_daily": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_synthesize_dreams": {
+      "class": "owner-only",
+      "note": ""
+    },
+    "memory_remind": {
+      "class": "owner-only",
+      "note": "creates standing intentions that fire into hooks and alerts"
+    },
+    "memory_intentions": {
+      "class": "owner-only",
+      "note": "intention titles are unclassified private text"
+    },
+    "memory_intention_done": {
+      "class": "owner-only",
+      "note": "resolves intentions"
+    },
+    "memory_extract": {
+      "class": "exempt",
+      "note": "pure text-in, text-out; reads no stored memory"
+    }
+  },
+  "reader_tools": [
+    "memory_check_duplicate",
+    "memory_context",
+    "memory_expand",
+    "memory_graph",
+    "memory_health",
+    "memory_history",
+    "memory_list",
+    "memory_recall"
+  ]
+}
