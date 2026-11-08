@@ -1,0 +1,155 @@
+name: publish
+
+# Packaging (SKMEM-R-13): abi3 wheels (manylinux x86_64 and aarch64, musllinux x86_64) and static
+# musl binaries for every [[bin]] target. Everything is built and smoke-tested on pull requests that
+# touch packaging, on workflow_dispatch and on version tags. A tag also attaches the wheels and
+# binaries to the GitHub release.
+#
+# PyPI publishing is deliberately NOT here. Add it only after the PyPI trusted publisher for
+# skmem-core exists (owner smilinTux, repo skmemory-rs, workflow publish.yml, environment pypi),
+# as a separate job gated on startsWith(github.ref, 'refs/tags/v') with `id-token: write`.
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - ".github/workflows/publish.yml"
+      - "pyproject.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  workflow_dispatch: {}
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: tag matches Cargo.toml version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: check tag against the package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          want="${GITHUB_REF_NAME#v}"
+          have=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          if [ "$want" != "$have" ]; then
+            echo "tag $GITHUB_REF_NAME does not match Cargo.toml version $have" >&2
+            exit 1
+          fi
+
+  wheels:
+    name: wheel ${{ matrix.name }}
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: manylinux-x86_64
+            target: x86_64-unknown-linux-gnu
+            manylinux: auto
+            smoke: venv
+          - name: manylinux-aarch64
+            target: aarch64-unknown-linux-gnu
+            manylinux: "2_28"
+            smoke: none # cross-built; no arm64 runner or emulation here, so build-only
+          - name: musllinux-x86_64
+            target: x86_64-unknown-linux-musl
+            manylinux: musllinux_1_2
+            smoke: alpine
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: build abi3 wheel
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          maturin-version: "1.9.4"
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --locked --out dist
+      - name: smoke test, clean venv
+        if: matrix.smoke == 'venv'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/smoke"
+          "$RUNNER_TEMP/smoke/bin/pip" install --no-index --find-links dist skmem-core
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/smoke/bin/python" -c "import skmem_core; print('skmem_core', skmem_core.version())"
+      - name: smoke test, clean venv on Alpine (musl)
+        if: matrix.smoke == 'alpine'
+        run: |
+          docker run --rm -v "$PWD/dist:/dist:ro" python:3.12-alpine sh -c '
+            python -m venv /tmp/smoke &&
+            /tmp/smoke/bin/pip install --no-index --find-links /dist skmem-core &&
+            cd /tmp && /tmp/smoke/bin/python -c "import skmem_core; print(\"skmem_core\", skmem_core.version())"'
+      - name: check the wheel is abi3
+        run: |
+          ls dist
+          ls dist/*-cp39-abi3-*.whl
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheel-${{ matrix.name }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+  binaries:
+    name: static musl binaries
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - name: musl toolchain (rusqlite bundles C sources)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends musl-tools
+      - name: build every bin target
+        run: cargo build --release --locked --bins --features pg --target x86_64-unknown-linux-musl
+      - name: collect binaries and verify they are static
+        run: |
+          mkdir -p out
+          # every [[bin]] target is picked up from cargo metadata, so skmem-mcp and the CLI need no edit here
+          bins=$(cargo metadata --locked --no-deps --format-version 1 \
+            | python3 -c 'import json,sys; [print(t["name"]) for p in json.load(sys.stdin)["packages"] for t in p["targets"] if "bin" in t["kind"]]')
+          [ -n "$bins" ] || { echo "no bin targets" >&2; exit 1; }
+          for b in $bins; do
+            f=target/x86_64-unknown-linux-musl/release/$b
+            test -x "$f"
+            out=$(ldd "$f" 2>&1 || true)
+            if ! printf '%s' "$out" | grep -Eq 'not a dynamic executable|statically linked'; then
+              echo "$b is not verified static, ldd said: '$out'" >&2; exit 1
+            fi
+            cp "$f" "out/$b-x86_64-unknown-linux-musl"
+            "out/$b-x86_64-unknown-linux-musl" --version || true
+          done
+          (cd out && sha256sum * > SHA256SUMS)
+          ls -l out
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: binaries-x86_64-musl
+          path: out/*
+          if-no-files-found: error
+
+  release-assets:
+    name: attach to GitHub release (tags only)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [wheels, binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          files: artifacts/*
