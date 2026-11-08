@@ -471,3 +471,52 @@ def test_snapshot_decompose_truthiness(eng):
             eng.snapshot("t", f"short {v}", decompose=v)
     for v in (0, "", [], None, False):
         eng.snapshot("t", f"falsy {v!r}", decompose=v)
+
+
+def test_releases_gil_flag():
+    assert skmem_core.RELEASES_GIL is True
+
+
+def test_search_does_not_hold_the_gil(home):
+    """Another Python thread keeps running while a search runs (SKMEM-R-11).
+
+    A search that holds the GIL freezes every other thread for its whole duration,
+    which would stall the Python search a shadow thread runs beside, and stop a
+    watchdog Timer from firing. Heartbeat: the main thread sleeps 1 ms in a loop
+    while a worker searches; with the GIL released the largest gap between
+    heartbeats stays far below one search.
+    """
+    import threading
+    import time
+
+    eng = Engine(str(home))
+    for i in range(1500):
+        eng.snapshot(f"title {i}", f"corpus filler {i} alpha beta gamma delta " * 8)
+
+    def one():
+        t0 = time.perf_counter()
+        eng.reindex(True)  # the longest call a small corpus gives; same GIL rule as search
+        eng.search_report("alpha beta gamma delta filler corpus", 10)
+        return time.perf_counter() - t0
+
+    dur = max(one() for _ in range(3))
+    if dur < 0.02:
+        pytest.skip(f"call too fast to observe a stall ({dur * 1000:.1f} ms)")
+
+    stop = threading.Event()
+
+    def work():
+        while not stop.is_set():
+            one()
+
+    th = threading.Thread(target=work)
+    th.start()
+    gaps, last, end = [], time.perf_counter(), time.perf_counter() + 1.5
+    while time.perf_counter() < end:
+        time.sleep(0.001)
+        now = time.perf_counter()
+        gaps.append(now - last)
+        last = now
+    stop.set()
+    th.join()
+    assert max(gaps) < dur / 2, f"main thread stalled {max(gaps) * 1000:.1f} ms; search {dur * 1000:.1f} ms"

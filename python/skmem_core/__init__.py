@@ -4,6 +4,6 @@
 (``SKMEMORY_READER``); no scope object is exposed.
 """
 
-from ._skmem_core import Engine, __version__, version
+from ._skmem_core import RELEASES_GIL, Engine, __version__, version
 
-__all__ = ["Engine", "__version__", "version"]
+__all__ = ["RELEASES_GIL", "Engine", "__version__", "version"]
