@@ -15,6 +15,7 @@ pub mod fusion;
 pub mod index;
 pub mod intentions;
 pub mod ledger;
+pub mod mcp;
 pub mod model;
 #[cfg(feature = "pg")]
 pub mod pg;

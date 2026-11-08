@@ -20,6 +20,10 @@ crate-type = ["cdylib", "rlib"]
 name = "skmem"
 path = "src/main.rs"
 
+[[bin]]
+name = "skmem-mcp"
+path = "src/bin/skmem_mcp.rs"
+
 [dependencies]
 # OPTIONAL Postgres vector arm (feature `pg`): sync client, no TLS, no async runtime in the API.
 # MSRV: postgres-protocol 0.6.11+ pulls sha2 0.11 (rustc 1.88), so Cargo.lock pins
