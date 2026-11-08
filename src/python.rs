@@ -339,6 +339,7 @@ impl Engine {
     #[allow(clippy::too_many_arguments)]
     fn run_search(
         &self,
+        py: Python<'_>,
         query: &str,
         limit: usize,
         layer: Option<&str>,
@@ -348,22 +349,24 @@ impl Engine {
         as_of: Option<&str>,
         scope: &ReaderScope,
     ) -> PyResult<(Vec<Memory>, SearchReport)> {
-        let out = self
-            .core
-            .search(
-                &SearchRequest {
-                    query,
-                    limit,
-                    layer,
-                    tags,
-                    source,
-                    context_tags,
-                    as_of,
-                    now: None,
-                },
-                scope,
-                &Env::process(),
-            )
+        // The arms (SQLite, Postgres, disk) can run for seconds: never hold the GIL.
+        let out = py
+            .allow_threads(|| {
+                self.core.search(
+                    &SearchRequest {
+                        query,
+                        limit,
+                        layer,
+                        tags,
+                        source,
+                        context_tags,
+                        as_of,
+                        now: None,
+                    },
+                    scope,
+                    &Env::process(),
+                )
+            })
             .map_err(engine_err)?;
         Ok((out.memories, out.report))
     }
@@ -397,6 +400,7 @@ impl Engine {
         let ctx = str_or_list(context_tag)?;
         let tags = tags.unwrap_or_default();
         let (mems, report) = self.run_search(
+            py,
             query,
             limit,
             layer,
@@ -407,12 +411,16 @@ impl Engine {
             &scope,
         )?;
         let mems: Vec<Memory> = mems.into_iter().take(limit).collect();
-        if record_access && self.may_reinforce(&scope) {
-            let ids: Vec<&str> = mems.iter().map(|m| m.id.as_str()).collect();
-            self.idx()?
-                .bump_access(&ids, None, Some(SEARCH_HIT_DEBOUNCE_S), &scope);
-        }
-        let sup = superseded_map(&mems, &mut |id| self.visible(id, &scope));
+        let reinforce = record_access && self.may_reinforce(&scope);
+        let sup = py.allow_threads(|| {
+            if reinforce {
+                let ids: Vec<&str> = mems.iter().map(|m| m.id.as_str()).collect();
+                self.core
+                    .index()
+                    .bump_access(&ids, None, Some(SEARCH_HIT_DEBOUNCE_S), &scope);
+            }
+            superseded_map(&mems, &mut |id| self.visible(id, &scope))
+        });
         let mut rows: Vec<Value> = Vec::new();
         for m in &mems {
             let mut v = m.to_value();
@@ -636,12 +644,10 @@ impl Engine {
     #[pyo3(signature = (memory_id, reader=None))]
     fn recall(&self, py: Python<'_>, memory_id: &str, reader: Option<&str>) -> PyResult<PyObject> {
         let scope = self.scope(reader);
-        let Some(mut m) = self
-            .core
-            .store()
-            .load(memory_id, &scope)
-            .map_err(store_err)?
-        else {
+        let loaded = py
+            .allow_threads(|| self.core.store().load(memory_id, &scope))
+            .map_err(store_err)?;
+        let Some(mut m) = loaded else {
             return Ok(py.None());
         };
         if !m.integrity_hash.is_empty() && !m.verify_integrity() {
@@ -654,7 +660,11 @@ impl Engine {
             );
         }
         if self.may_reinforce(&scope) {
-            self.idx()?.bump_access(&[memory_id], None, None, &scope);
+            py.allow_threads(|| {
+                self.core
+                    .index()
+                    .bump_access(&[memory_id], None, None, &scope)
+            });
         }
         to_py(py, &m.to_value())
     }
@@ -676,7 +686,7 @@ impl Engine {
         let layer = layer.map(parse_layer).transpose()?;
         let scope = self.scope(reader);
         let tags = tags.unwrap_or_default();
-        let listing = self.core.store().list(layer, &scope);
+        let listing = py.allow_threads(|| self.core.store().list(layer, &scope));
         let out: Vec<Value> = listing
             .memories
             .iter()
@@ -782,6 +792,7 @@ impl Engine {
     /// only the verdict (the report carries counts of memories it may not see).
     #[pyo3(signature = (reader=None))]
     fn health(&self, py: Python<'_>, reader: Option<&str>) -> PyResult<PyObject> {
+        let v = py.allow_threads(|| -> PyResult<Value> {
         let scope = self.scope(reader);
         let idx = self.idx()?;
         let fts_ok = !idx.fts_enabled() || idx.fts_ok();
@@ -792,7 +803,7 @@ impl Engine {
                 "ok": fts_ok,
                 "status": if fts_ok { "ok" } else { "degraded" },
             });
-            return to_py(py, &v);
+            return Ok(v);
         };
         let rs = own.reader_scope();
         let flat_ids = self.core.store().flat_id_set(rs);
@@ -834,6 +845,8 @@ impl Engine {
                 },
             },
         });
+        Ok(v)
+        })?;
         to_py(py, &v)
     }
 
@@ -848,11 +861,14 @@ impl Engine {
         if seal {
             m.seal();
         }
-        self.core.store().save(&m, &own).map_err(store_err)?;
-        let file = self.core.store().path_for(&m).map_err(store_err)?;
-        self.idx()?
-            .index_memory(&m, &file, &own)
-            .map_err(index_err)?;
+        py.allow_threads(|| -> PyResult<()> {
+            self.core.store().save(&m, &own).map_err(store_err)?;
+            let file = self.core.store().path_for(&m).map_err(store_err)?;
+            self.core
+                .index()
+                .index_memory(&m, &file, &own)
+                .map_err(index_err)
+        })?;
         Ok(m.id)
     }
 
@@ -889,9 +905,8 @@ impl Engine {
             Some(other) => Some(other.to_string()),
         };
         let scope = self.scope(reader.as_deref());
-        let snap = self
-            .core
-            .snapshot(title, content, extra, &own, &scope)
+        let snap = py
+            .allow_threads(|| self.core.snapshot(title, content, extra, &own, &scope))
             .map_err(|e| match e {
                 SnapshotError::Unsupported(m) => PyNotImplementedError::new_err(m),
                 SnapshotError::Invalid(e) => value_err(e),
@@ -941,9 +956,8 @@ impl Engine {
     #[pyo3(signature = (force=false))]
     fn reindex(&self, py: Python<'_>, force: bool) -> PyResult<PyObject> {
         let own = self.owner_rw()?;
-        let r = self
-            .idx()?
-            .reindex(self.core.store(), force, &own)
+        let r = py
+            .allow_threads(|| self.core.index().reindex(self.core.store(), force, &own))
             .map_err(index_err)?;
         to_py(
             py,
@@ -1083,5 +1097,10 @@ fn skmem_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(version, m)?)?;
     m.add_class::<Engine>()?;
     m.add("__version__", super::version())?;
+    // Every engine call that can block (search, recall, list, snapshot, save,
+    // reindex, health) runs with the GIL released, so a caller may run it on a
+    // background thread without stalling the interpreter. Shadow-read parity
+    // (skmemory SKMEM-R-11) refuses to run against a module without this.
+    m.add("RELEASES_GIL", true)?;
     Ok(())
 }
