@@ -337,3 +337,23 @@ fn unserved_and_unknown_tools_say_so() {
         json!({"error": "Unknown tool: memory_nope"})
     );
 }
+
+#[test]
+fn invalid_utf8_line_is_a_parse_error_and_serving_continues() {
+    let f = fx("utf8");
+    let mut input: Vec<u8> = vec![0xff, 0xfe, b'\n'];
+    input.extend_from_slice(b"[{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"ping\"}]\n");
+    input.extend_from_slice(b"{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"ping\"}\n");
+    let mut out = Vec::new();
+    f.server.serve(Cursor::new(input), &mut out).unwrap();
+    let lines: Vec<Value> = String::from_utf8(out)
+        .unwrap()
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert_eq!(lines.len(), 3);
+    assert_eq!(lines[0]["error"]["code"], -32700);
+    assert_eq!(lines[1]["error"]["code"], -32600);
+    assert_eq!(lines[2]["id"], 7);
+    assert_eq!(lines[2]["result"], json!({}));
+}

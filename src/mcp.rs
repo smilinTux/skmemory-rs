@@ -1024,15 +1024,26 @@ impl Server {
     }
 
     /// Serve newline-delimited JSON-RPC until `input` ends.
-    pub fn serve(&self, input: impl BufRead, mut output: impl Write) -> std::io::Result<()> {
-        for line in input.lines() {
-            let line = line?;
-            if line.trim().is_empty() {
-                continue;
+    pub fn serve(&self, mut input: impl BufRead, mut output: impl Write) -> std::io::Result<()> {
+        let mut buf = Vec::new();
+        loop {
+            buf.clear();
+            if input.read_until(b'\n', &mut buf)? == 0 {
+                break;
             }
-            let reply = match serde_json::from_str::<Value>(&line) {
-                Ok(msg) => self.handle(&msg),
+            // Invalid UTF-8 is a parse error on that line, never the end of the server.
+            let reply = match std::str::from_utf8(&buf) {
                 Err(_) => Some(rpc_err(Value::Null, -32700, "Parse error")),
+                Ok(line) if line.trim().is_empty() => continue,
+                Ok(line) => match serde_json::from_str::<Value>(line) {
+                    Ok(Value::Array(_)) => Some(rpc_err(
+                        Value::Null,
+                        -32600,
+                        "Invalid Request: batches are not supported",
+                    )),
+                    Ok(msg) => self.handle(&msg),
+                    Err(_) => Some(rpc_err(Value::Null, -32700, "Parse error")),
+                },
             };
             if let Some(r) = reply {
                 let text = serde_json::to_string(&r).unwrap_or_default();
