@@ -491,14 +491,12 @@ impl Server {
         if m.parent_id.is_none() {
             m.metadata.remove("parent_relation");
         }
-        for key in ["promoted_id"] {
-            let hide = m
-                .metadata
-                .get(key)
-                .is_some_and(|v| !v.as_str().is_some_and(&mut vis));
-            if hide {
-                m.metadata.remove(key);
-            }
+        let hide_promoted = m
+            .metadata
+            .get("promoted_id")
+            .is_some_and(|v| !v.as_str().is_some_and(&mut vis));
+        if hide_promoted {
+            m.metadata.remove("promoted_id");
         }
         if let Some(Value::Array(a)) = m.metadata.get("possible_conflict_with").cloned() {
             let kept: Vec<Value> = a
