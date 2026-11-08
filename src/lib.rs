@@ -5,6 +5,7 @@
 
 pub mod audience;
 pub mod bench;
+pub mod cli;
 pub mod decay;
 pub mod embed;
 pub mod engine;

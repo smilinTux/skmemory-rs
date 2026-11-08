@@ -6,6 +6,17 @@ All notable changes to `skmem` are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Hot-path CLI (SKMEM-R-10): `skmem search` (`--as-of`, `--layer`, `--tags`, `--json`), `recall`/`show`,
+  `list`, `health`, `snapshot`, `reindex`, `intentions list|reindex` and `ledger top`, byte-for-byte
+  against the Python CLI on 32 fixture cases (`tests/cli_parity.rs`). `SKMEMORY_READER` is a ceiling:
+  a declared reader opens the store read-only and is refused `snapshot`, `reindex`, `intentions` and
+  `ledger`. A Rust `snapshot` writes the flat file and the SQLite index only, so it is invisible to
+  pgvector and graph search until `skmemory sync --vector --graph`, and it skips the WAL and hooks.
+  `reindex` keeps index rows that have no flat file unless `--force`. `health` prints the engine
+  report only, without Python's vector, graph and profile probes.
+
 ### Changed
 
 - Review fixes for R-07C (PR 14): the temporal window is now exactly Python's or an abstain (never a
