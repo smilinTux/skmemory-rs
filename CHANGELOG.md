@@ -19,6 +19,10 @@ All notable changes to `skmem` are documented here. The format follows
 
 ### Changed
 
+- Python bindings release the GIL around every engine call that can block (search, recall, list,
+  snapshot, save, reindex, health), so a background thread running a search no longer freezes the
+  interpreter or a watchdog timer. `skmem_core.RELEASES_GIL` is `True` on such a build; a heartbeat
+  test in `tests/python` fails without it (SKMEM-R-11).
 - Review fixes for R-07C (PR 14): the temporal window is now exactly Python's or an abstain (never a
   different window; 5604-query Python golden, 0 wrong); a reader can never open Postgres writable
   (`pg_read_only=False` raises); arm reports carry `hits` and `ms` like Python's retrieval log; an arm
